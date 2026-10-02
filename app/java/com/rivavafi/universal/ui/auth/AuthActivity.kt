@@ -691,16 +691,18 @@ fun AuthScreenContent(
                             }
                         }
 
-                        // Forgot Password Link
-                        TextButton(
-                            onClick = onNavigateToReset,
-                            modifier = Modifier.padding(top = 2.dp)
-                        ) {
-                            Text(
-                                text = "Forgot Password?",
-                                color = PrimarySky,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
+                        // Forgot Password Link (Only shown when Email auth tab is selected and in sign-in mode)
+                        if (selectedAuthTab == 1 && !isEmailSignUp) {
+                            TextButton(
+                                onClick = onNavigateToReset,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Forgot Password?",
+                                    color = PrimarySky,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                            }
                         }
                     }
                 }
