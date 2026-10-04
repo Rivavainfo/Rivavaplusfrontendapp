@@ -47,15 +47,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val CardBg = Color(0xFF141A24)
-private val CardBorder = Color(0xFF1E293B)
-private val AccentGreen = Color(0xFF10B981)
-private val AccentRed = Color(0xFFEF4444)
-private val AccentBlue = Color(0xFF38BDF8)
+private val CardBg = Color(0xFF16161A)
+private val CardBorder = Color(0xFF282834)
+private val AccentGreen = Color(0xFF00E471) // Rivava Lime
+private val AccentRed = Color(0xFFFF2A85) // Rivava Pink
+private val AccentBlue = Color(0xFF00A3FF) // Rivava Cyan
 private val AccentPurple = Color(0xFF8B5CF6)
 private val AccentAmber = Color(0xFFF59E0B)
 private val AccentIndigo = Color(0xFF6366F1)
-private val InputBg = Color(0xFF0F172A)
+private val InputBg = Color(0xFF101014)
  
 data class ToolCardItem(
     val type: CalculatorType,
@@ -112,8 +112,8 @@ fun CalculatorsScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = "All Tools",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF38BDF8)
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = AccentBlue
                         )
                     }
                 } else {

@@ -151,11 +151,11 @@ fun PortfolioStockCard(
 ) {
     val isNyse = exchange.equals("NYSE", ignoreCase = true)
 
-    val primaryColor = if (isNyse) Color(0xFF3B82F6) else Color(0xFF34D399)
-    val badgeBgColor = primaryColor.copy(alpha = 0.1f)
+    val primaryColor = if (isNyse) com.rivavafi.universal.ui.theme.RivavaCyan else com.rivavafi.universal.ui.theme.RivavaLime
+    val badgeBgColor = primaryColor.copy(alpha = 0.15f)
 
     val priceColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isPositive) Color(0xFF34D399) else Color(0xFFFF4C91),
+        targetValue = if (isPositive) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink,
         animationSpec = androidx.compose.animation.core.tween(durationMillis = 500),
         label = "priceColor"
     )
@@ -177,11 +177,12 @@ fun PortfolioStockCard(
         modifier = modifier
             .fillMaxWidth()
             .height(90.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp))
             .clickable {
                 onValueClick?.invoke("market_price")
             },
-        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF111111)),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg),
         elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -207,7 +208,7 @@ fun PortfolioStockCard(
                     ) {
                         Text(
                             text = if (ticker.length > 4) ticker.take(4).uppercase() else ticker.uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                             color = primaryColor
                         )
                     }
@@ -215,7 +216,7 @@ fun PortfolioStockCard(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = ticker.uppercase(),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = Color.White,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -238,7 +239,7 @@ fun PortfolioStockCard(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = marketPrice,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = Color.White
                         )
                         if (isDefault) {
@@ -263,7 +264,7 @@ fun PortfolioStockCard(
                 ) {
                     Text(
                         text = percentageChange,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = priceColor
                     )
                     Text(

@@ -264,48 +264,92 @@ fun TransactionList(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 16.dp)
+                    .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Monthly Summary", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Monthly Summary",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.15f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = "${uiState.transactions.size} records",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                color = com.rivavafi.universal.ui.theme.RivavaCyan,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(14.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
-                            Text("Credit", style = MaterialTheme.typography.bodySmall, color = Color(0xFF4CAF50))
-                            Text("₹${String.format(Locale.getDefault(), "%.0f", uiState.monthlyCredit)}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(com.rivavafi.universal.ui.theme.RivavaLime, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Credit", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = com.rivavafi.universal.ui.theme.RivavaLime)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "₹${String.format(Locale.getDefault(), "%.0f", uiState.monthlyCredit)}",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Debit", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            Text("₹${String.format(Locale.getDefault(), "%.0f", uiState.monthlyDebit)}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(com.rivavafi.universal.ui.theme.RivavaPink, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Debit", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = com.rivavafi.universal.ui.theme.RivavaPink)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "₹${String.format(Locale.getDefault(), "%.0f", uiState.monthlyDebit)}",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     val net = uiState.monthlyCredit - uiState.monthlyDebit
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Net Balance", style = MaterialTheme.typography.bodyMedium)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Net Balance", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             text = "${if (net >= 0) "+" else ""}₹${String.format(Locale.getDefault(), "%.0f", net)}",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (net >= 0) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = if (net >= 0) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+                    HorizontalDivider(color = com.rivavafi.universal.ui.theme.DarkCardBorder)
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     val debits = uiState.transactions.filter { it.type == "DEBIT" || it.type == "BILL_PENDING" }
                     val topCategory = debits.groupBy { it.category }.maxByOrNull { it.value.sumOf { t -> t.amount } }?.key ?: "None"
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Top Category", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(topCategory, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Total Transactions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${uiState.transactions.size}", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(topCategory, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = com.rivavafi.universal.ui.theme.RivavaCyan)
                     }
                 }
             }
@@ -616,13 +660,14 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -649,7 +694,7 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (showDetails) transaction.merchantName else "Hidden",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -661,7 +706,7 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = if (showDetails) catVisual.title else "Hidden",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         color = iconColor,
                         modifier = Modifier
                             .background(iconColor.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
@@ -692,8 +737,8 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
 
             Text(
                 text = "${if (isCredit) "+" else "-"}₹${String.format(Locale.getDefault(), "%.0f", transaction.amount)}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (isCredit) Color(0xFF4CAF50) else Color(0xFFE53935)
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = if (isCredit) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
             )
         }
     }

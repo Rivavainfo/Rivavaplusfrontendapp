@@ -13,15 +13,18 @@ val StandardColorScheme = darkColorScheme(
     primaryContainer = PrimaryContainerSky,
     secondary = SecondaryPink,
     tertiary = TertiaryEmerald,
-    onPrimary = OnDarkSurface,
-    onPrimaryContainer = OnDarkSurface,
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    onPrimaryContainer = androidx.compose.ui.graphics.Color.White,
     background = AmoledBlack,
     onBackground = OnDarkSurface,
     surface = DarkSurface,
     onSurface = OnDarkSurface,
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = OnDarkSurfaceVariant,
-    error = VibrantRed
+    outline = DarkCardBorder,
+    outlineVariant = DarkCardBorder.copy(alpha = 0.6f),
+    error = VibrantRed,
+    onError = androidx.compose.ui.graphics.Color.White
 )
 
 val PremiumColorScheme = darkColorScheme(
@@ -29,15 +32,18 @@ val PremiumColorScheme = darkColorScheme(
     primaryContainer = PrimaryContainerSky,
     secondary = SecondaryPink,
     tertiary = TertiaryEmerald,
-    onPrimary = OnDarkSurface,
-    onPrimaryContainer = OnDarkSurface,
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    onPrimaryContainer = androidx.compose.ui.graphics.Color.White,
     background = AmoledBlack,
     onBackground = OnDarkSurface,
     surface = DarkSurface,
     onSurface = OnDarkSurface,
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = OnDarkSurfaceVariant,
-    error = VibrantRed
+    outline = DarkCardBorder,
+    outlineVariant = DarkCardBorder.copy(alpha = 0.6f),
+    error = VibrantRed,
+    onError = androidx.compose.ui.graphics.Color.White
 )
 
 @Composable

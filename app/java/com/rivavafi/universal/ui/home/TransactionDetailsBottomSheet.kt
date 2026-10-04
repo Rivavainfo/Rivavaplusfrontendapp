@@ -30,7 +30,7 @@ fun TransactionDetailsBottomSheet(
     onDelete: () -> Unit = {}
 ) {
     val isCredit = transaction.type == "CREDIT"
-    val color = if (isCredit) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+    val color = if (isCredit) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
     val sign = if (isCredit) "+" else "-"
 
     val formatter = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault())
@@ -38,7 +38,7 @@ fun TransactionDetailsBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = com.rivavafi.universal.ui.theme.DarkCardBg,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
@@ -51,7 +51,7 @@ fun TransactionDetailsBottomSheet(
             Text(
                 text = "Transaction Details",
                 style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier.padding(bottom = 24.dp)

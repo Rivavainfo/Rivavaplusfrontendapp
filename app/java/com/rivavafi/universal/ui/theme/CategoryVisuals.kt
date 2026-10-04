@@ -13,23 +13,23 @@ data class CategoryVisual(
 )
 
 object CategoryVisuals {
-    val EXPENSE = CategoryVisual("Debit", Color(0xFFE53935), Icons.Outlined.TrendingDown)
-    val INCOME = CategoryVisual("Credit", Color(0xFF4CAF50), Icons.Outlined.TrendingUp)
-    val BILL = CategoryVisual("Bill", Color(0xFF9C27B0), Icons.Outlined.Receipt)
-    val INVESTMENT = CategoryVisual("Investment", Color(0xFF00897B), Icons.Outlined.Savings)
-    val SUBSCRIPTION = CategoryVisual("Subscription", Color(0xFF3949AB), Icons.Outlined.Autorenew)
-    val REWARD = CategoryVisual("Reward", Color(0xFFFBC02D), Icons.Outlined.CardGiftcard)
-    val SELF_TRANSFER = CategoryVisual("Transfer", Color(0xFF757575), Icons.Outlined.SyncAlt)
-    val IGNORE = CategoryVisual("Ignore", Color(0xFF9E9E9E), Icons.Outlined.Block)
-    val DEFAULT = CategoryVisual("Other", Color(0xFF546E7A), Icons.Outlined.HelpOutline)
+    val EXPENSE = CategoryVisual("Debit", RivavaPink, Icons.Outlined.TrendingDown)
+    val INCOME = CategoryVisual("Credit", RivavaLime, Icons.Outlined.TrendingUp)
+    val BILL = CategoryVisual("Bill", Color(0xFFA855F7), Icons.Outlined.Receipt)
+    val INVESTMENT = CategoryVisual("Investment", RivavaCyan, Icons.Outlined.Savings)
+    val SUBSCRIPTION = CategoryVisual("Subscription", Color(0xFF6366F1), Icons.Outlined.Autorenew)
+    val REWARD = CategoryVisual("Reward", Color(0xFFFBBF24), Icons.Outlined.CardGiftcard)
+    val SELF_TRANSFER = CategoryVisual("Transfer", Color(0xFF94A3B8), Icons.Outlined.SyncAlt)
+    val IGNORE = CategoryVisual("Ignore", Color(0xFF64748B), Icons.Outlined.Block)
+    val DEFAULT = CategoryVisual("Other", Color(0xFF64748B), Icons.Outlined.HelpOutline)
 
     val subcategories = mapOf(
-        "Food" to CategoryVisual("Food", Color(0xFFFF9800), Icons.Outlined.Restaurant),
-        "Groceries" to CategoryVisual("Groceries", Color(0xFF4CAF50), Icons.Outlined.LocalGroceryStore),
-        "Transport" to CategoryVisual("Transport", Color(0xFF2196F3), Icons.Outlined.DirectionsCar),
-        "Bills" to CategoryVisual("Bills", Color(0xFF9C27B0), Icons.Outlined.ReceiptLong),
-        "Shopping" to CategoryVisual("Shopping", Color(0xFFE91E63), Icons.Outlined.ShoppingBag),
-        "Recharge" to CategoryVisual("Recharge", Color(0xFF00BCD4), Icons.Outlined.PhoneAndroid),
+        "Food" to CategoryVisual("Food", Color(0xFFFB923C), Icons.Outlined.Restaurant),
+        "Groceries" to CategoryVisual("Groceries", RivavaLime, Icons.Outlined.LocalGroceryStore),
+        "Transport" to CategoryVisual("Transport", RivavaCyan, Icons.Outlined.DirectionsCar),
+        "Bills" to CategoryVisual("Bills", Color(0xFFA855F7), Icons.Outlined.ReceiptLong),
+        "Shopping" to CategoryVisual("Shopping", RivavaPink, Icons.Outlined.ShoppingBag),
+        "Recharge" to CategoryVisual("Recharge", RivavaCyan, Icons.Outlined.PhoneAndroid),
         "Entertainment" to CategoryVisual("Entertainment", Color(0xFFF44336), Icons.Outlined.Movie),
         "Travel" to CategoryVisual("Travel", Color(0xFF03A9F4), Icons.Outlined.Flight),
         "Loan Given" to CategoryVisual("Loan Given", Color(0xFF795548), Icons.Outlined.Handshake),

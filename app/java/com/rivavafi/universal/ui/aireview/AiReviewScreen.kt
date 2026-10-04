@@ -1,6 +1,7 @@
 package com.rivavafi.universal.ui.aireview
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -102,7 +103,7 @@ fun AiReviewScreen(viewModel: AiReviewViewModel = hiltViewModel()) {
 fun SectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary),
+        style = MaterialTheme.typography.titleLarge.copy(color = com.rivavafi.universal.ui.theme.RivavaCyan, fontWeight = FontWeight.SemiBold),
         modifier = Modifier.padding(vertical = 8.dp)
     )
 }
@@ -112,23 +113,25 @@ fun UncertainTransactionCard(transaction: TransactionEntity, onCategorySelected:
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
             .bounceClick { },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = "What is ${transaction.merchantName}?",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { onCategorySelected("FOOD") }, modifier = Modifier.weight(1f)) {
-                    Text("Food")
+                    Text("Food", fontWeight = FontWeight.Medium)
                 }
                 Button(onClick = { onCategorySelected("SHOPPING") }, modifier = Modifier.weight(1f)) {
-                    Text("Shopping")
+                    Text("Shopping", fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -140,17 +143,19 @@ fun LearningQuestionCard(transaction: TransactionEntity, suggestedCategory: Stri
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
             .bounceClick { },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.5f))
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = com.rivavafi.universal.ui.theme.RivavaCyan)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Is ${transaction.merchantName} a $suggestedCategory debit?",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -161,22 +166,22 @@ fun LearningQuestionCard(transaction: TransactionEntity, suggestedCategory: Stri
                     modifier = Modifier
                         .weight(1f)
                         .bounceClick { onAnswer(true) },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF4CAF50))
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = com.rivavafi.universal.ui.theme.RivavaLime)
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Yes")
+                    Text("Yes", fontWeight = FontWeight.SemiBold)
                 }
                 OutlinedButton(
                     onClick = { onAnswer(false) },
                     modifier = Modifier
                         .weight(1f)
                         .bounceClick { onAnswer(false) },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = com.rivavafi.universal.ui.theme.RivavaPink)
                 ) {
                     Icon(Icons.Default.Close, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("No")
+                    Text("No", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -186,9 +191,12 @@ fun LearningQuestionCard(transaction: TransactionEntity, suggestedCategory: Stri
 @Composable
 fun InsightsCard(topCategory: String, avgDaily: Double, frequentMerchant: String) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             InsightRow("Top Spending Category", topCategory.ifBlank { "Not enough data" })

@@ -45,6 +45,13 @@ import com.rivavafi.universal.ui.theme.CategoryVisuals
 import com.rivavafi.universal.ui.theme.bounceClick
 import com.rivavafi.universal.ui.theme.glassMorphism
 import com.rivavafi.universal.ui.theme.glowEffect
+import com.rivavafi.universal.ui.theme.RivavaCyan
+import com.rivavafi.universal.ui.theme.RivavaPink
+import com.rivavafi.universal.ui.theme.RivavaLime
+import com.rivavafi.universal.ui.theme.DarkCardBg
+import com.rivavafi.universal.ui.theme.DarkCardBorder
+import com.rivavafi.universal.ui.theme.OnDarkSurface
+import com.rivavafi.universal.ui.theme.OnDarkSurfaceVariant
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Edit
@@ -568,25 +575,32 @@ fun HomeScreen(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, DarkCardBorder, RoundedCornerShape(20.dp))
                             .clickable {
                                 val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+918881176909"))
                                 context.startActivity(intent)
                             },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
+                        colors = CardDefaults.cardColors(containerColor = DarkCardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color(0xFF111111)),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(RivavaCyan.copy(alpha = 0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(22.dp), tint = RivavaCyan)
+                                }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Call", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                                Text("Call", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                             }
                         }
                     }
@@ -595,22 +609,29 @@ fun HomeScreen(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, DarkCardBorder, RoundedCornerShape(20.dp))
                             .clickable { showVideoCallDialog = true },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
+                        colors = CardDefaults.cardColors(containerColor = DarkCardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color(0xFF111111)),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(Icons.Default.VideoCall, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(RivavaPink.copy(alpha = 0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.VideoCall, contentDescription = null, modifier = Modifier.size(24.dp), tint = RivavaPink)
+                                }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Video Call", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                                Text("Video Call", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                             }
                         }
                     }
@@ -619,22 +640,29 @@ fun HomeScreen(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, DarkCardBorder, RoundedCornerShape(20.dp))
                             .clickable { showChatDialog = true },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
+                        colors = CardDefaults.cardColors(containerColor = DarkCardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color(0xFF111111)),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(RivavaLime.copy(alpha = 0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(22.dp), tint = RivavaLime)
+                                }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Chat", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                                Text("Chat", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
                             }
                         }
                     }
@@ -1169,7 +1197,8 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .glassMorphism(cornerRadius = 24f, alpha = 0.15f),
+                .border(1.dp, androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(RivavaCyan.copy(alpha = 0.6f), RivavaLime.copy(alpha = 0.5f))), RoundedCornerShape(24.dp))
+                .glassMorphism(cornerRadius = 24f, alpha = 0.18f),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -1178,31 +1207,37 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                 Text(
                     text = "NET WORTH",
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = RivavaCyan
                     )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
                         text = "₹${String.format(java.util.Locale.getDefault(), "%.0f", netWorth)}",
                         style = MaterialTheme.typography.displaySmall.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = OnDarkSurface
                         )
                     )
-                    Text(
-                        text = netWorthChange,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
+                    Surface(
+                        color = (if (netWorth >= 0) RivavaLime else RivavaPink).copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            text = netWorthChange,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = if (netWorth >= 0) RivavaLime else RivavaPink
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
@@ -1217,32 +1252,39 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF161616)),
+                    .border(1.dp, DarkCardBorder, RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                colors = CardDefaults.cardColors(containerColor = DarkCardBg),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.AccountBalanceWallet,
-                        contentDescription = "Savings",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(RivavaPink.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = "Savings",
+                            tint = RivavaPink,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "Savings",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = OnDarkSurfaceVariant
                         )
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "₹${String.format(java.util.Locale.getDefault(), "%.0f", savings)}",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontWeight = FontWeight.ExtraBold,
+                            color = OnDarkSurface
                         )
                     )
                 }
@@ -1253,32 +1295,39 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF161616)),
+                    .border(1.dp, DarkCardBorder, RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                colors = CardDefaults.cardColors(containerColor = DarkCardBg),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Insights,
-                        contentDescription = "Investments",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(RivavaCyan.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Insights,
+                            contentDescription = "Investments",
+                            tint = RivavaCyan,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "Investments",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = OnDarkSurfaceVariant
                         )
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "₹${String.format(java.util.Locale.getDefault(), "%.0f", investments)}",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontWeight = FontWeight.ExtraBold,
+                            color = OnDarkSurface
                         )
                     )
                 }
@@ -1345,8 +1394,8 @@ fun RealBalanceCard(transactions: List<TransactionEntity>) {
 
 @Composable
 fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true, onClick: () -> Unit) {
-    val isCredit = transaction.type == "CREDIT" || transaction.type == "INCOME" || transaction.type == "REWARD" || transaction.type == "INCOME" || transaction.type == "REWARD"
-    val amountColor = if (isCredit) Color(0xFF4CAF50) else Color(0xFFE53935)
+    val isCredit = transaction.type == "CREDIT" || transaction.type == "INCOME" || transaction.type == "REWARD"
+    val amountColor = if (isCredit) RivavaLime else RivavaPink
 
     val categoryVisual = CategoryVisuals.getCategoryVisual(transaction.category)
     val subCategoryVisual = transaction.subcategory?.let { CategoryVisuals.getSubcategoryVisual(it) }

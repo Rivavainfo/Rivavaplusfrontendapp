@@ -1,6 +1,7 @@
 package com.rivavafi.universal.ui.portfolio
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -208,38 +209,44 @@ fun StockPortfolioDetailScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Metric Card 3
                     Card(
-                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp)),
+                        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("MARKET OPEN", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
+                                Text("MARKET OPEN", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = com.rivavafi.universal.ui.theme.RivavaCyan, modifier = Modifier.size(12.dp))
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             val marketOpenText = if (exchange == "NYSE") String.format("%.2f USD", openPrice) else String.format("₹%.2f", openPrice)
-                            Text(marketOpenText, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black))
+                            Text(marketOpenText, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold))
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("09:30:01 EST", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("09:30:01 EST", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     // Metric Card 4
                     Card(
-                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp)),
+                        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("52W CHANGE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
+                                Text("52W CHANGE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = com.rivavafi.universal.ui.theme.RivavaCyan, modifier = Modifier.size(12.dp))
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             val simulated52wChange = pnlPercent * 2.5
                             val is52wPositive = simulated52wChange >= 0
                             val simulated52wChangeText = String.format("%s%.2f%%", if(is52wPositive) "+" else "", simulated52wChange)
-                            Text(simulated52wChangeText, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black), color = if (is52wPositive) com.rivavafi.universal.ui.theme.EmeraldGreen else com.rivavafi.universal.ui.theme.VibrantRed)
+                            Text(simulated52wChangeText, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = if (is52wPositive) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink)
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("Exponential Trend", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Exponential Trend", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -252,12 +259,12 @@ fun StockPortfolioDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(24.dp))
-                            .glassMorphism(cornerRadius = 24f, alpha = 0.15f)
+                            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
                             .background(
                                 Brush.linearGradient(
                                     colors = listOf(
-                                        Color(0xFF161616),
-                                        if (ticker == "IREDA") com.rivavafi.universal.ui.theme.TertiaryEmerald.copy(alpha = 0.15f) else com.rivavafi.universal.ui.theme.PrimaryContainerSky.copy(alpha = 0.15f)
+                                        com.rivavafi.universal.ui.theme.DarkCardBg,
+                                        if (ticker == "IREDA") com.rivavafi.universal.ui.theme.RivavaLime.copy(alpha = 0.15f) else com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.15f)
                                     )
                                 )
                             )
@@ -266,20 +273,20 @@ fun StockPortfolioDetailScreen(
                             modifier = Modifier.fillMaxWidth().padding(24.dp),
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Text("Investment Thesis", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, color = Color.White))
+                            Text("Investment Thesis", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold, color = Color.White))
                             Spacer(modifier = Modifier.height(16.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
                                     Text(if (ticker == "IREDA") "IPO Price" else if (ticker == "INDHOTEL" || ticker == "NVDA") "Buying Price" else "Buy Price", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
-                                    Text(when(ticker) { "IREDA" -> "₹32"; "INDHOTEL" -> "₹76.49"; "NVDA" -> "$23.36"; else -> "82.22 USD" }, color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                    Text(when(ticker) { "IREDA" -> "₹32"; "INDHOTEL" -> "₹76.49"; "NVDA" -> "$23.36"; else -> "82.22 USD" }, color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                                 }
                                 Column {
                                     Text("Status", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
-                                    Text(if (ticker == "RTX") "StillActive" else "Sold", color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                    Text(if (ticker == "RTX") "StillActive" else "Sold", color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                                 }
                                 Column {
                                     Text("Returns", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
-                                    Text(when(ticker) { "IREDA" -> "715%"; "INDHOTEL" -> "951.05%"; "NVDA" -> "575.4%"; else -> "138.64%" }, color = if (ticker == "IREDA" || ticker == "INDHOTEL") com.rivavafi.universal.ui.theme.TertiaryEmerald else com.rivavafi.universal.ui.theme.PrimaryContainerSky, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                    Text(when(ticker) { "IREDA" -> "715%"; "INDHOTEL" -> "951.05%"; "NVDA" -> "575.4%"; else -> "138.64%" }, color = if (ticker == "IREDA" || ticker == "INDHOTEL") com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaCyan, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                                 }
                             }
                             Spacer(modifier = Modifier.height(24.dp))
@@ -297,9 +304,9 @@ fun StockPortfolioDetailScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f), contentColor = Color.White),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp), tint = if (ticker == "IREDA") com.rivavafi.universal.ui.theme.TertiaryEmerald else com.rivavafi.universal.ui.theme.PrimaryContainerSky)
+                                Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp), tint = if (ticker == "IREDA") com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaCyan)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Read Detailed PDF", fontWeight = FontWeight.Bold, color = if (ticker == "IREDA") com.rivavafi.universal.ui.theme.TertiaryEmerald else com.rivavafi.universal.ui.theme.PrimaryContainerSky)
+                                Text("Read Detailed PDF", fontWeight = FontWeight.SemiBold, color = if (ticker == "IREDA") com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaCyan)
                             }
                         }
                     }

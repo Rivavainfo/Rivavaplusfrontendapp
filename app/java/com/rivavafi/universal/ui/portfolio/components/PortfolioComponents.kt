@@ -1,6 +1,7 @@
 package com.rivavafi.universal.ui.portfolio.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,7 +63,7 @@ fun PortfolioMetricsTable(
     focusedMetric: String? = null
 ) {
     val valueColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isPositive) EmeraldGreen else VibrantRed,
+        targetValue = if (isPositive) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink,
         animationSpec = androidx.compose.animation.core.tween(durationMillis = 500)
     )
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
@@ -77,14 +78,15 @@ fun PortfolioMetricsTable(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .glassMorphism(cornerRadius = 16f, alpha = 0.1f)
+            .clip(RoundedCornerShape(20.dp))
+            .background(com.rivavafi.universal.ui.theme.DarkCardBg)
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp))
             .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = ticker,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -97,18 +99,18 @@ fun PortfolioMetricsTable(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        MetricRow("Change", change, Icons.AutoMirrored.Filled.TrendingUp, EmeraldGreen, valueColor, openUrl, isFocused = focusedMetric == "change")
-        MetricRow("Position", position, Icons.Default.PieChart, MaterialTheme.colorScheme.primary, onClick = openUrl, isFocused = focusedMetric == "position")
-        MetricRow("Avg Volume", avgVolume, Icons.Default.BarChart, MaterialTheme.colorScheme.primaryContainer, onClick = openUrl, isFocused = focusedMetric == "avgVolume")
+        MetricRow("Change", change, Icons.AutoMirrored.Filled.TrendingUp, com.rivavafi.universal.ui.theme.RivavaLime, valueColor, openUrl, isFocused = focusedMetric == "change")
+        MetricRow("Position", position, Icons.Default.PieChart, com.rivavafi.universal.ui.theme.RivavaCyan, onClick = openUrl, isFocused = focusedMetric == "position")
+        MetricRow("Avg Volume", avgVolume, Icons.Default.BarChart, com.rivavafi.universal.ui.theme.RivavaCyan, onClick = openUrl, isFocused = focusedMetric == "avgVolume")
         MetricRow("Avg Price", avgPrice, Icons.Default.Payments, MaterialTheme.colorScheme.secondary, onClick = openUrl, isFocused = focusedMetric == "avgPrice")
-        MetricRow("Last Price", lastPrice, Icons.Default.Sell, MaterialTheme.colorScheme.primary, onClick = openUrl, isFocused = focusedMetric == "lastPrice")
-        MetricRow("Day High", dayHigh, Icons.Default.ArrowUpward, EmeraldGreen, EmeraldGreen, openUrl, isFocused = focusedMetric == "dayHigh")
-        MetricRow("Day Low", dayLow, Icons.Default.ArrowDownward, VibrantRed, VibrantRed, openUrl, isFocused = focusedMetric == "dayLow")
+        MetricRow("Last Price", lastPrice, Icons.Default.Sell, com.rivavafi.universal.ui.theme.RivavaCyan, onClick = openUrl, isFocused = focusedMetric == "lastPrice")
+        MetricRow("Day High", dayHigh, Icons.Default.ArrowUpward, com.rivavafi.universal.ui.theme.RivavaLime, com.rivavafi.universal.ui.theme.RivavaLime, openUrl, isFocused = focusedMetric == "dayHigh")
+        MetricRow("Day Low", dayLow, Icons.Default.ArrowDownward, com.rivavafi.universal.ui.theme.RivavaPink, com.rivavafi.universal.ui.theme.RivavaPink, openUrl, isFocused = focusedMetric == "dayLow")
         MetricRow("Open Price", openPrice, Icons.Default.ArrowUpward, MaterialTheme.colorScheme.outline, onClick = openUrl, isFocused = focusedMetric == "openPrice")
         MetricRow("Cost Basis", costBasis, Icons.Default.AccountBalanceWallet, MaterialTheme.colorScheme.secondary, onClick = openUrl, isFocused = focusedMetric == "costBasis")
-        MetricRow("P&L", pnl, Icons.Default.AddChart, EmeraldGreen, valueColor, openUrl, isFocused = focusedMetric == "pnl")
-        MetricRow("P&L %", pnlPercent, Icons.Default.Percent, EmeraldGreen, valueColor, openUrl, isFocused = focusedMetric == "pnlPercent")
-        MetricRow("Unrealized P&L %", unrealizedPnl, Icons.Default.PieChart, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary, openUrl, isFocused = focusedMetric == "unrealizedPnl")
+        MetricRow("P&L", pnl, Icons.Default.AddChart, com.rivavafi.universal.ui.theme.RivavaLime, valueColor, openUrl, isFocused = focusedMetric == "pnl")
+        MetricRow("P&L %", pnlPercent, Icons.Default.Percent, com.rivavafi.universal.ui.theme.RivavaLime, valueColor, openUrl, isFocused = focusedMetric == "pnlPercent")
+        MetricRow("Unrealized P&L %", unrealizedPnl, Icons.Default.PieChart, com.rivavafi.universal.ui.theme.RivavaCyan, com.rivavafi.universal.ui.theme.RivavaCyan, openUrl, isFocused = focusedMetric == "unrealizedPnl")
     }
 }
 
@@ -197,12 +199,13 @@ fun CashBalanceSection(usdCash: String, totalCash: String) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .glassMorphism(cornerRadius = 16f, alpha = 0.1f)
+                .clip(RoundedCornerShape(20.dp))
+                .background(com.rivavafi.universal.ui.theme.DarkCardBg)
+                .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp))
                 .padding(16.dp)
         ) {
-            BalanceRow("INR Cash", usdCash, Icons.Default.AttachMoney, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f), "CURRENCY BALANCE")
-            BalanceRow("Total Cash", totalCash, Icons.Default.Savings, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f), "AGGREGATE", showDivider = false)
+            BalanceRow("INR Cash", usdCash, Icons.Default.AttachMoney, com.rivavafi.universal.ui.theme.RivavaLime, com.rivavafi.universal.ui.theme.RivavaLime.copy(alpha = 0.15f), "CURRENCY BALANCE")
+            BalanceRow("Total Cash", totalCash, Icons.Default.Savings, com.rivavafi.universal.ui.theme.RivavaCyan, com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.15f), "AGGREGATE", showDivider = false)
         }
     }
 }
@@ -244,7 +247,7 @@ fun BalanceRow(label: String, value: String, icon: ImageVector, iconColor: Color
                 Column {
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -258,7 +261,7 @@ fun BalanceRow(label: String, value: String, icon: ImageVector, iconColor: Color
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(

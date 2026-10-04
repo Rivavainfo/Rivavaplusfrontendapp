@@ -1,6 +1,7 @@
 package com.rivavafi.universal.ui.history
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -139,7 +140,7 @@ fun TransactionDetailScreen(
 @Composable
 fun TransactionInfoCard(transaction: TransactionEntity, showSmsDetails: Boolean) {
     val isCredit = transaction.type == "CREDIT" || transaction.type == "INCOME" || transaction.type == "REWARD"
-    val color = if (isCredit) Color(0xFF4CAF50) else Color(0xFFE53935)
+    val color = if (isCredit) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
     val sign = if (isCredit) "+" else "-"
 
     val formatter = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault())
@@ -153,14 +154,14 @@ fun TransactionInfoCard(transaction: TransactionEntity, showSmsDetails: Boolean)
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .glassMorphism(cornerRadius = 24f, alpha = 0.15f),
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
                 text = transaction.merchantName,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -182,13 +183,13 @@ fun TransactionInfoCard(transaction: TransactionEntity, showSmsDetails: Boolean)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = visualToUse.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                     color = visualToUse.color
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            HorizontalDivider(color = com.rivavafi.universal.ui.theme.DarkCardBorder)
             Spacer(modifier = Modifier.height(24.dp))
 
             DetailItem("Amount", "$sign₹${String.format(Locale.getDefault(), "%.2f", transaction.amount)}", valueColor = color, isBold = true)
@@ -229,9 +230,9 @@ fun RawMessageCard(message: String) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .glassMorphism(cornerRadius = 24f, alpha = 0.1f),
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(

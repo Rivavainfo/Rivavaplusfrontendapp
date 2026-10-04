@@ -524,8 +524,8 @@ fun RivavaPortfolioScreen(
                             Column {
                                 Text(
                                     "INDIAN MARKET",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF34D399),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = com.rivavafi.universal.ui.theme.RivavaLime,
                                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                                 )
                                 Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -539,8 +539,8 @@ fun RivavaPortfolioScreen(
                             Column {
                                 Text(
                                     "US MARKET",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF3B82F6),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = com.rivavafi.universal.ui.theme.RivavaCyan,
                                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                                 )
                                 Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -593,11 +593,11 @@ fun RivavaPortfolioScreen(
                     NewsItem("The Economist", "World News, Politics, Economics", "https://www.economist.com/", "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=600&q=80")
                 )
 
-                MarketNewsSection("🇮🇳 INDIAN MARKET", Color(0xFFFF4C91), indianMarket, uriHandler)
+                MarketNewsSection("🇮🇳 INDIAN MARKET", com.rivavafi.universal.ui.theme.RivavaPink, indianMarket, uriHandler)
                 Spacer(modifier = Modifier.height(24.dp))
-                MarketNewsSection("🇺🇸 US MARKET", Color(0xFF3B82F6), usMarket, uriHandler)
+                MarketNewsSection("🇺🇸 US MARKET", com.rivavafi.universal.ui.theme.RivavaCyan, usMarket, uriHandler)
                 Spacer(modifier = Modifier.height(24.dp))
-                MarketNewsSection("🌍 INTERNATIONAL MARKET", Color(0xFF34D399), internationalMarket, uriHandler)
+                MarketNewsSection("🌍 INTERNATIONAL MARKET", com.rivavafi.universal.ui.theme.RivavaLime, internationalMarket, uriHandler)
             }
 
 
@@ -621,7 +621,7 @@ fun RivavaPortfolioScreen(
 fun CryptoCard(id: String, data: CryptoData, isApiWorking: Boolean = true) {
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     val isPositive = data.change24h >= 0
-    val color = if (isPositive) Color(0xFF34D399) else Color(0xFFFF4C91)
+    val color = if (isPositive) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
     val inrFormatter = java.text.NumberFormat.getCurrencyInstance(Locale("en", "IN"))
     val symbol = when (id.lowercase()) {
         "bitcoin" -> "BTC"
@@ -633,8 +633,8 @@ fun CryptoCard(id: String, data: CryptoData, isApiWorking: Boolean = true) {
         modifier = Modifier
             .fillMaxWidth()
             .height(90.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp))
             .animateContentSize(animationSpec = androidx.compose.animation.core.tween(durationMillis = 300))
             .clickable {
                 val url = "https://www.google.com/search?q=$id+crypto+price"
@@ -642,7 +642,7 @@ fun CryptoCard(id: String, data: CryptoData, isApiWorking: Boolean = true) {
                     uriHandler.openUri(url)
                 } catch(e: Exception) {}
             },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -652,32 +652,32 @@ fun CryptoCard(id: String, data: CryptoData, isApiWorking: Boolean = true) {
                 modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.06f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(symbol, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                Text(symbol, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = id.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = Color.White
                 )
                 Text(
                     text = "See current live rates now",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = com.rivavafi.universal.ui.theme.PrimarySky
+                    color = com.rivavafi.universal.ui.theme.RivavaCyan
                 )
             }
             Box(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(com.rivavafi.universal.ui.theme.EmeraldGreen.copy(alpha = 0.1f)),
+                    .background(com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "See rates",
-                    tint = com.rivavafi.universal.ui.theme.EmeraldGreen,
+                    tint = com.rivavafi.universal.ui.theme.RivavaCyan,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -690,14 +690,14 @@ fun CuratedNewsCard(title: String, url: String, uriHandler: androidx.compose.ui.
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp))
             .clickable {
                 try {
                     uriHandler.openUri(url)
                 } catch (e: Exception) {}
             },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
+        colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -706,13 +706,13 @@ fun CuratedNewsCard(title: String, url: String, uriHandler: androidx.compose.ui.
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = "Read News",
-                tint = PrimarySky,
+                tint = com.rivavafi.universal.ui.theme.RivavaCyan,
                 modifier = Modifier.size(20.dp)
             )
         }

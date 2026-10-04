@@ -49,11 +49,11 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private val CardBg = Color(0xFF141A24)
-private val CardBorder = Color(0xFF1E293B)
-private val AccentGreen = Color(0xFF10B981)
-private val AccentRed = Color(0xFFEF4444)
-private val AccentBlue = Color(0xFF38BDF8)
+private val CardBg = Color(0xFF14141A)
+private val CardBorder = Color(0xFF262634)
+private val AccentGreen = Color(0xFF00E471) // RivavaLime
+private val AccentRed = Color(0xFFFF2A85)   // RivavaPink
+private val AccentBlue = Color(0xFF00A3FF)  // RivavaCyan
 private val AccentPurple = Color(0xFF8B5CF6)
 private val AccentAmber = Color(0xFFF59E0B)
 
@@ -1016,7 +1016,7 @@ fun TrendsDeepDiveView(data: MonthlyFinancialData) {
                             BarEntry(it.dayOfMonth.toFloat(), it.debit)
                         }
                         val dataSet = BarDataSet(entries, "Debits").apply {
-                            color = AndroidColor.parseColor("#38BDF8")
+                            color = AndroidColor.parseColor("#00A3FF")
                             valueTextColor = AndroidColor.TRANSPARENT
                         }
                         barChart.data = BarData(dataSet)
