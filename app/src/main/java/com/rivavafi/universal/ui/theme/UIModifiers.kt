@@ -112,3 +112,44 @@ fun Modifier.glowEffect(color: Color, radius: Float = 20f, isSelected: Boolean) 
         drawContent()
     }
 }
+
+fun Modifier.rivavaCard(
+    cornerRadius: Float = 24f,
+    borderBrush: Brush = Brush.linearGradient(
+        listOf(DarkCardBorderHighlight, DarkCardBorder)
+    ),
+    backgroundBrush: Brush = Brush.linearGradient(
+        listOf(DarkCardBgElevated, DarkCardBg)
+    )
+) = composed {
+    this
+        .clip(RoundedCornerShape(cornerRadius.dp))
+        .background(backgroundBrush)
+        .border(1.dp, borderBrush, RoundedCornerShape(cornerRadius.dp))
+}
+
+fun Modifier.neonRim(
+    cornerRadius: Float = 24f,
+    primaryColor: Color = RivavaCyan,
+    secondaryColor: Color = RivavaPink
+) = composed {
+    this
+        .clip(RoundedCornerShape(cornerRadius.dp))
+        .background(
+            Brush.linearGradient(
+                listOf(DarkCardBgElevated, DarkCardBg)
+            )
+        )
+        .border(
+            width = 1.dp,
+            brush = Brush.linearGradient(
+                listOf(
+                    primaryColor.copy(alpha = 0.6f),
+                    secondaryColor.copy(alpha = 0.3f),
+                    Color.White.copy(alpha = 0.05f)
+                )
+            ),
+            shape = RoundedCornerShape(cornerRadius.dp)
+        )
+}
+

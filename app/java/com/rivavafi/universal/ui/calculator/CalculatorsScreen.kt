@@ -139,35 +139,39 @@ fun CalculatorsScreen(
                     }
                 }
 
-                IconButton(onClick = { showHistorySheet = true }) {
-                    if (allHistory.isNotEmpty()) {
-                        BadgedBox(
-                            badge = {
-                                Badge(
-                                    containerColor = AccentBlue,
-                                    contentColor = Color.Black
-                                ) {
-                                    Text(
-                                        text = "${allHistory.size.coerceAtMost(99)}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
-                                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { showHistorySheet = true }) {
+                        if (allHistory.isNotEmpty()) {
+                            BadgedBox(
+                                badge = {
+                                    Badge(
+                                        containerColor = AccentBlue,
+                                        contentColor = Color.Black
+                                    ) {
+                                        Text(
+                                            text = "${allHistory.size.coerceAtMost(99)}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 10.sp
+                                        )
+                                    }
                                 }
+                            ) {
+                                Icon(
+                                    Icons.Outlined.History,
+                                    contentDescription = "Calculation History",
+                                    tint = AccentBlue
+                                )
                             }
-                        ) {
+                        } else {
                             Icon(
                                 Icons.Outlined.History,
                                 contentDescription = "Calculation History",
                                 tint = AccentBlue
                             )
                         }
-                    } else {
-                        Icon(
-                            Icons.Outlined.History,
-                            contentDescription = "Calculation History",
-                            tint = AccentBlue
-                        )
                     }
+                    Spacer(Modifier.width(4.dp))
+                    com.rivavafi.universal.ui.components.RivavaGlowingLogo(size = 32.dp)
                 }
             }
         }

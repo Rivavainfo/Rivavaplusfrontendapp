@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
 import androidx.compose.animation.AnimatedVisibility
@@ -225,16 +226,28 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(androidx.compose.ui.graphics.Color.Transparent)
-                        .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
+                        .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(0.9f)
+                            .fillMaxWidth(0.92f)
                             .clip(RoundedCornerShape(999.dp))
-                            .background(androidx.compose.ui.graphics.Color(0xFF161616).copy(alpha = 0.85f))
-                            .glassMorphism(cornerRadius = 999f, alpha = 0.05f, strokeAlpha = 0.05f)
-                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                            .background(androidx.compose.ui.graphics.Color(0xFF101016).copy(alpha = 0.94f))
+                            .border(
+                                width = 1.2.dp,
+                                brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    listOf(
+                                        com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.5f),
+                                        com.rivavafi.universal.ui.theme.RivavaPink.copy(alpha = 0.35f),
+                                        com.rivavafi.universal.ui.theme.RivavaLime.copy(alpha = 0.4f),
+                                        com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.5f)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(999.dp)
+                            )
+                            .glassMorphism(cornerRadius = 999f, alpha = 0.1f, strokeAlpha = 0.12f)
+                            .padding(horizontal = 14.dp, vertical = 7.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -263,7 +276,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                 }
             }
         },
-        containerColor = androidx.compose.ui.graphics.Color(0xFF0A0A0A)
+        containerColor = com.rivavafi.universal.ui.theme.AmoledBlack
     ) { _ ->
         NavHost(
             navController = navController,
@@ -451,21 +464,40 @@ fun CustomBottomNavItem(
     val haptic = LocalHapticFeedback.current
 
     val iconColor by animateColorAsState(
-        targetValue = if (isLocked && !isSelected) {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-        } else if (isSelected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        targetValue = when {
+            isLocked && !isSelected -> com.rivavafi.universal.ui.theme.OnDarkSurfaceVariant.copy(alpha = 0.35f)
+            isSelected -> com.rivavafi.universal.ui.theme.RivavaCyan
+            else -> com.rivavafi.universal.ui.theme.OnDarkSurfaceVariant.copy(alpha = 0.7f)
         },
-        animationSpec = tween(300),
+        animationSpec = tween(220),
         label = "iconColor"
+    )
+
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.12f else 1.0f,
+        animationSpec = tween(220),
+        label = "itemScale"
     )
 
     Box(
         modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
+            .scale(scale)
+            .clip(RoundedCornerShape(999.dp))
+            .background(
+                if (isSelected) com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.16f) else androidx.compose.ui.graphics.Color.Transparent
+            )
+            .border(
+                width = if (isSelected) 1.dp else 0.dp,
+                brush = if (isSelected) androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    listOf(
+                        com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.6f),
+                        com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.25f)
+                    )
+                ) else androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(androidx.compose.ui.graphics.Color.Transparent, androidx.compose.ui.graphics.Color.Transparent)
+                ),
+                shape = RoundedCornerShape(999.dp)
+            )
             .selectable(
                 selected = isSelected,
                 onClick = {
@@ -473,8 +505,9 @@ fun CustomBottomNavItem(
                     onClick()
                 },
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = true, radius = 24.dp)
-            ),
+                indication = rememberRipple(bounded = true, radius = 22.dp)
+            )
+            .padding(horizontal = 11.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -486,17 +519,17 @@ fun CustomBottomNavItem(
                     imageVector = screen.icon,
                     contentDescription = screen.title,
                     tint = iconColor,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(24.dp)
                 )
                 if (isLocked) {
                     Icon(
                         imageVector = androidx.compose.material.icons.Icons.Filled.Lock,
                         contentDescription = "Locked",
-                        tint = com.rivavafi.universal.ui.theme.SecondaryPink,
+                        tint = com.rivavafi.universal.ui.theme.RivavaPink,
                         modifier = Modifier
-                            .size(12.dp)
-                            .offset(x = 6.dp, y = (-2).dp)
-                            .background(MaterialTheme.colorScheme.background, CircleShape)
+                            .size(11.dp)
+                            .offset(x = 6.dp, y = (-3).dp)
+                            .background(com.rivavafi.universal.ui.theme.AmoledBlack, CircleShape)
                             .padding(1.dp)
                     )
                 }
@@ -504,10 +537,17 @@ fun CustomBottomNavItem(
             if (isSelected) {
                 Box(
                     modifier = Modifier
-                        .padding(top = 4.dp)
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(top = 3.dp)
+                        .size(width = 12.dp, height = 3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                listOf(
+                                    com.rivavafi.universal.ui.theme.RivavaCyan,
+                                    com.rivavafi.universal.ui.theme.RivavaLime
+                                )
+                            )
+                        )
                 )
             }
         }

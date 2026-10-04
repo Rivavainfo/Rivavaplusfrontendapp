@@ -217,10 +217,12 @@ fun ProfileScreen(
                     modifier = Modifier
                         .size(136.dp)
                         .background(
-                            Brush.linearGradient(
+                            Brush.sweepGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.tertiary,
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    com.rivavafi.universal.ui.theme.RivavaCyan,
+                                    com.rivavafi.universal.ui.theme.RivavaPink,
+                                    com.rivavafi.universal.ui.theme.RivavaLime,
+                                    com.rivavafi.universal.ui.theme.RivavaCyan
                                 )
                             ),
                             CircleShape
@@ -231,15 +233,10 @@ fun ProfileScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
-                                Brush.radialGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.surfaceVariant,
-                                        MaterialTheme.colorScheme.surface
-                                    )
-                                ),
+                                com.rivavafi.universal.ui.theme.DarkCardBg,
                                 CircleShape
                             )
-                            .border(4.dp, MaterialTheme.colorScheme.background, CircleShape),
+                            .border(3.dp, Color(0xFF08080B), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!profileImageUri.isNullOrBlank()) {
@@ -287,14 +284,14 @@ fun ProfileScreen(
                     modifier = Modifier
                         .offset(x = (-8).dp, y = (-8).dp)
                         .size(32.dp)
-                        .background(MaterialTheme.colorScheme.tertiary, CircleShape)
-                        .shadow(16.dp, CircleShape, ambientColor = MaterialTheme.colorScheme.tertiary),
+                        .background(com.rivavafi.universal.ui.theme.RivavaCyan, CircleShape)
+                        .shadow(16.dp, CircleShape, ambientColor = com.rivavafi.universal.ui.theme.RivavaCyan),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Verified,
                         contentDescription = "Verified",
-                        tint = MaterialTheme.colorScheme.onTertiary,
+                        tint = Color(0xFF08080B),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -321,11 +318,13 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Profile Info Glass Card
+            // Profile Info Obsidian Card
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassMorphism(cornerRadius = 24f, alpha = 0.05f, strokeAlpha = 0.15f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(com.rivavafi.universal.ui.theme.DarkCardBg)
+                    .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
                     .padding(1.dp)
             ) {
                 // Name Row
@@ -556,8 +555,8 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .height(60.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                color = com.rivavafi.universal.ui.theme.DarkCardBg,
+                border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder)
             ) {
                 Row(
                     modifier = Modifier
@@ -573,18 +572,18 @@ fun ProfileScreen(
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = com.rivavafi.universal.ui.theme.RivavaCyan
                         )
                         Text(
                             text = "App Settings",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = Color.White
                         )
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Navigate",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = Color.White.copy(alpha = 0.5f),
                         modifier = Modifier.size(20.dp)
                     )
                 }

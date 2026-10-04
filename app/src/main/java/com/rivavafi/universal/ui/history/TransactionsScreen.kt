@@ -73,38 +73,55 @@ fun TransactionsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Header with Logo
+            // Header with Rivava Glowing Logo
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                    .padding(horizontal = 24.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Transactions",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.5).sp
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Transactions",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-0.5).sp
+                            )
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.15f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.35f)),
+                            modifier = Modifier.padding(start = 10.dp)
+                        ) {
+                            Text(
+                                text = "LEDGER",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp),
+                                color = com.rivavafi.universal.ui.theme.RivavaCyan,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = "Real-time AI expense tracking & analytics",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.White.copy(alpha = 0.6f)
+                        ),
+                        modifier = Modifier.padding(top = 2.dp)
                     )
-                )
+                }
 
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.rivavafi.universal.R.drawable.rivava_logo),
-                    contentDescription = "Rivava Logo",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(6.dp)),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                )
+                com.rivavafi.universal.ui.components.RivavaGlowingLogo(size = 38.dp)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // Month Selector
+            // Month Selector with elevated pills
             val selectedMonth by viewModel.selectedMonth.collectAsState()
             val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
             Row(
@@ -112,16 +129,55 @@ fun TransactionsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { viewModel.previousMonth() }) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous Month")
+                Surface(
+                    onClick = { viewModel.previousMonth() },
+                    shape = RoundedCornerShape(12.dp),
+                    color = com.rivavafi.universal.ui.theme.DarkCardBg,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder)
+                ) {
+                    Box(modifier = Modifier.size(38.dp), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Previous Month",
+                            tint = Color.White
+                        )
+                    }
                 }
-                Text(
-                    text = monthFormat.format(selectedMonth.time),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                IconButton(onClick = { viewModel.nextMonth() }) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next Month")
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = com.rivavafi.universal.ui.theme.DarkCardBg,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .background(com.rivavafi.universal.ui.theme.RivavaCyan, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = monthFormat.format(selectedMonth.time),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
+                }
+                Surface(
+                    onClick = { viewModel.nextMonth() },
+                    shape = RoundedCornerShape(12.dp),
+                    color = com.rivavafi.universal.ui.theme.DarkCardBg,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder)
+                ) {
+                    Box(modifier = Modifier.size(38.dp), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Next Month",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
 
@@ -134,8 +190,20 @@ fun TransactionsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp),
-                placeholder = { Text("Search merchants, categories, amounts...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+                placeholder = {
+                    Text(
+                        "Search merchants, categories, amounts...",
+                        color = Color.White.copy(alpha = 0.4f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Search Icon",
+                        tint = com.rivavafi.universal.ui.theme.RivavaCyan
+                    )
+                },
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (searchQuery.isNotEmpty()) {
@@ -201,12 +269,14 @@ fun TransactionsScreen(
                         }
                     }
                 },
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary
+                    unfocusedContainerColor = com.rivavafi.universal.ui.theme.DarkCardBg,
+                    focusedContainerColor = com.rivavafi.universal.ui.theme.DarkCardBgElevated,
+                    unfocusedBorderColor = com.rivavafi.universal.ui.theme.DarkCardBorder,
+                    focusedBorderColor = com.rivavafi.universal.ui.theme.RivavaCyan,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
                 ),
                 singleLine = true
             )
@@ -216,7 +286,7 @@ fun TransactionsScreen(
         when (val state = uiState) {
             is TransactionsUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = com.rivavafi.universal.ui.theme.RivavaCyan)
                 }
             }
             is TransactionsUiState.Empty -> {
@@ -260,14 +330,31 @@ fun TransactionList(
         contentPadding = PaddingValues(bottom = 140.dp) // Provide enough bottom padding for the floating nav bar
     ) {
         item {
-            // Month Summary Card
-            Card(
+            // Month Summary Card - Obsidian with Neon Rim
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
-                    .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            listOf(
+                                com.rivavafi.universal.ui.theme.DarkCardBgElevated,
+                                com.rivavafi.universal.ui.theme.DarkCardBg
+                            )
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            listOf(
+                                com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.5f),
+                                com.rivavafi.universal.ui.theme.RivavaPink.copy(alpha = 0.35f),
+                                com.rivavafi.universal.ui.theme.DarkCardBorder
+                            )
+                        ),
+                        RoundedCornerShape(24.dp)
+                    )
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(
@@ -277,23 +364,23 @@ fun TransactionList(
                     ) {
                         Text(
                             "Monthly Summary",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
                         )
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.15f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.3f))
+                            border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.RivavaCyan.copy(alpha = 0.35f))
                         ) {
                             Text(
                                 text = "${uiState.transactions.size} records",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = com.rivavafi.universal.ui.theme.RivavaCyan,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -303,13 +390,13 @@ fun TransactionList(
                                         .background(com.rivavafi.universal.ui.theme.RivavaLime, CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Credit", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = com.rivavafi.universal.ui.theme.RivavaLime)
+                                Text("Credit", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = com.rivavafi.universal.ui.theme.RivavaLime)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 "₹${String.format(Locale.getDefault(), "%.0f", uiState.monthlyCredit)}",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                                color = Color.White
                             )
                         }
                         Column(horizontalAlignment = Alignment.End) {
@@ -320,27 +407,27 @@ fun TransactionList(
                                         .background(com.rivavafi.universal.ui.theme.RivavaPink, CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Debit", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = com.rivavafi.universal.ui.theme.RivavaPink)
+                                Text("Debit", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = com.rivavafi.universal.ui.theme.RivavaPink)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 "₹${String.format(Locale.getDefault(), "%.0f", uiState.monthlyDebit)}",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                                color = Color.White
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     val net = uiState.monthlyCredit - uiState.monthlyDebit
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Net Balance", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Net Cashflow", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.6f))
                         Text(
                             text = "${if (net >= 0) "+" else ""}₹${String.format(Locale.getDefault(), "%.0f", net)}",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = if (net >= 0) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
                         )
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider(color = com.rivavafi.universal.ui.theme.DarkCardBorder)
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -348,8 +435,8 @@ fun TransactionList(
                     val topCategory = debits.groupBy { it.category }.maxByOrNull { it.value.sumOf { t -> t.amount } }?.key ?: "None"
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Top Category", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(topCategory, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = com.rivavafi.universal.ui.theme.RivavaCyan)
+                        Text("Top Category", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+                        Text(topCategory, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = com.rivavafi.universal.ui.theme.RivavaCyan)
                     }
                 }
             }
@@ -659,43 +746,45 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
     androidx.compose.material3.Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(20.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = com.rivavafi.universal.ui.theme.DarkCardBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(iconColor.copy(alpha = 0.2f), androidx.compose.foundation.shape.CircleShape),
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(iconColor.copy(alpha = 0.16f))
+                    .border(1.dp, iconColor.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = catVisual.icon,
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (showDetails) transaction.merchantName else "Hidden",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
@@ -706,28 +795,28 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = if (showDetails) catVisual.title else "Hidden",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = iconColor,
                         modifier = Modifier
-                            .background(iconColor.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                            .background(iconColor.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = dateString,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.55f)
                     )
                     if (showDetails && !transaction.bankName.isNullOrBlank()) {
                         Text(
                             text = " • ",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.35f)
                         )
                         Text(
                             text = transaction.bankName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.65f),
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
@@ -737,7 +826,7 @@ fun TransactionItem(transaction: TransactionEntity, showDetails: Boolean = true,
 
             Text(
                 text = "${if (isCredit) "+" else "-"}₹${String.format(Locale.getDefault(), "%.0f", transaction.amount)}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = if (isCredit) com.rivavafi.universal.ui.theme.RivavaLime else com.rivavafi.universal.ui.theme.RivavaPink
             )
         }

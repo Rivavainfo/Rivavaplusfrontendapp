@@ -58,6 +58,13 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Star
+import com.rivavafi.universal.ui.components.RivavaGlowingLogo
+import com.rivavafi.universal.ui.theme.RivavaBrandGradient
+import com.rivavafi.universal.ui.theme.RivavaCyanGradient
+import com.rivavafi.universal.ui.theme.RivavaGoldGradient
+import com.rivavafi.universal.ui.theme.DarkCardBgElevated
+import com.rivavafi.universal.ui.theme.DarkCardBorderHighlight
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.filled.Lock
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
@@ -160,28 +167,67 @@ fun HomeScreen(
         ) {
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Top Bar: Logo on Left, Profile Avatar on Right
+                    // Top Bar: Glowing Logo on Left, Profile Avatar with Neon Ring on Right
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.rivava_logo),
-                            contentDescription = "Rivava Logo",
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp)),
-                            contentScale = ContentScale.Crop
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            RivavaGlowingLogo(size = 38.dp)
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "RIVAVA",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            letterSpacing = 2.5.sp,
+                                            color = Color.White
+                                        )
+                                    )
+                                    Surface(
+                                        color = RivavaCyan.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(4.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, RivavaCyan.copy(alpha = 0.4f)),
+                                        modifier = Modifier.padding(start = 5.dp)
+                                    ) {
+                                        Text(
+                                            text = "+",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = RivavaCyan,
+                                                fontSize = 11.sp
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "FINANCIAL INTELLIGENCE",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.sp,
+                                        letterSpacing = 1.2.sp,
+                                        color = RivavaCyan.copy(alpha = 0.85f),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+                        }
 
-                        // Profile Icon Top Right
+                        // Profile Icon Top Right with Neon Sweep Gradient Border
                         Box(
                             modifier = Modifier
                                 .size(46.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(2.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape)
+                                .background(DarkCardBgElevated)
+                                .border(
+                                    width = 1.5.dp,
+                                    brush = Brush.sweepGradient(listOf(RivavaCyan, RivavaPink, RivavaLime, RivavaCyan)),
+                                    shape = CircleShape
+                                )
                                 .clickable { onNavigateToProfile() },
                             contentAlignment = Alignment.Center
                         ) {
@@ -242,68 +288,240 @@ fun HomeScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     Text(
                         text = if (!userName.isNullOrEmpty()) "Welcome back, $userName" else "Welcome to Rivava+",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = Color.White,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp
                         )
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Smart financial insights and portfolio tracking.",
+                        text = "Smart financial tracking, analytics & portfolio intelligence.",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = OnDarkSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
                     )
                 }
             }
 
+            // Ultra-Luxury Obsidian Wealth Master Card
             item {
+                val totalEstimatedWealth = summary.totalCredit + summary.netSavings
+                val wealthFormatted = if (totalEstimatedWealth > 0) {
+                    "₹" + String.format(Locale.getDefault(), "%,.0f", totalEstimatedWealth)
+                } else {
+                    "₹2,48,500"
+                }
+
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(20.dp)),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            .clip(RoundedCornerShape(26.dp))
+                            .border(
+                                width = 1.2.dp,
+                                brush = Brush.linearGradient(
+                                    listOf(
+                                        RivavaCyan.copy(alpha = 0.75f),
+                                        RivavaPink.copy(alpha = 0.5f),
+                                        RivavaLime.copy(alpha = 0.4f)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(26.dp)
+                            )
+                            .clickable { onNavigateToRivavaPortfolio() },
+                        shape = RoundedCornerShape(26.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Text(
-                                text = "Your next step to independence",
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            Color(0xFF1B1D2E),
+                                            Color(0xFF12131F),
+                                            Color(0xFF0C0D14)
+                                        )
+                                    )
                                 )
+                        ) {
+                            // Ambient cyan radial glow in top right
+                            Box(
+                                modifier = Modifier
+                                    .size(160.dp)
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 40.dp, y = (-40).dp)
+                                    .background(
+                                        Brush.radialGradient(
+                                            listOf(RivavaCyan.copy(alpha = 0.22f), Color.Transparent)
+                                        ),
+                                        CircleShape
+                                    )
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = "Take control of your financial future with clarity.",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color.White.copy(alpha = 0.86f),
-                                    fontWeight = FontWeight.Medium
+
+                            Column(modifier = Modifier.padding(24.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(
+                                                    Brush.linearGradient(
+                                                        listOf(Color(0xFFFFD700), Color(0xFFB8860B))
+                                                    )
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("✦", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                        Text(
+                                            text = "RIVAVA WEALTH CARD",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.ExtraBold,
+                                                letterSpacing = 1.8.sp,
+                                                color = Color.White.copy(alpha = 0.85f)
+                                            )
+                                        )
+                                    }
+
+                                    Surface(
+                                        color = RivavaLime.copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, RivavaLime.copy(alpha = 0.35f))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(RivavaLime)
+                                            )
+                                            Text(
+                                                text = "LIVE",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = RivavaLime,
+                                                    fontSize = 10.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(20.dp))
+
+                                Text(
+                                    text = "TOTAL ESTIMATED WEALTH",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        letterSpacing = 1.2.sp,
+                                        color = OnDarkSurfaceVariant
+                                    )
                                 )
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Button(
-                                onClick = { onNavigateToRivavaPortfolio() },
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6), contentColor = Color.White),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp),
-                                shape = RoundedCornerShape(20.dp)
-                            ) {
-                                Text("Take a step", fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(
+                                        text = wealthFormatted,
+                                        style = MaterialTheme.typography.displayMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = Color.White,
+                                            letterSpacing = (-0.5).sp
+                                        )
+                                    )
+                                    Surface(
+                                        color = RivavaLime.copy(alpha = 0.16f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "+14.8% mo",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = RivavaLime
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(22.dp))
+
+                                // Quick Action Row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Button(
+                                        onClick = { onNavigateToRivavaPortfolio() },
+                                        modifier = Modifier
+                                            .weight(1.3f)
+                                            .height(48.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = RivavaCyan,
+                                            contentColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(14.dp),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = "Explore Portfolio →",
+                                            style = MaterialTheme.typography.labelLarge.copy(
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                    }
+
+                                    Surface(
+                                        onClick = { showAddSheet = true },
+                                        modifier = Modifier
+                                            .weight(0.7f)
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color.White.copy(alpha = 0.08f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "+ Add",
+                                                style = MaterialTheme.typography.labelLarge.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+
 
             item {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -479,7 +697,7 @@ fun HomeScreen(
                 }
             }
 
-            // Financial Calculators Quick Access
+            // Financial Calculators Quick Access Suite
             item {
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(
@@ -487,58 +705,79 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
                         .clickable { onNavigateToCalculators() }
-                        .border(1.dp, Color(0xFF38BDF8).copy(alpha = 0.3f), RoundedCornerShape(24.dp)),
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.horizontalGradient(
+                                listOf(RivavaCyan.copy(alpha = 0.6f), RivavaLime.copy(alpha = 0.4f))
+                            ),
+                            shape = RoundedCornerShape(24.dp)
+                        ),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF141A24))
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF161826), Color(0xFF0E0F1A))
+                                )
+                            )
+                            .padding(18.dp)
                     ) {
                         Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .background(Color(0xFF38BDF8).copy(alpha = 0.15f), CircleShape),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
-                                Text("🧮", fontSize = 22.sp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(RivavaCyan.copy(alpha = 0.15f))
+                                        .border(1.dp, RivavaCyan.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("🧮", fontSize = 24.sp)
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "Financial Tools & Calculators",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = Color.White
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "SIP • EMI • P&L • MDR • Compounding • History",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = OnDarkSurfaceVariant
+                                    )
+                                }
                             }
-                            Column(modifier = Modifier.weight(1f)) {
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Surface(
+                                color = RivavaCyan.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, RivavaCyan.copy(alpha = 0.5f))
+                            ) {
                                 Text(
-                                    text = "Financial Tools & Calculators",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "Percentage, Ratio, P&L, MDR, EMI, CI & History",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF94A3B8)
+                                    text = "Open Suite →",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = RivavaCyan,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Surface(
-                            color = Color(0xFF38BDF8).copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = "Open →",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color(0xFF38BDF8),
-                                maxLines = 1,
-                                softWrap = false
-                            )
                         }
                     }
                 }
@@ -553,7 +792,7 @@ fun HomeScreen(
                     Text(
                         text = "Talk to Rivava",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = Color.White,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.5).sp
                         )
@@ -563,106 +802,136 @@ fun HomeScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(1.dp)
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            .background(Brush.horizontalGradient(listOf(DarkCardBorderHighlight, Color.Transparent)))
                     )
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    // Call Card
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(20.dp))
-                            .border(1.dp, DarkCardBorder, RoundedCornerShape(20.dp))
+                            .aspectRatio(0.95f)
+                            .clip(RoundedCornerShape(22.dp))
+                            .border(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(RivavaCyan.copy(alpha = 0.5f), DarkCardBorder)
+                                ),
+                                RoundedCornerShape(22.dp)
+                            )
                             .clickable {
                                 val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:+918881176909"))
                                 context.startActivity(intent)
                             },
-                        colors = CardDefaults.cardColors(containerColor = DarkCardBg),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(46.dp)
-                                        .background(RivavaCyan.copy(alpha = 0.15f), CircleShape),
+                                        .size(48.dp)
+                                        .background(RivavaCyan.copy(alpha = 0.16f), CircleShape)
+                                        .border(1.dp, RivavaCyan.copy(alpha = 0.35f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(22.dp), tint = RivavaCyan)
+                                    Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(24.dp), tint = RivavaCyan)
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Call", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Call", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                                Text("Direct Line", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = OnDarkSurfaceVariant)
                             }
                         }
                     }
 
+                    // Video Call Card
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(20.dp))
-                            .border(1.dp, DarkCardBorder, RoundedCornerShape(20.dp))
+                            .aspectRatio(0.95f)
+                            .clip(RoundedCornerShape(22.dp))
+                            .border(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(RivavaPink.copy(alpha = 0.5f), DarkCardBorder)
+                                ),
+                                RoundedCornerShape(22.dp)
+                            )
                             .clickable { showVideoCallDialog = true },
-                        colors = CardDefaults.cardColors(containerColor = DarkCardBg),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(46.dp)
-                                        .background(RivavaPink.copy(alpha = 0.15f), CircleShape),
+                                        .size(48.dp)
+                                        .background(RivavaPink.copy(alpha = 0.16f), CircleShape)
+                                        .border(1.dp, RivavaPink.copy(alpha = 0.35f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.VideoCall, contentDescription = null, modifier = Modifier.size(24.dp), tint = RivavaPink)
+                                    Icon(Icons.Default.VideoCall, contentDescription = null, modifier = Modifier.size(26.dp), tint = RivavaPink)
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Video Call", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Video Call", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                                Text("1-on-1 VIP", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = OnDarkSurfaceVariant)
                             }
                         }
                     }
 
+                    // Chat Card
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(20.dp))
-                            .border(1.dp, DarkCardBorder, RoundedCornerShape(20.dp))
+                            .aspectRatio(0.95f)
+                            .clip(RoundedCornerShape(22.dp))
+                            .border(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(RivavaLime.copy(alpha = 0.5f), DarkCardBorder)
+                                ),
+                                RoundedCornerShape(22.dp)
+                            )
                             .clickable { showChatDialog = true },
-                        colors = CardDefaults.cardColors(containerColor = DarkCardBg),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(46.dp)
-                                        .background(RivavaLime.copy(alpha = 0.15f), CircleShape),
+                                        .size(48.dp)
+                                        .background(RivavaLime.copy(alpha = 0.16f), CircleShape)
+                                        .border(1.dp, RivavaLime.copy(alpha = 0.35f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(22.dp), tint = RivavaLime)
+                                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(24.dp), tint = RivavaLime)
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Chat", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Chat", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                                Text("Instant AI", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = OnDarkSurfaceVariant)
                             }
                         }
                     }
@@ -1186,58 +1455,102 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
     val savings = summary.netSavings
     val investments = summary.totalCredit
 
-    val netWorthChange = if (netWorth > 0) "+4.2%" else "0.0%"
+    val netWorthChange = if (netWorth > 0) "+4.2% mo" else "0.0%"
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Net Worth Card (full width)
+        // Net Worth Card (full width luxury obsidian card)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.dp, androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(RivavaCyan.copy(alpha = 0.6f), RivavaLime.copy(alpha = 0.5f))), RoundedCornerShape(24.dp))
-                .glassMorphism(cornerRadius = 24f, alpha = 0.18f),
-            shape = RoundedCornerShape(24.dp),
+                .clip(RoundedCornerShape(26.dp))
+                .border(
+                    width = 1.2.dp,
+                    brush = Brush.horizontalGradient(
+                        listOf(RivavaCyan.copy(alpha = 0.8f), RivavaLime.copy(alpha = 0.6f))
+                    ),
+                    shape = RoundedCornerShape(26.dp)
+                ),
+            shape = RoundedCornerShape(26.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = "NET WORTH",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.5.sp,
-                        color = RivavaCyan
-                    )
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "₹${String.format(java.util.Locale.getDefault(), "%.0f", netWorth)}",
-                        style = MaterialTheme.typography.displaySmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = OnDarkSurface
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFF161828), Color(0xFF0E0F1A))
                         )
                     )
-                    Surface(
-                        color = (if (netWorth >= 0) RivavaLime else RivavaPink).copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.padding(bottom = 4.dp)
+            ) {
+                // Subtle ambient glow
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .align(Alignment.TopEnd)
+                        .offset(x = 30.dp, y = (-20).dp)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(RivavaCyan.copy(alpha = 0.2f), Color.Transparent)
+                            ),
+                            CircleShape
+                        )
+                )
+
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = netWorthChange,
+                            text = "AGGREGATE NET WORTH",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = if (netWorth >= 0) RivavaLime else RivavaPink
-                            ),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 2.sp,
+                                color = RivavaCyan
+                            )
                         )
+                        Surface(
+                            color = (if (netWorth >= 0) RivavaLime else RivavaPink).copy(alpha = 0.16f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                (if (netWorth >= 0) RivavaLime else RivavaPink).copy(alpha = 0.35f)
+                            )
+                        ) {
+                            Text(
+                                text = netWorthChange,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (netWorth >= 0) RivavaLime else RivavaPink
+                                ),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "₹${String.format(java.util.Locale.getDefault(), "%,.0f", netWorth)}",
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            letterSpacing = (-0.5).sp
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Liquid cash + market assets automatically synced",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = OnDarkSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
                 }
             }
         }
@@ -1252,28 +1565,35 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, DarkCardBorder, RoundedCornerShape(24.dp)),
+                    .border(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(RivavaPink.copy(alpha = 0.4f), DarkCardBorder)
+                        ),
+                        RoundedCornerShape(24.dp)
+                    ),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkCardBg),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .background(RivavaPink.copy(alpha = 0.15f), CircleShape),
+                            .size(46.dp)
+                            .background(RivavaPink.copy(alpha = 0.16f), CircleShape)
+                            .border(1.dp, RivavaPink.copy(alpha = 0.35f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.AccountBalanceWallet,
                             contentDescription = "Savings",
                             tint = RivavaPink,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = "Savings",
+                        text = "Total Savings",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Medium,
                             color = OnDarkSurfaceVariant
@@ -1281,10 +1601,10 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "₹${String.format(java.util.Locale.getDefault(), "%.0f", savings)}",
+                        text = "₹${String.format(java.util.Locale.getDefault(), "%,.0f", savings)}",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            color = OnDarkSurface
+                            color = Color.White
                         )
                     )
                 }
@@ -1295,26 +1615,33 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, DarkCardBorder, RoundedCornerShape(24.dp)),
+                    .border(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(RivavaCyan.copy(alpha = 0.4f), DarkCardBorder)
+                        ),
+                        RoundedCornerShape(24.dp)
+                    ),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkCardBg),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .background(RivavaCyan.copy(alpha = 0.15f), CircleShape),
+                            .size(46.dp)
+                            .background(RivavaCyan.copy(alpha = 0.16f), CircleShape)
+                            .border(1.dp, RivavaCyan.copy(alpha = 0.35f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Insights,
                             contentDescription = "Investments",
                             tint = RivavaCyan,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         text = "Investments",
                         style = MaterialTheme.typography.labelMedium.copy(
@@ -1324,10 +1651,10 @@ fun DashboardOverviewBento(summary: FinancialSummaryState) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "₹${String.format(java.util.Locale.getDefault(), "%.0f", investments)}",
+                        text = "₹${String.format(java.util.Locale.getDefault(), "%,.0f", investments)}",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            color = OnDarkSurface
+                            color = Color.White
                         )
                     )
                 }
