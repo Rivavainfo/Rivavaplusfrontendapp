@@ -243,7 +243,7 @@ class PaymentActivity : ComponentActivity(), PaymentResultWithDataListener {
                     // Update entitlement locally and in Firestore
                     entitlementRepository.syncEntitlement()
 
-                    Toast.makeText(this@PaymentActivity, "🎉 Payment Successful! Access Unlocked.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@PaymentActivity, "Payment Successful! Access Unlocked.", Toast.LENGTH_LONG).show()
                     setResult(Activity.RESULT_OK, Intent().apply {
                         putExtra("orderId", orderId)
                         putExtra("paymentId", paymentId)

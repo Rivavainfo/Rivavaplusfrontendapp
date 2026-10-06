@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Email
@@ -525,7 +526,12 @@ fun AuthScreenContent(
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                listOf("⚡ Fast", "✉️ Email", "📱 Phone").forEachIndexed { index, label ->
+                                val authTabs = listOf(
+                                    Triple("Fast", Icons.Default.Bolt, 0),
+                                    Triple("Email", Icons.Outlined.Email, 1),
+                                    Triple("Phone", Icons.Outlined.Phone, 2)
+                                )
+                                authTabs.forEach { (label, icon, index) ->
                                     val isSelected = selectedAuthTab == index
                                     Box(
                                         modifier = Modifier
@@ -540,13 +546,24 @@ fun AuthScreenContent(
                                             .padding(vertical = 9.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                            ),
-                                            color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f)
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(15.dp)
+                                            )
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                ),
+                                                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f)
+                                            )
+                                        }
                                     }
                                 }
                             }

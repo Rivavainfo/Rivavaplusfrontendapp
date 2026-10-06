@@ -17,9 +17,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,14 +61,29 @@ private val AccentPurple = Color(0xFF8B5CF6)
 private val AccentAmber = Color(0xFFF59E0B)
 private val AccentIndigo = Color(0xFF6366F1)
 private val InputBg = Color(0xFF101014)
- 
+
+fun getCalculatorIcon(type: CalculatorType): ImageVector = when (type) {
+    CalculatorType.PERCENTAGE -> Icons.Outlined.Percent
+    CalculatorType.EQUIVALENCE -> Icons.Outlined.Balance
+    CalculatorType.PROFIT_LOSS -> Icons.Outlined.ShowChart
+    CalculatorType.COMPOUND_INTEREST -> Icons.Outlined.HourglassEmpty
+    CalculatorType.MDR -> Icons.Outlined.CreditCard
+    CalculatorType.EMI -> Icons.Outlined.Home
+    CalculatorType.SIP -> Icons.AutoMirrored.Outlined.TrendingUp
+    CalculatorType.LUMPSUM -> Icons.Outlined.Savings
+    CalculatorType.FD -> Icons.Outlined.AccountBalance
+    CalculatorType.RD -> Icons.Outlined.Sync
+    CalculatorType.GST -> Icons.Outlined.Receipt
+    CalculatorType.INFLATION -> Icons.Outlined.PriceChange
+}
+
 data class ToolCardItem(
     val type: CalculatorType,
     val title: String,
     val subtitle: String,
     val tag: String,
     val color: Color,
-    val icon: String
+    val iconVector: ImageVector
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -211,7 +231,7 @@ fun CalculatorsScreen(
                         subtitle = "Ratio, Equivalence & Scaling Proportionality",
                         tag = "RATIO & EQUIV",
                         color = AccentPurple,
-                        icon = "⚖️"
+                        iconVector = Icons.Outlined.Balance
                     ),
                     ToolCardItem(
                         type = CalculatorType.MDR,
@@ -219,7 +239,7 @@ fun CalculatorsScreen(
                         subtitle = "0.4% rate, ₹2,000 threshold waiver & ₹300 cap",
                         tag = "PAYMENTS",
                         color = AccentGreen,
-                        icon = "💳"
+                        iconVector = Icons.Outlined.CreditCard
                     ),
                     ToolCardItem(
                         type = CalculatorType.EMI,
@@ -227,7 +247,7 @@ fun CalculatorsScreen(
                         subtitle = "Monthly installment, total interest & loan payout",
                         tag = "BORROWING",
                         color = AccentBlue,
-                        icon = "🏠"
+                        iconVector = Icons.Outlined.Home
                     ),
                     ToolCardItem(
                         type = CalculatorType.PROFIT_LOSS,
@@ -235,7 +255,7 @@ fun CalculatorsScreen(
                         subtitle = "Gain/Loss %, cost breakdown & final amount",
                         tag = "BUSINESS",
                         color = AccentAmber,
-                        icon = "💹"
+                        iconVector = Icons.Outlined.ShowChart
                     ),
                     ToolCardItem(
                         type = CalculatorType.COMPOUND_INTEREST,
@@ -243,7 +263,7 @@ fun CalculatorsScreen(
                         subtitle = "Exponential growth with compounding periods",
                         tag = "INVESTMENT",
                         color = AccentIndigo,
-                        icon = "⏳"
+                        iconVector = Icons.Outlined.HourglassEmpty
                     ),
                     ToolCardItem(
                         type = CalculatorType.PERCENTAGE,
@@ -251,7 +271,7 @@ fun CalculatorsScreen(
                         subtitle = "Direct %, value additions & subtractions",
                         tag = "UTILITY",
                         color = AccentBlue,
-                        icon = "🔢"
+                        iconVector = Icons.Outlined.Percent
                     ),
                     ToolCardItem(
                         type = CalculatorType.SIP,
@@ -259,7 +279,7 @@ fun CalculatorsScreen(
                         subtitle = "Monthly SIP projection & long-term wealth",
                         tag = "GROWTH",
                         color = AccentGreen,
-                        icon = "📈"
+                        iconVector = Icons.AutoMirrored.Outlined.TrendingUp
                     ),
                     ToolCardItem(
                         type = CalculatorType.GST,
@@ -267,7 +287,7 @@ fun CalculatorsScreen(
                         subtitle = "Inclusive & Exclusive tax calculations",
                         tag = "TAX",
                         color = AccentAmber,
-                        icon = "📑"
+                        iconVector = Icons.Outlined.Receipt
                     ),
                     ToolCardItem(
                         type = CalculatorType.FD,
@@ -275,7 +295,7 @@ fun CalculatorsScreen(
                         subtitle = "Quarterly compounded deposit maturity",
                         tag = "SAVINGS",
                         color = AccentPurple,
-                        icon = "🏦"
+                        iconVector = Icons.Outlined.AccountBalance
                     ),
                     ToolCardItem(
                         type = CalculatorType.INFLATION,
@@ -283,7 +303,7 @@ fun CalculatorsScreen(
                         subtitle = "Future cost & purchasing power erosion",
                         tag = "PLANNING",
                         color = AccentRed,
-                        icon = "📊"
+                        iconVector = Icons.Outlined.PriceChange
                     )
                 )
 
@@ -316,10 +336,24 @@ fun CalculatorsScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(46.dp)
-                                        .background(item.color.copy(alpha = 0.15f), CircleShape),
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    item.color.copy(alpha = 0.22f),
+                                                    item.color.copy(alpha = 0.08f)
+                                                )
+                                            )
+                                        )
+                                        .border(1.dp, item.color.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(item.icon, fontSize = 20.sp)
+                                    Icon(
+                                        imageVector = item.iconVector,
+                                        contentDescription = item.title,
+                                        tint = item.color,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
                                 Column(
                                     modifier = Modifier.weight(1f),
@@ -441,7 +475,7 @@ fun CalculatorsScreen(
                     onClick = {
                         viewModel.saveCurrentCalculation()
                         scope.launch {
-                            snackbarHostState.showSnackbar("Calculation saved to history! 📜")
+                            snackbarHostState.showSnackbar("Calculation saved to history!")
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
@@ -487,22 +521,31 @@ fun CalculatorsScreen(
 // CATEGORY FILTER BAR
 // -------------------------------------------------------------------------------------------------
 
+data class CalculatorCategoryFilter(val key: String, val label: String, val icon: ImageVector)
+
 @Composable
 fun CategoryFilterBar(
     selectedCategory: String,
     onCategorySelected: (String) -> Unit
 ) {
-    val categories = listOf("ALL" to "All Tools", "Tools" to "⚡ Tools", "Borrowing" to "🏠 Loans", "Investment" to "📈 Investments", "Savings" to "🏦 Savings", "Tax" to "📑 Tax")
+    val categories = listOf(
+        CalculatorCategoryFilter("ALL", "All Tools", Icons.Default.Dashboard),
+        CalculatorCategoryFilter("Tools", "Tools", Icons.Default.Build),
+        CalculatorCategoryFilter("Borrowing", "Loans", Icons.Default.Home),
+        CalculatorCategoryFilter("Investment", "Investments", Icons.AutoMirrored.Filled.TrendingUp),
+        CalculatorCategoryFilter("Savings", "Savings", Icons.Default.Savings),
+        CalculatorCategoryFilter("Tax", "Tax", Icons.AutoMirrored.Filled.ReceiptLong)
+    )
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(vertical = 2.dp)
     ) {
-        items(categories) { (key, label) ->
-            val isSelected = selectedCategory == key
+        items(categories) { item ->
+            val isSelected = selectedCategory == item.key
             Surface(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { onCategorySelected(key) },
+                    .clickable { onCategorySelected(item.key) },
                 color = if (isSelected) Color(0xFF2563EB) else CardBg,
                 shape = RoundedCornerShape(12.dp),
                 border = androidx.compose.foundation.BorderStroke(
@@ -510,12 +553,23 @@ fun CategoryFilterBar(
                     if (isSelected) AccentBlue else CardBorder
                 )
             ) {
-                Text(
-                    text = label,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (isSelected) Color.White else Color(0xFF94A3B8)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = null,
+                        tint = if (isSelected) Color.White else Color(0xFF94A3B8),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = item.label,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (isSelected) Color.White else Color(0xFF94A3B8)
+                    )
+                }
             }
         }
     }
@@ -561,7 +615,12 @@ fun CalculatorTypeSelector(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(type.icon, fontSize = 16.sp)
+                    Icon(
+                        imageVector = getCalculatorIcon(type),
+                        contentDescription = null,
+                        tint = if (isSelected) Color.White else Color(0xFF94A3B8),
+                        modifier = Modifier.size(16.dp)
+                    )
                     Text(
                         text = type.displayName,
                         style = MaterialTheme.typography.labelMedium.copy(
@@ -876,12 +935,23 @@ fun ProfitLossCalculatorSection(viewModel: CalculatorViewModel) {
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "📈 Profit (+)",
-                    color = if (isProfit) Color.Black else Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = null,
+                        tint = if (isProfit) Color.Black else AccentGreen,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Profit (+)",
+                        color = if (isProfit) Color.Black else Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
             Box(
@@ -893,12 +963,23 @@ fun ProfitLossCalculatorSection(viewModel: CalculatorViewModel) {
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "📉 Loss (-)",
-                    color = if (!isProfit) Color.White else Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                        contentDescription = null,
+                        tint = if (!isProfit) Color.White else AccentRed,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Loss (-)",
+                        color = if (!isProfit) Color.White else Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
 
@@ -1065,13 +1146,27 @@ fun CompoundInterestCalculatorSection(viewModel: CalculatorViewModel) {
             shape = RoundedCornerShape(12.dp),
             border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
         ) {
-            Text(
-                text = "⚡ Example: ₹1,000 invested for 10 years @ 20% interest",
-                modifier = Modifier.padding(12.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = AccentBlue
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = AccentBlue,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Example: ₹1,000 invested for 10 years @ 20% interest",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = AccentBlue
+                )
+            }
         }
 
         // Inputs
@@ -1147,9 +1242,11 @@ fun MdrCalculatorSection(viewModel: CalculatorViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = if (result.isThresholdWaived) "✅" else if (result.isCapped) "🔒" else "⚡",
-                    fontSize = 20.sp
+                Icon(
+                    imageVector = if (result.isThresholdWaived) Icons.Default.CheckCircle else if (result.isCapped) Icons.Default.Lock else Icons.Default.Bolt,
+                    contentDescription = null,
+                    tint = if (result.isThresholdWaived) AccentGreen else if (result.isCapped) AccentAmber else AccentBlue,
+                    modifier = Modifier.size(24.dp)
                 )
                 Column {
                     Text(
@@ -2137,7 +2234,12 @@ fun FormulaExplainerCard(title: String, formula: String) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text("💡", fontSize = 14.sp)
+                Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = null,
+                    tint = AccentBlue,
+                    modifier = Modifier.size(16.dp)
+                )
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -2211,7 +2313,12 @@ fun CalculationHistorySheetContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("📜", fontSize = 20.sp)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                    contentDescription = null,
+                    tint = AccentBlue,
+                    modifier = Modifier.size(24.dp)
+                )
                 Text(
                     text = "Calculation History",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
@@ -2260,9 +2367,23 @@ fun CalculationHistorySheetContent(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text("🧮", fontSize = 48.sp)
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF2563EB).copy(alpha = 0.15f))
+                            .border(1.dp, Color(0xFF2563EB).copy(alpha = 0.35f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Calculate,
+                            contentDescription = null,
+                            tint = AccentBlue,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
                     Text(
                         text = "No calculations saved yet",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),

@@ -16,6 +16,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -56,6 +58,24 @@ private val AccentRed = Color(0xFFFF2A85)   // RivavaPink
 private val AccentBlue = Color(0xFF00A3FF)  // RivavaCyan
 private val AccentPurple = Color(0xFF8B5CF6)
 private val AccentAmber = Color(0xFFF59E0B)
+
+fun getCategoryImageVector(categoryName: String): androidx.compose.ui.graphics.vector.ImageVector {
+    val lower = categoryName.lowercase()
+    return when {
+        lower.contains("food") || lower.contains("dining") -> Icons.Outlined.Restaurant
+        lower.contains("shop") -> Icons.Outlined.ShoppingBag
+        lower.contains("travel") || lower.contains("fuel") -> Icons.Outlined.DirectionsCar
+        lower.contains("bill") || lower.contains("recharge") -> Icons.AutoMirrored.Outlined.ReceiptLong
+        lower.contains("entertain") || lower.contains("movie") -> Icons.Outlined.Movie
+        lower.contains("invest") -> Icons.AutoMirrored.Outlined.TrendingUp
+        lower.contains("health") || lower.contains("medic") -> Icons.Outlined.LocalHospital
+        lower.contains("transfer") || lower.contains("upi") -> Icons.Outlined.SyncAlt
+        lower.contains("salary") || lower.contains("income") -> Icons.Outlined.AccountBalanceWallet
+        lower.contains("subscript") -> Icons.Outlined.Autorenew
+        lower.contains("grocer") -> Icons.Outlined.LocalGroceryStore
+        else -> Icons.Outlined.Label
+    }
+}
 
 @Composable
 fun AnalyticsScreen(
@@ -462,7 +482,12 @@ fun NetSavingsHeroCard(data: MonthlyFinancialData, terminologyMode: String) {
                             .background(statusColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(if (isPositive) "💰" else "⚠️", fontSize = 18.sp)
+                        Icon(
+                            imageVector = if (isPositive) Icons.Default.Savings else Icons.Default.WarningAmber,
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Text(
                         text = if (terminologyMode == "CREDIT_DEBIT") "Net Cash Flow" else "Net Savings / Profit",
@@ -911,9 +936,22 @@ fun CategoryProgressRow(cat: CategoryStat) {
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(cat.icon, fontSize = 16.sp)
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(barColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = getCategoryImageVector(cat.category),
+                        contentDescription = null,
+                        tint = barColor,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
                 Text(
                     text = cat.category,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -1388,7 +1426,20 @@ fun SubscriptionsSection(subscriptions: List<SubscriptionStat>) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text("🔄", fontSize = 18.sp)
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(AccentPurple.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Autorenew,
+                                contentDescription = null,
+                                tint = AccentPurple,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
                         Column {
                             Text(
                                 text = sub.merchantName,
@@ -1453,115 +1504,182 @@ fun EmptyStateView(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, CardBorder, RoundedCornerShape(28.dp)),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBg)
+            .clip(RoundedCornerShape(26.dp))
+            .border(
+                1.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF00A3FF).copy(alpha = 0.35f),
+                        Color(0xFF1E283D).copy(alpha = 0.55f)
+                    )
+                ),
+                RoundedCornerShape(26.dp)
+            ),
+        shape = RoundedCornerShape(26.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(76.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(AccentBlue.copy(alpha = 0.25f), Color.Transparent)
-                        )
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF101626), Color(0xFF080C16))
                     )
-                    .border(2.dp, AccentBlue.copy(alpha = 0.4f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.AutoGraph,
-                    contentDescription = null,
-                    tint = AccentBlue,
-                    modifier = Modifier.size(36.dp)
                 )
-            }
-
-            Text(
-                text = "No Activity in $monthName",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-
-            Text(
-                text = if (availableMonths.isNotEmpty()) {
-                    "No transactions recorded for $monthName. You have transaction history in other months below:"
-                } else if (prevMonthExpense > 0) {
-                    "No transactions found for $monthName. In the previous month, you spent ₹${formatCurrency(prevMonthExpense)}."
-                } else {
-                    "We haven't detected transactions yet. Add manual transactions or sync your bank SMS messages to generate real-time analytics."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF94A3B8),
-                textAlign = TextAlign.Center
-            )
-
-            // SMS Sync Card
-            Card(
+                .padding(26.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (!hasSmsPermission) AccentAmber.copy(alpha = 0.4f) else CardBorder)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                Box(
+                    modifier = Modifier
+                        .size(76.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(AccentBlue.copy(alpha = 0.25f), Color.Transparent)
+                            )
+                        )
+                        .border(1.5.dp, AccentBlue.copy(alpha = 0.45f), CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(if (!hasSmsPermission) "🔐" else "📱", fontSize = 20.sp)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (!hasSmsPermission) "SMS Permission Required" else "Automatic SMS Sync",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = Color.White
-                            )
-                            Text(
-                                text = if (!hasSmsPermission) "Grant permission to read bank & UPI SMS alerts." else "Sync your bank debit/credit messages to auto-populate analytics.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF94A3B8)
-                            )
-                        }
-                    }
+                    Icon(
+                        Icons.Default.AutoGraph,
+                        contentDescription = null,
+                        tint = AccentBlue,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
 
-                    Button(
-                        onClick = {
-                            if (!hasSmsPermission) {
-                                permissionLauncher.launch(arrayOf(android.Manifest.permission.READ_SMS, android.Manifest.permission.RECEIVE_SMS))
-                            } else {
-                                onScanSms()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!hasSmsPermission) AccentAmber else Color(0xFF2563EB)
+                Text(
+                    text = "No Activity in $monthName",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = if (availableMonths.isNotEmpty()) {
+                        "No transactions recorded for $monthName. You have transaction history in other months below:"
+                    } else if (prevMonthExpense > 0) {
+                        "No transactions found for $monthName. In the previous month, you spent ₹${formatCurrency(prevMonthExpense)}."
+                    } else {
+                        "We haven't detected transactions yet. Add manual transactions or sync your bank SMS messages to generate real-time analytics."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF94A3B8),
+                    textAlign = TextAlign.Center
+                )
+
+                // SMS Sync Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .border(
+                            1.dp,
+                            if (!hasSmsPermission) AccentAmber.copy(alpha = 0.45f) else Color(0xFF00A3FF).copy(alpha = 0.35f),
+                            RoundedCornerShape(18.dp)
                         ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isScanning
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0A0F1D))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (isScanning) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Scanning SMS Inbox...", fontWeight = FontWeight.Bold)
-                        } else {
-                            Text(
-                                if (!hasSmsPermission) "Grant SMS Permission & Scan" else "🔄 Scan SMS Inbox Now",
-                                fontWeight = FontWeight.Bold
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (!hasSmsPermission) AccentAmber.copy(alpha = 0.15f) else Color(0xFF00A3FF).copy(alpha = 0.15f)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (!hasSmsPermission) Icons.Default.Lock else Icons.Default.Sms,
+                                    contentDescription = null,
+                                    tint = if (!hasSmsPermission) AccentAmber else Color(0xFF00A3FF),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (!hasSmsPermission) "SMS Permission Required" else "Automatic SMS Sync",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = if (!hasSmsPermission) "Grant permission to read bank & UPI SMS alerts." else "Sync your bank debit/credit messages to auto-populate analytics.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFF94A3B8)
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                if (!hasSmsPermission) {
+                                    permissionLauncher.launch(arrayOf(android.Manifest.permission.READ_SMS, android.Manifest.permission.RECEIVE_SMS))
+                                } else {
+                                    onScanSms()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(999.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(
+                                    if (!hasSmsPermission) {
+                                        Brush.horizontalGradient(listOf(AccentAmber, Color(0xFFD97706)))
+                                    } else {
+                                        Brush.horizontalGradient(listOf(Color(0xFF00A3FF), Color(0xFF0066FF)))
+                                    }
+                                )
+                                .border(
+                                    1.dp,
+                                    if (!hasSmsPermission) AccentAmber.copy(alpha = 0.5f) else Color(0xFF60A5FA).copy(alpha = 0.5f),
+                                    RoundedCornerShape(999.dp)
+                                ),
+                            enabled = !isScanning,
+                            contentPadding = PaddingValues(vertical = 12.dp)
+                        ) {
+                            if (isScanning) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Scanning SMS Inbox...", fontWeight = FontWeight.Bold)
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (!hasSmsPermission) Icons.Default.Key else Icons.Default.Sync,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        if (!hasSmsPermission) "Grant SMS Permission & Scan" else "Scan SMS Inbox Now",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1596,11 +1714,22 @@ fun EmptyStateView(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "📅 ${monthFormat.format(cal.time)}",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarMonth,
+                                        contentDescription = null,
+                                        tint = AccentBlue,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = monthFormat.format(cal.time),
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = Color.White
+                                    )
+                                }
                                 Surface(
                                     color = AccentBlue.copy(alpha = 0.15f),
                                     shape = RoundedCornerShape(8.dp)
@@ -1710,7 +1839,12 @@ fun SubscriptionTrackerCard(
                             .background(AccentPurple.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("🔄", fontSize = 18.sp)
+                        Icon(
+                            imageVector = Icons.Default.Autorenew,
+                            contentDescription = null,
+                            tint = AccentPurple,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Column {
                         Text(

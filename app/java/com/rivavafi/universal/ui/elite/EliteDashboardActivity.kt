@@ -56,7 +56,7 @@ class EliteDashboardActivity : ComponentActivity() {
                 if (result.resultCode == RESULT_OK) {
                     prefs.edit().putBoolean("elite_unlocked", true).apply()
                     localUnlocked = true
-                    Toast.makeText(this@EliteDashboardActivity, "🎉 Elite Membership Activated!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@EliteDashboardActivity, "Elite Membership Activated!", Toast.LENGTH_LONG).show()
                 } else {
                     val error = result.data?.getStringExtra("error") ?: "Payment cancelled."
                     Toast.makeText(this@EliteDashboardActivity, error, Toast.LENGTH_SHORT).show()

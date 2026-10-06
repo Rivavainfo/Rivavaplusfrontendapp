@@ -107,7 +107,7 @@ fun SetNewPasswordContent(
     ) {
         if (isSuccess) {
             Text(
-                text = "Password Reset Done! 🎉",
+                text = "Password Reset Done!",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = PrimarySky,

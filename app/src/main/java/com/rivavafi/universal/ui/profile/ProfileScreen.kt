@@ -28,6 +28,12 @@ import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.AlternateEmail
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -297,230 +303,149 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = userName,
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp,
+                    fontSize = 22.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = Color.White
             )
             if (userEmail != "No Email") {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = userEmail,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = Color(0xFF94A3B8)
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Profile Info Obsidian Card
+            // Membership Tier Pill Badge
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        if (finalIsPremium) Color(0xFFFFD700).copy(alpha = 0.12f)
+                        else Color(0xFF00C6FF).copy(alpha = 0.12f)
+                    )
+                    .border(
+                        1.dp,
+                        if (finalIsPremium) Color(0xFFFFD700).copy(alpha = 0.35f)
+                        else Color(0xFF00C6FF).copy(alpha = 0.35f),
+                        RoundedCornerShape(999.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (finalIsPremium) Icons.Default.WorkspacePremium else Icons.Default.Verified,
+                        contentDescription = null,
+                        tint = if (finalIsPremium) Color(0xFFFFD700) else Color(0xFF00C6FF),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = if (finalIsPremium) "VIP ELITE MEMBER" else "VERIFIED INVESTOR",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.2.sp,
+                            fontSize = 10.sp,
+                            color = if (finalIsPremium) Color(0xFFFFD700) else Color(0xFF00C6FF)
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            // Profile Info Obsidian Card with Luxury Squircle Badges
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(24.dp))
-                    .background(com.rivavafi.universal.ui.theme.DarkCardBg)
-                    .border(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder, RoundedCornerShape(24.dp))
-                    .padding(1.dp)
+                    .background(Color(0xFF0E1322))
+                    .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(24.dp))
             ) {
                 // Name Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showEditNameDialog = true }
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "NAME",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = userName,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                ProfileInfoRow(
+                    label = "NAME",
+                    value = userName,
+                    icon = Icons.Default.Person,
+                    iconTint = Color(0xFF00C6FF),
+                    onClick = { showEditNameDialog = true }
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 18.dp), color = Color(0xFF1A2234))
 
                 // Username Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showEditUsernameDialog = true }
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "USERNAME",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "@$username",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Username", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                ProfileInfoRow(
+                    label = "USERNAME",
+                    value = "@$username",
+                    icon = Icons.Default.AlternateEmail,
+                    iconTint = Color(0xFFA855F7),
+                    onClick = { showEditUsernameDialog = true }
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 18.dp), color = Color(0xFF1A2234))
 
                 // Email Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "EMAIL",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Text(
-                        text = userEmail,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                ProfileInfoRow(
+                    label = "EMAIL",
+                    value = userEmail,
+                    icon = Icons.Default.Email,
+                    iconTint = Color(0xFF38BDF8)
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 18.dp), color = Color(0xFF1A2234))
 
                 // Phone Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showEditPhoneDialog = true }
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "PHONE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = userPhone,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Phone", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                ProfileInfoRow(
+                    label = "PHONE",
+                    value = userPhone,
+                    icon = Icons.Default.Phone,
+                    iconTint = Color(0xFF00E471),
+                    onClick = { showEditPhoneDialog = true }
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 18.dp), color = Color(0xFF1A2234))
 
                 // Member Since Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "JOINED",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Text(
-                        text = memberSince,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                ProfileInfoRow(
+                    label = "JOINED",
+                    value = memberSince,
+                    icon = Icons.Default.CalendarMonth,
+                    iconTint = Color(0xFFFFB800)
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 18.dp), color = Color(0xFF1A2234))
 
                 // Preference Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "PREFERENCE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Text(
-                        text = preference,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                ProfileInfoRow(
+                    label = "PREFERENCE",
+                    value = preference,
+                    icon = Icons.Default.Tune,
+                    iconTint = Color(0xFF94A3B8)
                 )
 
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 18.dp), color = Color(0xFF1A2234))
+
                 // Status Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "STATUS",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        letterSpacing = 1.5.sp
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Pulsing Dot
+                ProfileInfoRow(
+                    label = "MEMBERSHIP STATUS",
+                    value = if (finalIsPremium) "VIP Elite" else "Standard Free",
+                    icon = Icons.Default.WorkspacePremium,
+                    iconTint = if (finalIsPremium) Color(0xFFFFD700) else Color(0xFF64748B),
+                    trailingContent = {
                         val infiniteTransition = rememberInfiniteTransition(label = "pulse")
                         val alphaPulse by infiniteTransition.animateFloat(
-                            initialValue = 0.3f,
+                            initialValue = 0.4f,
                             targetValue = 1f,
                             animationSpec = infiniteRepeatable(
                                 animation = tween(1000),
@@ -528,40 +453,52 @@ fun ProfileScreen(
                             ),
                             label = "pulseAlpha"
                         )
-                        val statusColor = if (finalIsPremium) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                        val statusColor = if (finalIsPremium) Color(0xFFFFD700) else Color(0xFF00E471)
 
-                        Box(
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier
-                                .size(8.dp)
-                                .alpha(alphaPulse)
-                                .background(statusColor, CircleShape)
-                        )
-
-                        Text(
-                            text = if (finalIsPremium) "Premium" else "Free",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = statusColor
-                        )
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(statusColor.copy(alpha = 0.12f))
+                                .border(1.dp, statusColor.copy(alpha = 0.3f), RoundedCornerShape(999.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .alpha(alphaPulse)
+                                    .background(statusColor, CircleShape)
+                            )
+                            Text(
+                                text = if (finalIsPremium) "Active VIP" else "Active Free",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp
+                                ),
+                                color = statusColor
+                            )
+                        }
                     }
-                }
+                )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // App Settings Button
+            // App Settings Button with Modern Glass Styling
             Surface(
                 onClick = onNavigateToSettings,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
+                    .height(64.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = com.rivavafi.universal.ui.theme.DarkCardBg,
-                border = androidx.compose.foundation.BorderStroke(1.dp, com.rivavafi.universal.ui.theme.DarkCardBorder)
+                color = Color(0xFF0E1322),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E283D))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -569,22 +506,44 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = com.rivavafi.universal.ui.theme.RivavaCyan
-                        )
-                        Text(
-                            text = "App Settings",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color.White
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF00C6FF).copy(alpha = 0.12f))
+                                .border(1.dp, Color(0xFF00C6FF).copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = Color(0xFF00C6FF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = "App Settings",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                ),
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Security, biometric lock & preferences",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp
+                                ),
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Navigate",
-                        tint = Color.White.copy(alpha = 0.5f),
-                        modifier = Modifier.size(20.dp)
+                        tint = Color(0xFF64748B),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -977,6 +936,80 @@ fun QuickActionItem(
                 contentDescription = "Navigate",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileInfoRow(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    onClick: (() -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (onClick != null) Modifier.clickable { onClick() }
+                else Modifier
+            )
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(iconTint.copy(alpha = 0.12f))
+                    .border(1.dp, iconTint.copy(alpha = 0.25f), RoundedCornerShape(11.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = iconTint,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = Color(0xFF64748B)
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    ),
+                    color = Color.White
+                )
+            }
+        }
+
+        if (trailingContent != null) {
+            trailingContent()
+        } else if (onClick != null) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit $label",
+                tint = Color(0xFF64748B),
+                modifier = Modifier.size(15.dp)
             )
         }
     }

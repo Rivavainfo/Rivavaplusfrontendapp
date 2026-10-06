@@ -33,14 +33,20 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.Locale
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.ShowChart
 import com.rivavafi.universal.ui.theme.glassMorphism
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +55,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Public
 import com.rivavafi.universal.ui.theme.AmoledBlack
 import com.rivavafi.universal.ui.theme.TertiaryEmerald
 import com.rivavafi.universal.ui.theme.SecondaryPink
@@ -119,7 +128,7 @@ fun RivavaPortfolioScreen(
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             premiumViewModel.syncEntitlement()
-            android.widget.Toast.makeText(context, "🎉 Portfolio Premium Unlocked!", android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(context, "Portfolio Premium Unlocked!", android.widget.Toast.LENGTH_LONG).show()
         } else {
             val error = result.data?.getStringExtra("error") ?: "Payment was cancelled."
             android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
@@ -199,7 +208,7 @@ fun RivavaPortfolioScreen(
                     ) {
                         // Glowing Brand Logo & Lock Badge
                         Box(contentAlignment = Alignment.BottomEnd) {
-                            RivavaGlowingLogo(size = 54.dp)
+                            RivavaGlowingLogo(size = 56.dp)
                             Box(
                                 modifier = Modifier
                                     .offset(x = 6.dp, y = 6.dp)
@@ -207,27 +216,50 @@ fun RivavaPortfolioScreen(
                                     .clip(CircleShape)
                                     .background(
                                         Brush.linearGradient(
-                                            listOf(Color(0xFFFFD700), Color(0xFFB8860B))
+                                            listOf(Color(0xFFFFB800), Color(0xFFD97706))
                                         )
-                                    ),
+                                    )
+                                    .border(1.5.dp, Color(0xFF090A10), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Lock,
                                     contentDescription = "Locked",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(13.dp)
+                                    tint = Color(0xFF090A10),
+                                    modifier = Modifier.size(12.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Luxury VIP Pill Badge
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color(0xFF00C6FF).copy(alpha = 0.12f))
+                                .border(1.dp, Color(0xFF00C6FF).copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                "★ INSTITUTIONAL INTELLIGENCE",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 1.4.sp,
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF00C6FF)
+                                )
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
                             "Rivava Portfolio VIP",
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = (-0.5).sp,
+                                letterSpacing = (-0.6).sp,
+                                fontSize = 24.sp,
                                 color = Color.White
                             ),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -235,57 +267,90 @@ fun RivavaPortfolioScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             "Private institution-grade market analytics, live multi-asset tracking, and expert advisory.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = OnDarkSurfaceVariant,
-                                lineHeight = 20.sp
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = Color(0xFF94A3B8),
+                                lineHeight = 18.sp,
+                                fontSize = 12.sp
                             ),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Features List with Neon Checkmarks
+                        // Features List with Obsidian Glow Badges
                         val vipFeatures = listOf(
-                            "Live Real-Time Indian (NSE) & US (NYSE) Quotes",
-                            "24/7 Live Crypto Rates (BTC, ETH, SOL in INR)",
-                            "Global Finnhub Market News & Intelligence",
-                            "Direct 1-on-1 SEBI Registered Advisor Access"
+                            Triple("Live NSE & NYSE Quotes", "Real-time tick stream with zero latency", Icons.AutoMirrored.Filled.TrendingUp),
+                            Triple("24/7 Multi-Asset Tracking", "Live INR valuation for BTC, ETH & SOL", Icons.Default.ShowChart),
+                            Triple("Global Finnhub Market News", "Wall St & Dalal Street institutional radar", Icons.Outlined.Public),
+                            Triple("Direct SEBI Advisor Access", "1-on-1 private advisory consultation", Icons.Default.VerifiedUser)
                         )
                         Column(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(16.dp))
-                                .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+                                .background(Color(0xFF131724), RoundedCornerShape(18.dp))
+                                .border(1.dp, Color(0xFF232D42), RoundedCornerShape(18.dp))
                                 .padding(14.dp)
                         ) {
-                            vipFeatures.forEach { feature ->
+                            vipFeatures.forEach { (title, subtitle, icon) ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(Color(0xFF00C6FF).copy(alpha = 0.12f))
+                                            .border(1.dp, Color(0xFF00C6FF).copy(alpha = 0.25f), RoundedCornerShape(10.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = Color(0xFF00C6FF),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = title,
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                        )
+                                        Text(
+                                            text = subtitle,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 10.sp
+                                            )
+                                        )
+                                    }
                                     Box(
                                         modifier = Modifier
                                             .size(18.dp)
                                             .clip(CircleShape)
-                                            .background(RivavaLime.copy(alpha = 0.2f)),
+                                            .background(RivavaLime.copy(alpha = 0.15f)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("✓", color = RivavaLime, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                                    }
-                                    Text(
-                                        text = feature,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            color = Color.White.copy(alpha = 0.9f),
-                                            fontWeight = FontWeight.Medium
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = RivavaLime,
+                                            modifier = Modifier.size(11.dp)
                                         )
-                                    )
+                                    }
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(22.dp))
 
+                        // High-End Gold/Amber Gradient Button
                         Button(
                             onClick = {
                                 val intent = Intent(context, PaymentActivity::class.java).apply {
@@ -297,21 +362,45 @@ fun RivavaPortfolioScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(54.dp),
+                                .height(54.dp)
+                                .shadow(12.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFFFFB800)),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFFD700),
-                                contentColor = Color.Black
+                                containerColor = Color.Transparent,
+                                contentColor = Color(0xFF0A0F1D)
                             ),
-                            shape = RoundedCornerShape(16.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+                            contentPadding = PaddingValues(0.dp),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text(
-                                "Pay ₹399 & Unlock Instant Access",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.Black
-                                )
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            listOf(Color(0xFFFFB800), Color(0xFFFF8C00))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Bolt,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0A0F1D),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        "Unlock Instant Access • ₹399",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF0A0F1D)
+                                        )
+                                    )
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -332,26 +421,59 @@ fun RivavaPortfolioScreen(
                                 .fillMaxWidth()
                                 .height(48.dp),
                             shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, RivavaCyan.copy(alpha = 0.5f))
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF0B101D)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00A3FF).copy(alpha = 0.4f))
                         ) {
-                            Text(
-                                "💬 Chat With SEBI Advisor",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = RivavaCyan
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Chat,
+                                    contentDescription = null,
+                                    tint = Color(0xFF00A3FF),
+                                    modifier = Modifier.size(17.dp)
                                 )
-                            )
+                                Text(
+                                    "Chat With SEBI Advisor",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF00A3FF)
+                                    )
+                                )
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         var showSecretDialog by remember { mutableStateOf(false) }
 
-                        TextButton(
-                            onClick = { showSecretDialog = true },
-                            modifier = Modifier.fillMaxWidth().height(38.dp)
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .clickable { showSecretDialog = true }
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text("Have a pass? Enter Secret Key →", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                            Icon(
+                                imageVector = Icons.Default.Key,
+                                contentDescription = null,
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                "Have an access pass? Enter Secret Key",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(11.dp)
+                            )
                         }
 
                         if (showSecretDialog) {
@@ -697,11 +819,11 @@ fun RivavaPortfolioScreen(
                     NewsItem("The Economist", "World News, Politics, Economics", "https://www.economist.com/", "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=600&q=80")
                 )
 
-                MarketNewsSection("🇮🇳 INDIAN MARKET", com.rivavafi.universal.ui.theme.RivavaPink, indianMarket, uriHandler)
+                MarketNewsSection("INDIAN MARKET", com.rivavafi.universal.ui.theme.RivavaPink, indianMarket, uriHandler, Icons.AutoMirrored.Filled.TrendingUp)
                 Spacer(modifier = Modifier.height(24.dp))
-                MarketNewsSection("🇺🇸 US MARKET", com.rivavafi.universal.ui.theme.RivavaCyan, usMarket, uriHandler)
+                MarketNewsSection("US MARKET", com.rivavafi.universal.ui.theme.RivavaCyan, usMarket, uriHandler, Icons.Outlined.Language)
                 Spacer(modifier = Modifier.height(24.dp))
-                MarketNewsSection("🌍 INTERNATIONAL MARKET", com.rivavafi.universal.ui.theme.RivavaLime, internationalMarket, uriHandler)
+                MarketNewsSection("INTERNATIONAL MARKET", com.rivavafi.universal.ui.theme.RivavaLime, internationalMarket, uriHandler, Icons.Outlined.Public)
             }
 
 
@@ -947,14 +1069,36 @@ fun MarketNewsSection(
     heading: String,
     headingColor: Color,
     items: List<NewsItem>,
-    uriHandler: androidx.compose.ui.platform.UriHandler
+    uriHandler: androidx.compose.ui.platform.UriHandler,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            heading,
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-            color = headingColor
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (icon != null) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(headingColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = headingColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+            Text(
+                heading,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = headingColor
+            )
+        }
         items.chunked(2).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),

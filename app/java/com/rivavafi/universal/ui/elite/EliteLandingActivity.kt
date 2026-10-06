@@ -233,7 +233,7 @@ fun EliteLandingScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF00E471))
                     Spacer(Modifier.width(8.dp))
-                    Text("🎉 Elite Unlocked!", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Elite Unlocked!", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             text = {

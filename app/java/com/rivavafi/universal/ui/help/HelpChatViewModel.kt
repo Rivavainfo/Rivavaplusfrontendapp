@@ -27,7 +27,7 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
     private val _messages = MutableStateFlow<List<ChatMessage>>(
         listOf(
             ChatMessage(
-                text = "Hello! 👋 I'm your Rivava+ AI Financial Assistant. How can I help you today?",
+                text = "Hello! I'm your Rivava+ AI Financial Assistant. How can I help you today?",
                 isUser = false,
                 actionType = null
             )
@@ -39,11 +39,11 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
     val isTyping: StateFlow<Boolean> = _isTyping.asStateFlow()
 
     val quickPrompts = listOf(
-        "🔑 Secret Key / Unlock",
-        "💳 Pay ₹399 Access",
-        "📱 SMS Tracking Setup",
-        "👨‍💼 Elite Private Session",
-        "📞 Speak to Live Advisor"
+        "Secret Key / Unlock",
+        "Pay ₹399 Access",
+        "SMS Tracking Setup",
+        "Elite Private Session",
+        "Speak to Live Advisor"
     )
 
     fun sendMessage(text: String, userProfileInfo: String = "") {
@@ -69,7 +69,7 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
             lower.contains("secret") || lower.contains("key") || lower.contains("unlock") || lower.contains("code") || lower.contains("license") -> {
                 ChatMessage(
                     text = """
-                        🔑 **Secret Access Key Guide:**
+                        **Secret Access Key Guide:**
                         
                         * **Format:** Keys follow the pattern `RIV-XXXX-XXXX-XXXX-XXXX` (All Capital Letters & Digits 2-9).
                         * **Where to Enter:** Go to **Portfolio** tab, tap **Unlock**, paste your key, and tap **"Verify & Unlock"**.
@@ -83,7 +83,7 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
             lower.contains("399") || lower.contains("pay") || lower.contains("payment") || lower.contains("price") || lower.contains("cost") || lower.contains("subscription") -> {
                 ChatMessage(
                     text = """
-                        💳 **Rivava+ ₹399 Special Access:**
+                        **Rivava+ ₹399 Special Access:**
                         
                         * **Included Benefits:**
                           • Full Portfolio & Stock PDF analytics unlocked
@@ -100,10 +100,10 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
             lower.contains("sms") || lower.contains("track") || lower.contains("expense") || lower.contains("scan") || lower.contains("bank") -> {
                 ChatMessage(
                     text = """
-                        📱 **Automated SMS & Expense Tracking:**
+                        **Automated SMS & Expense Tracking:**
                         
                         * **How it works:** Rivava automatically reads bank transaction SMS messages on your device to log expenses instantly.
-                        * **Privacy First:** Only financial OTPs and bank alerts are categorized locally. Your data is encrypted and never sold.
+                        * **Privacy First:** Only financial alerts and OTPs are categorized locally. Your data is encrypted and never sold.
                         * **Manual Entry:** You can also tap the **'+' button** on Home to log cash transactions manually.
                     """.trimIndent(),
                     isUser = false,
@@ -114,7 +114,7 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
             lower.contains("elite") || lower.contains("advisor") || lower.contains("manager") || lower.contains("session") || lower.contains("call") -> {
                 ChatMessage(
                     text = """
-                        👨‍💼 **Rivava Elite & Private Fund Manager:**
+                        **Rivava Elite & Private Fund Manager:**
                         
                         * You get dedicated 1-on-1 private video consultations and portfolio reviews.
                         * **Live Helpline:** +91-8881176909
@@ -128,7 +128,7 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
             lower.contains("calc") || lower.contains("emi") || lower.contains("mdr") || lower.contains("ratio") || lower.contains("tool") -> {
                 ChatMessage(
                     text = """
-                        🧮 **Financial Tools & Calculators:**
+                        **Financial Tools & Calculators:**
                         
                         * Tap the **Tools** tab in the bottom navigation bar to access:
                           • **R&E Calculator** (Ratio & Equivalence)
@@ -143,7 +143,7 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
 
             lower.contains("hi") || lower.contains("hello") || lower.contains("hey") -> {
                 ChatMessage(
-                    text = "Hello! 😊 How can I assist you with Rivava TrackFi today? You can ask about unlocking your Portfolio, payments, SMS tracking, or connect with our financial advisory team.",
+                    text = "Hello! How can I assist you with Rivava TrackFi today? You can ask about unlocking your Portfolio, payments, SMS tracking, or connect with our financial advisory team.",
                     isUser = false,
                     actionType = null
                 )
@@ -154,9 +154,9 @@ class HelpChatViewModel @Inject constructor() : ViewModel() {
                     text = """
                         I understand your query. For specialized assistance or personalized account queries:
                         
-                        📞 **Helpline:** +91 8881176909
-                        💬 **WhatsApp:** Available 24/7 for instant chat
-                        📧 **Email:** support@rivava.in
+                        * **Helpline:** +91 8881176909
+                        * **WhatsApp:** Available 24/7 for instant chat
+                        * **Email:** support@rivava.in
                         
                         You can tap below to connect with a live advisor immediately!
                     """.trimIndent(),
