@@ -644,12 +644,8 @@ fun HomeEliteHeroBanner(
     onJoinClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Card(
-            modifier = Modifier
+    Card(
+        modifier = modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(22.dp))
                 .border(
@@ -875,35 +871,7 @@ fun HomeEliteHeroBanner(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Carousel indicator dots: [====]  •  •
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(width = 16.dp, height = 4.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
-            )
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.35f))
-            )
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.35f))
-            )
-        }
     }
-}
 
 /**
  * 2. 1 in 1 Sessions with Our Advisor Micro Card Matching Reference Image
