@@ -207,35 +207,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Circular Notification Bell Button with Red Badge Dot
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF141724))
-                                .border(1.dp, Color.White.copy(alpha = 0.12f), CircleShape)
-                                .clickable {
-                                    Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(contentAlignment = Alignment.TopEnd) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = Color.White.copy(alpha = 0.85f),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                // Red badge dot
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .offset(x = 1.dp, y = (-2).dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFFF2A85))
-                                )
-                            }
-                        }
+
 
                         // Profile Avatar with Neon Ring
                         Box(

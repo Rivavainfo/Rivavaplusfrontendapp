@@ -457,10 +457,14 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                 })
             }
             composable(Screen.RivavaPortfolio.route) {
-                RivavaPortfolioScreen(onBack = { navController.popBackStack() }, onNavigateToDetail = { ticker, focus ->
-                    val focusParam = focus ?: "none"
-                    navController.navigate("${Screen.StockDetail.route}/$ticker?focus=$focusParam")
-                })
+                RivavaPortfolioScreen(
+                    onBack = { navController.popBackStack() }, 
+                    onNavigateToDetail = { ticker, focus ->
+                        val focusParam = focus ?: "none"
+                        navController.navigate("${Screen.StockDetail.route}/$ticker?focus=$focusParam")
+                    },
+                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                )
             }
             composable(
                 route = "${Screen.StockDetail.route}/{ticker}?focus={focus}",

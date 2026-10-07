@@ -216,21 +216,6 @@ fun PremiumUnlockDialog(
                                 )
                             }
 
-                            if (com.rivavafi.universal.BuildConfig.DEBUG) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFF00C6FF).copy(alpha = 0.12f))
-                                        .clickable { secretKeyInput = "DEV-PASS" }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("⚡ Dev Mode: Tap to auto-fill 'DEV-PASS'", color = Color(0xFF00C6FF), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
 
                             Button(
                                 onClick = {

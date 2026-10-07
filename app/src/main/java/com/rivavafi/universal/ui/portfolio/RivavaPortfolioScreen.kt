@@ -75,6 +75,7 @@ import java.util.Locale
 fun RivavaPortfolioScreen(
     onBack: () -> Unit = {},
     onNavigateToDetail: (ticker: String, focus: String) -> Unit = { _, _ -> },
+    onNavigateToProfile: () -> Unit = {},
     premiumViewModel: PremiumViewModel = hiltViewModel(),
     viewModel: StockViewModel = hiltViewModel(),
     cryptoViewModel: CryptoViewModel = hiltViewModel(),
@@ -561,48 +562,9 @@ fun RivavaPortfolioScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Search
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF121726))
-                                .border(1.dp, Color(0xFF1E283D), CircleShape)
-                                .clickable { },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
 
-                        // Notifications
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF121726))
-                                .border(1.dp, Color(0xFF1E283D), CircleShape)
-                                .clickable { },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 9.dp, end = 9.dp)
-                                    .size(6.dp)
-                                    .background(Color(0xFFFF3366), CircleShape)
-                            )
-                        }
+
+
 
                         // User Initial Avatar
                         val initial = auth.currentUser?.displayName?.firstOrNull()?.uppercase() ?: "A"
@@ -615,7 +577,8 @@ fun RivavaPortfolioScreen(
                                         listOf(Color(0xFF1E3A8A), Color(0xFF2563EB))
                                     )
                                 )
-                                .border(1.5.dp, Color(0xFF00C6FF).copy(alpha = 0.5f), CircleShape),
+                                .border(1.5.dp, Color(0xFF00C6FF).copy(alpha = 0.5f), CircleShape)
+                                .clickable { onNavigateToProfile() },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
