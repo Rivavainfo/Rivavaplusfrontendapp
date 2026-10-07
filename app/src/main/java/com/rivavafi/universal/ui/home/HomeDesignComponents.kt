@@ -17,12 +17,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rivavafi.universal.ui.theme.*
@@ -581,3 +584,1177 @@ fun QuickActionItem(
         )
     }
 }
+
+/**
+ * Speedometer Gauge Icon for Credit Score Card
+ */
+@Composable
+fun SpeedometerGaugeIcon(
+    modifier: Modifier = Modifier,
+    color: Color = Color.White
+) {
+    Canvas(modifier = modifier) {
+        val stroke = size.width * 0.12f
+        val r = (size.width - stroke) / 2
+        val center = Offset(size.width / 2f, size.height * 0.55f)
+
+        // Background track arc
+        drawArc(
+            color = color.copy(alpha = 0.35f),
+            startAngle = 145f,
+            sweepAngle = 250f,
+            useCenter = false,
+            topLeft = Offset(center.x - r, center.y - r),
+            size = androidx.compose.ui.geometry.Size(r * 2, r * 2),
+            style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
+        // Active progress arc
+        drawArc(
+            color = color,
+            startAngle = 145f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = Offset(center.x - r, center.y - r),
+            size = androidx.compose.ui.geometry.Size(r * 2, r * 2),
+            style = Stroke(width = stroke, cap = StrokeCap.Round)
+        )
+        // Needle
+        val angleRad = Math.toRadians(310.0)
+        val needleEnd = Offset(
+            center.x + (r * 0.68f) * kotlin.math.cos(angleRad).toFloat(),
+            center.y + (r * 0.68f) * kotlin.math.sin(angleRad).toFloat()
+        )
+        drawLine(
+            color = color,
+            start = center,
+            end = needleEnd,
+            strokeWidth = stroke * 0.85f,
+            cap = StrokeCap.Round
+        )
+        drawCircle(color = color, radius = stroke * 0.9f, center = center)
+    }
+}
+
+/**
+ * 1. Rivava Elite Hero Banner Matching Reference Image Exactly
+ */
+@Composable
+fun HomeEliteHeroBanner(
+    seatsRemaining: Int = 93,
+    onJoinClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(22.dp))
+                .border(
+                    width = 1.dp,
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFFFFD700).copy(alpha = 0.45f),
+                            Color(0xFF8B6914).copy(alpha = 0.25f),
+                            Color(0xFFFFD700).copy(alpha = 0.45f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(22.dp)
+                )
+                .clickable { onJoinClick() },
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0C0A06)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(218.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color(0xFF16130B),
+                                Color(0xFF0F0C07),
+                                Color(0xFF080603)
+                            )
+                        )
+                    )
+            ) {
+                // Advisor photo with golden crown on the right
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = com.rivavafi.universal.R.drawable.elite_advisor_hero),
+                    contentDescription = "Elite Advisor",
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(235.dp)
+                        .align(Alignment.CenterEnd),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alignment = Alignment.CenterEnd
+                )
+
+                // Smooth horizontal fade from solid dark on left to transparent on right
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color(0xFF0C0A06),
+                                    Color(0xFF0C0A06).copy(alpha = 0.98f),
+                                    Color(0xFF0C0A06).copy(alpha = 0.82f),
+                                    Color(0xFF0C0A06).copy(alpha = 0.40f),
+                                    Color.Transparent
+                                ),
+                                startX = 0f,
+                                endX = 620f
+                            )
+                        )
+                )
+
+                // Foreground Content Layout
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Top Row: RIVAVA ELITE on Left, 93/100 Seats badge on Right
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("👑", fontSize = 15.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "RIVAVA ",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 12.sp,
+                                        letterSpacing = 1.3.sp
+                                    )
+                                )
+                                Text(
+                                    text = "ELITE",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color(0xFFFFD700),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 12.sp,
+                                        letterSpacing = 1.3.sp
+                                    )
+                                )
+                            }
+                        }
+
+                        // Seats Badge: "93/100 Seats"
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color(0xFF261D07).copy(alpha = 0.95f))
+                                .border(
+                                    1.dp,
+                                    Color(0xFFFFD700).copy(alpha = 0.55f),
+                                    RoundedCornerShape(999.dp)
+                                )
+                                .padding(horizontal = 9.dp, vertical = 3.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${if (seatsRemaining > 0) seatsRemaining else 93}/100 Seats",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFFD700),
+                                    fontSize = 10.sp
+                                )
+                            )
+                        }
+                    }
+
+                    // Headline + Subtitle
+                    Column {
+                        Text(
+                            text = androidx.compose.ui.text.buildAnnotatedString {
+                                withStyle(
+                                    androidx.compose.ui.text.SpanStyle(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 19.sp,
+                                        letterSpacing = (-0.3).sp
+                                    )
+                                ) {
+                                    append("1-on-1 Wealth Guidance\nwith ")
+                                }
+                                withStyle(
+                                    androidx.compose.ui.text.SpanStyle(
+                                        color = Color(0xFFFFC83B),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 19.sp,
+                                        letterSpacing = (-0.3).sp
+                                    )
+                                ) {
+                                    append("Experts")
+                                }
+                            },
+                            lineHeight = 24.sp
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Text(
+                            text = "Exclusive research, in-house AI,\npersonal sessions & wealth creation tools.",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = Color.White.copy(alpha = 0.72f),
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                        )
+                    }
+
+                    // Bottom Row: "Join Rivava Elite →" Button + "Limited to 100 Members"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Surface(
+                            onClick = onJoinClick,
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFFFC83B)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Text(
+                                    text = "Join Rivava Elite",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF0F0B00),
+                                        fontSize = 12.sp
+                                    )
+                                )
+                                Text(
+                                    text = "→",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF0F0B00),
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+
+                        // Text under advisor pointing hand
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(end = 4.dp, bottom = 2.dp)
+                        ) {
+                            Text(
+                                text = "Limited to",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color(0xFFFFD700).copy(alpha = 0.85f),
+                                    fontSize = 8.5.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                            Text(
+                                text = "100 Members",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color(0xFFFFD700),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Carousel indicator dots: [====]  •  •
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 16.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            )
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.35f))
+            )
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.35f))
+            )
+        }
+    }
+}
+
+/**
+ * 2. 1 in 1 Sessions with Our Advisor Micro Card Matching Reference Image
+ */
+@Composable
+fun HomeAdvisorMicroBanner(
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1E253A), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Left: Circular 3D cartoon advisor avatar
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.rivavafi.universal.R.drawable.advisor_session_avatar),
+                contentDescription = "Advisor Avatar",
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+
+            // Middle: Headline and Description
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "1 in 1 Sessions with Our Advisor",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.5.sp
+                    )
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Get personalised market insights,\nportfolio guidance & investment strategies.",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = Color.White.copy(alpha = 0.62f),
+                        fontSize = 10.5.sp,
+                        lineHeight = 14.sp
+                    )
+                )
+            }
+
+            // Right: Chevron >
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.55f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+/**
+ * 3. Quick Actions 4-Card Row Matching Reference Image
+ */
+@Composable
+fun HomeQuickActionsSection(
+    onSeeAllClick: () -> Unit = {},
+    onPayEarnClick: () -> Unit = {},
+    onBillsRechargeClick: () -> Unit = {},
+    onMyUpiClick: () -> Unit = {},
+    onCreditScoreClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Quick Actions",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { onSeeAllClick() },
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = "See All",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
+                )
+                Text("→", fontSize = 12.sp, color = Color.White.copy(alpha = 0.65f))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 4 Action Cards in a horizontal row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            // Card 1: Pay & Earn
+            HomeActionCard(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFF00E575)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "₹",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF042817)
+                        )
+                    }
+                },
+                title = "Pay & Earn",
+                subtitle = "Win Rewards",
+                subtitleColor = Color(0xFF00E575),
+                onClick = onPayEarnClick
+            )
+
+            // Card 2: Bills & Recharge
+            HomeActionCard(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0xFF9333EA), Color(0xFF7E22CE))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ReceiptLong,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                title = "Bills & Recharge",
+                subtitle = "Electricity, Mobile",
+                subtitleColor = Color.White.copy(alpha = 0.55f),
+                onClick = onBillsRechargeClick
+            )
+
+            // Card 3: My UPI
+            HomeActionCard(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0xFFE11D48), Color(0xFFBE123C))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        UpiPhoneBoltIcon(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    }
+                },
+                title = "My UPI",
+                subtitle = "Bank Accounts",
+                subtitleColor = Color.White.copy(alpha = 0.55f),
+                onClick = onMyUpiClick
+            )
+
+            // Card 4: Credit Score
+            HomeActionCard(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0xFF00A3FF), Color(0xFF0284C7))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        SpeedometerGaugeIcon(
+                            modifier = Modifier.size(26.dp),
+                            color = Color.White
+                        )
+                    }
+                },
+                title = "Credit Score",
+                subtitle = "Free Report",
+                subtitleColor = Color.White.copy(alpha = 0.55f),
+                onClick = onCreditScoreClick
+            )
+        }
+    }
+}
+
+/**
+ * Phone container with bolt icon for My UPI
+ */
+@Composable
+fun UpiPhoneBoltIcon(
+    modifier: Modifier = Modifier,
+    color: Color = Color.White
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val stroke = 1.8.dp.toPx()
+
+            // Phone rounded rect outline
+            val rectWidth = w * 0.62f
+            val rectHeight = h * 0.88f
+            val left = (w - rectWidth) / 2f
+            val top = (h - rectHeight) / 2f
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(left, top),
+                size = Size(rectWidth, rectHeight),
+                cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx()),
+                style = Stroke(width = stroke)
+            )
+        }
+        Icon(
+            imageVector = Icons.Default.Bolt,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(15.dp)
+        )
+    }
+}
+
+/**
+ * Diagonal Opposing Arrows Icon for R&E Calculator
+ */
+@Composable
+fun DiagonalOpposingArrowsIcon(
+    modifier: Modifier = Modifier,
+    color: Color = Color(0xFF34D399)
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = 2.2.dp.toPx()
+
+        // 1. Top-right pointing arrow ↗
+        val a1Start = Offset(w * 0.40f, h * 0.50f)
+        val a1End = Offset(w * 0.72f, h * 0.18f)
+        drawLine(color = color, start = a1Start, end = a1End, strokeWidth = stroke, cap = StrokeCap.Round)
+        drawLine(color = color, start = a1End, end = Offset(w * 0.52f, h * 0.18f), strokeWidth = stroke, cap = StrokeCap.Round)
+        drawLine(color = color, start = a1End, end = Offset(w * 0.72f, h * 0.38f), strokeWidth = stroke, cap = StrokeCap.Round)
+
+        // 2. Bottom-left pointing arrow ↙
+        val a2Start = Offset(w * 0.60f, h * 0.50f)
+        val a2End = Offset(w * 0.28f, h * 0.82f)
+        drawLine(color = color, start = a2Start, end = a2End, strokeWidth = stroke, cap = StrokeCap.Round)
+        drawLine(color = color, start = a2End, end = Offset(w * 0.48f, h * 0.82f), strokeWidth = stroke, cap = StrokeCap.Round)
+        drawLine(color = color, start = a2End, end = Offset(w * 0.28f, h * 0.62f), strokeWidth = stroke, cap = StrokeCap.Round)
+    }
+}
+
+@Composable
+private fun HomeActionCard(
+    iconContent: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    subtitleColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1C2235), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            iconContent()
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                ),
+                maxLines = 1,
+                softWrap = false,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 8.8.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = subtitleColor
+                ),
+                maxLines = 1,
+                softWrap = false,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * 4. Track Your Money Donut Chart and Category Breakdown Matching Reference Image
+ */
+@Composable
+fun HomeTrackMoneySection(
+    totalSpent: String = "₹24,320",
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Section Header with Chevron >
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Track Your Money",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+            )
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Large Card with Donut Chart + Breakdown Legend
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(22.dp))
+                .border(1.dp, Color(0xFF1C2235), RoundedCornerShape(22.dp))
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Donut Chart on Left with Center Text
+                Box(
+                    modifier = Modifier.size(136.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val strokeWidth = 16.dp.toPx()
+                        val diameter = size.minDimension - strokeWidth
+                        val topLeft = Offset(
+                            (size.width - diameter) / 2f,
+                            (size.height - diameter) / 2f
+                        )
+                        val arcSize = androidx.compose.ui.geometry.Size(diameter, diameter)
+
+                        // Slices in clockwise order matching reference screenshot:
+                        // Green (top-left) -> Pink (top-right & right) -> Orange (bottom-right) -> Purple (bottom) -> Blue (bottom-left)
+                        val slices = listOf(
+                            Pair(Color(0xFF00E575), 21f), // Shopping (21%)
+                            Pair(Color(0xFFFF2A85), 34f), // Food & Dining (34%)
+                            Pair(Color(0xFFFF8A00), 12f), // Others (12%)
+                            Pair(Color(0xFFA855F7), 13f), // Bills & Utilities (13%)
+                            Pair(Color(0xFF0091FF), 15f)  // Transport (15%)
+                        )
+
+                        var currentAngle = -145f
+                        val gap = 4f
+                        slices.forEach { (color, pct) ->
+                            val sweep = (pct / 95f * 360f) - gap
+                            drawArc(
+                                color = color,
+                                startAngle = currentAngle + (gap / 2f),
+                                sweepAngle = sweep,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                            currentAngle += (pct / 95f * 360f)
+                        }
+                    }
+
+                    // Center Labels inside donut
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = totalSpent,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(1.dp))
+                        Text(
+                            text = "Total Spent",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        Text(
+                            text = "This Month",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Breakdown Legend on Right
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ExpenseCategoryRow(
+                        color = Color(0xFFFF2A85),
+                        name = "Food & Dining",
+                        amount = "₹8,400",
+                        percentage = "34%"
+                    )
+                    ExpenseCategoryRow(
+                        color = Color(0xFF00E575),
+                        name = "Shopping",
+                        amount = "₹5,200",
+                        percentage = "21%"
+                    )
+                    ExpenseCategoryRow(
+                        color = Color(0xFF0091FF),
+                        name = "Transport",
+                        amount = "₹3,600",
+                        percentage = "15%"
+                    )
+                    ExpenseCategoryRow(
+                        color = Color(0xFFA855F7),
+                        name = "Bills & Utilities",
+                        amount = "₹3,120",
+                        percentage = "13%"
+                    )
+                    ExpenseCategoryRow(
+                        color = Color(0xFFFF8A00),
+                        name = "Others",
+                        amount = "₹3,000",
+                        percentage = "12%"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpenseCategoryRow(
+    color: Color,
+    name: String,
+    amount: String,
+    percentage: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Color Rounded Square / Pill
+        Box(
+            modifier = Modifier
+                .size(width = 8.5.dp, height = 6.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(7.dp))
+        // Category Name
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color.White.copy(alpha = 0.88f)
+            ),
+            modifier = Modifier.weight(1f),
+            maxLines = 1
+        )
+        // Amount
+        Text(
+            text = amount,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        // Percentage
+        Text(
+            text = percentage,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color.White.copy(alpha = 0.55f)
+            ),
+            modifier = Modifier.width(28.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End
+        )
+    }
+}
+
+/**
+ * 5. Financial Tools & Calculators 8-Item Grid Matching Reference Image
+ */
+@Composable
+fun HomeFinancialToolsSection(
+    onSeeAllClick: () -> Unit = {},
+    onToolClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Financial Tools & Calculators",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { onSeeAllClick() },
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = "See All",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
+                )
+                Text("→", fontSize = 12.sp, color = Color.White.copy(alpha = 0.65f))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Row 1 (4 items)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            // 1. Percentage Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF2E174D))
+                            .border(1.dp, Color(0xFF7C3AED).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("%", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC084FC))
+                    }
+                },
+                title = "Percentage\nCalculator",
+                onClick = { onToolClick("PERCENTAGE") }
+            )
+
+            // 2. R&E Calculator with diagonal opposing arrows
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF0C2B20))
+                            .border(1.dp, Color(0xFF059669).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        DiagonalOpposingArrowsIcon(
+                            modifier = Modifier.size(24.dp),
+                            color = Color(0xFF34D399)
+                        )
+                    }
+                },
+                title = "R&E\nCalculator",
+                onClick = { onToolClick("EQUIVALENCE") }
+            )
+
+            // 3. MDR Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF0B293F))
+                            .border(1.dp, Color(0xFF0284C7).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                title = "MDR\nCalculator",
+                onClick = { onToolClick("MDR") }
+            )
+
+            // 4. Loan EMI Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF3B1527))
+                            .border(1.dp, Color(0xFFBE123C).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = null,
+                            tint = Color(0xFFFB7185),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                title = "Loan EMI\nCalculator",
+                onClick = { onToolClick("EMI") }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Row 2 (4 items)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            // 5. Profit & Loss Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF351F0D))
+                            .border(1.dp, Color(0xFFD97706).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                            contentDescription = null,
+                            tint = Color(0xFFFBBF24),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                title = "Profit & Loss\nCalculator",
+                onClick = { onToolClick("PROFIT_LOSS") }
+            )
+
+            // 6. Compound Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF0A2B35))
+                            .border(1.dp, Color(0xFF0891B2).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.HourglassTop,
+                            contentDescription = null,
+                            tint = Color(0xFF22D3EE),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                title = "Compound\nCalculator",
+                onClick = { onToolClick("COMPOUND_INTEREST") }
+            )
+
+            // 7. SIP Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF342B0D))
+                            .border(1.dp, Color(0xFFCA8A04).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PieChart,
+                            contentDescription = null,
+                            tint = Color(0xFFFACC15),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                title = "SIP\nCalculator",
+                onClick = { onToolClick("SIP") }
+            )
+
+            // 8. Equivalence Calculator
+            CalculatorGridItem(
+                modifier = Modifier.weight(1f),
+                iconContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF2C1645))
+                            .border(1.dp, Color(0xFF7C3AED).copy(alpha = 0.45f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Balance,
+                            contentDescription = null,
+                            tint = Color(0xFFC084FC),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                title = "Equivalence\nCalculator",
+                onClick = { onToolClick("EQUIVALENCE") }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CalculatorGridItem(
+    iconContent: @Composable () -> Unit,
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1C2235), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            iconContent()
+            Spacer(modifier = Modifier.height(7.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.9f),
+                    lineHeight = 13.sp
+                ),
+                maxLines = 2,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
