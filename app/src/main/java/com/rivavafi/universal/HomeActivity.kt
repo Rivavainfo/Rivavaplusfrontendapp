@@ -95,7 +95,7 @@ sealed class Screen(
     object Scanning : Screen("scanning", "Scanning", Icons.Outlined.Home, Icons.Filled.Home)
     object Home : Screen("home", "Home", Icons.Outlined.Home, Icons.Filled.Home)
     object Transactions : Screen("transactions", "Reports", Icons.Outlined.ReceiptLong, Icons.Filled.ReceiptLong)
-    object Analytics : Screen("analytics", "Insights", Icons.Outlined.Analytics, Icons.Filled.Analytics)
+    object Analytics : Screen("analytics", "Analytics", Icons.Outlined.Analytics, Icons.Filled.Analytics)
     object AiReview : Screen("ai_review", "AI Review", Icons.Outlined.AutoAwesome, Icons.Filled.AutoAwesome)
     object Settings : Screen("settings", "Settings", Icons.Outlined.Settings, Icons.Filled.Settings)
     object Profile : Screen("profile", "Profile", Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
@@ -113,6 +113,7 @@ val BaseBottomNavigationItems = listOf(
     Screen.RivavaPortfolio,
     Screen.Calculators,
     Screen.Transactions,
+    Screen.Analytics,
     Screen.Profile
 )
 
@@ -215,7 +216,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
         }
     }
 
-    val bottomNavigationItems = listOf(Screen.Home, Screen.RivavaPortfolio, Screen.Calculators, Screen.Transactions, Screen.Profile)
+    val bottomNavigationItems = BaseBottomNavigationItems
 
     val isBottomBarVisible = currentRoute in bottomNavigationItems.map { it.route }
 
@@ -232,8 +233,8 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                         .fillMaxWidth()
                         .background(androidx.compose.ui.graphics.Color.Transparent)
                         .padding(
-                            start = 14.dp,
-                            end = 14.dp,
+                            start = 8.dp,
+                            end = 8.dp,
                             bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 8.dp
                         ),
                     contentAlignment = Alignment.Center
@@ -523,7 +524,7 @@ fun CustomBottomNavItem(
     )
 
     val indicatorWidth by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (isSelected) 14.dp else 0.dp,
+        targetValue = if (isSelected) 12.dp else 0.dp,
         animationSpec = tween(220),
         label = "indicatorWidth"
     )
@@ -547,8 +548,8 @@ fun CustomBottomNavItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(width = 46.dp, height = 30.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(width = 40.dp, height = 28.dp)
+                    .clip(RoundedCornerShape(11.dp))
                     .background(
                         if (isSelected) {
                             androidx.compose.ui.graphics.Brush.verticalGradient(
@@ -583,7 +584,7 @@ fun CustomBottomNavItem(
                                 )
                             )
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(11.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -591,7 +592,7 @@ fun CustomBottomNavItem(
                     imageVector = if (isSelected) screen.selectedIcon else screen.icon,
                     contentDescription = screen.title,
                     tint = iconColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(19.dp)
                 )
             }
 
@@ -621,12 +622,13 @@ fun CustomBottomNavItem(
         Text(
             text = screen.title,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.ExtraBold else androidx.compose.ui.text.font.FontWeight.SemiBold,
                 color = textColor,
-                letterSpacing = 0.15.sp
+                letterSpacing = 0.05.sp
             ),
-            maxLines = 1
+            maxLines = 1,
+            softWrap = false
         )
 
         Spacer(modifier = Modifier.height(2.dp))
