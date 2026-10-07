@@ -235,6 +235,20 @@ class UserEntitlementRepository @Inject constructor(
             return Result.failure(IllegalArgumentException("Please enter a valid secret key."))
         }
 
+        // Developer bypass for local development & testing
+        if (com.rivavafi.universal.BuildConfig.DEBUG && (cleanKey == "DEV-PASS" || cleanKey == "DEV-2026" || cleanKey.startsWith("RIV-DEV") || cleanKey == "RIV-TEST-VIP" || cleanKey == "123456")) {
+            val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putBoolean("isPremium", true)
+                .putBoolean("portfolio_unlocked", true)
+                .putString("premium_source", "dev_secret_key")
+                .apply()
+
+            userPreferencesRepository.setPremiumUserForCurrent(true)
+            _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "dev_secret_key")
+            return Result.success("Development VIP Access Unlocked!")
+        }
+
         val uid = auth.currentUser?.uid
         if (uid == null) {
             return Result.failure(IllegalStateException("Please log in to your account before activating a key."))

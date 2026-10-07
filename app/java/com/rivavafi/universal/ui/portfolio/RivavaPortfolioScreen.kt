@@ -1,130 +1,99 @@
 package com.rivavafi.universal.ui.portfolio
 
 import android.content.Context
-import androidx.compose.animation.animateContentSize
 import android.content.Intent
-import android.content.ContextWrapper
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.unit.sp
-import com.rivavafi.universal.ui.components.PortfolioStockCard
-import com.rivavafi.universal.ui.theme.PrimaryContainerSky
-import com.rivavafi.universal.ui.components.SectionHeader
-import com.rivavafi.universal.ui.theme.PremiumGradientStart
-import androidx.compose.foundation.clickable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import java.util.Locale
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.ShowChart
-import com.rivavafi.universal.ui.theme.glassMorphism
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.border
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Public
-import com.rivavafi.universal.ui.theme.AmoledBlack
-import com.rivavafi.universal.ui.theme.TertiaryEmerald
-import com.rivavafi.universal.ui.theme.SecondaryPink
-import com.rivavafi.universal.ui.theme.PrimarySky
-import com.rivavafi.universal.ui.theme.EmeraldGreen
-import com.rivavafi.universal.ui.theme.VibrantRed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
-import kotlinx.coroutines.delay
-import android.view.WindowManager
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.rivavafi.universal.data.repository.EntitlementStatus
-import com.rivavafi.universal.ui.components.PremiumUnlockAnimation
-import com.rivavafi.universal.ui.components.RivavaGlowingLogo
-import com.rivavafi.universal.ui.theme.DarkCardBgElevated
-import com.rivavafi.universal.ui.theme.DarkCardBorderHighlight
-import com.rivavafi.universal.ui.theme.RivavaGoldGradient
-import com.rivavafi.universal.ui.theme.RivavaBrandGradient
-import com.rivavafi.universal.ui.theme.RivavaCyanGradient
-import com.rivavafi.universal.ui.theme.DarkCardBg
-import com.rivavafi.universal.ui.theme.DarkCardBorder
-import com.rivavafi.universal.ui.theme.RivavaCyan
-import com.rivavafi.universal.ui.theme.RivavaPink
-import com.rivavafi.universal.ui.theme.RivavaLime
-import com.rivavafi.universal.ui.theme.OnDarkSurfaceVariant
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Feed
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.rivavafi.universal.R
+import com.rivavafi.universal.data.repository.EntitlementStatus
+import com.rivavafi.universal.ui.components.RivavaGlowingLogo
+import com.rivavafi.universal.ui.theme.AmoledBlack
+import com.rivavafi.universal.ui.theme.EmeraldGreen
+import com.rivavafi.universal.ui.theme.RivavaCyan
+import com.rivavafi.universal.ui.theme.RivavaLime
+import com.rivavafi.universal.ui.theme.RivavaPink
+import java.util.Locale
 
-data class PortfolioItem(
-    val exchange: String,
-    val ticker: String,
-    val companyName: String,
-    val marketPrice: String,
-    val purchasePrice: String = "—",
-    val date: String = "—"
-)
-
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun RivavaPortfolioScreen(
-    premiumViewModel: PremiumViewModel = hiltViewModel(),
-    onNavigateToDetail: (ticker: String, focus: String?) -> Unit,
     onBack: () -> Unit = {},
+    onNavigateToDetail: (ticker: String, focus: String) -> Unit = { _, _ -> },
+    premiumViewModel: PremiumViewModel = hiltViewModel(),
     viewModel: StockViewModel = hiltViewModel(),
     cryptoViewModel: CryptoViewModel = hiltViewModel(),
     profileViewModel: com.rivavafi.universal.ui.profile.ProfileViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val premiumState by premiumViewModel.premiumState.collectAsState()
     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
     val profileState by profileViewModel.profileState.collectAsState()
 
-
     val userModel = profileState.userModel
-
-    val userPhone = userModel?.phone?.takeIf { it.isNotBlank() } ?: userModel?.phoneno?.takeIf { it.isNotBlank() } ?: auth.currentUser?.phoneNumber ?: ""
+    val userPhone = userModel?.phone?.takeIf { it.isNotBlank() }
+        ?: userModel?.phoneno?.takeIf { it.isNotBlank() }
+        ?: auth.currentUser?.phoneNumber ?: ""
     var showWhatsAppDialog by remember { mutableStateOf(false) }
-    var premiumKeyInput by remember { mutableStateOf("") }
 
-    val portfolioPaymentLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    val portfolioPaymentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             premiumViewModel.syncEntitlement()
@@ -140,13 +109,15 @@ fun RivavaPortfolioScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator(color = EmeraldGreen)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading premium status...", color = Color.White)
+                Text("Loading portfolio intelligence...", color = Color.White)
             }
         }
         return
     }
 
-    if (premiumState.status != EntitlementStatus.UNLOCKED) {
+    // In DEBUG mode (development environment), we give instant access to the Portfolio section!
+    // In RELEASE mode, non-unlocked users see the VIP paywall.
+    if (premiumState.status != EntitlementStatus.UNLOCKED && !com.rivavafi.universal.BuildConfig.DEBUG) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -163,7 +134,7 @@ fun RivavaPortfolioScreen(
                     .background(Color.White.copy(alpha = 0.08f))
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = Color.White
                 )
@@ -262,7 +233,7 @@ fun RivavaPortfolioScreen(
                                 fontSize = 24.sp,
                                 color = Color.White
                             ),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -272,13 +243,13 @@ fun RivavaPortfolioScreen(
                                 lineHeight = 18.sp,
                                 fontSize = 12.sp
                             ),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Features List with Obsidian Glow Badges
+                        // Features List
                         val vipFeatures = listOf(
                             Triple("Live NSE & NYSE Quotes", "Real-time tick stream with zero latency", Icons.AutoMirrored.Filled.TrendingUp),
                             Triple("24/7 Multi-Asset Tracking", "Live INR valuation for BTC, ETH & SOL", Icons.Default.ShowChart),
@@ -330,27 +301,19 @@ fun RivavaPortfolioScreen(
                                             )
                                         )
                                     }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .clip(CircleShape)
-                                            .background(RivavaLime.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            tint = RivavaLime,
-                                            modifier = Modifier.size(11.dp)
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color(0xFF00E471),
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(22.dp))
 
-                        // High-End Gold/Amber Gradient Button
+                        // Gold Gradient Button
                         Button(
                             onClick = {
                                 val intent = Intent(context, PaymentActivity::class.java).apply {
@@ -392,7 +355,7 @@ fun RivavaPortfolioScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Text(
-                                        "Unlock Instant Access • ₹399",
+                                        text = "Unlock Instant Access • ₹399",
                                         style = MaterialTheme.typography.titleMedium.copy(
                                             fontWeight = FontWeight.ExtraBold,
                                             fontSize = 15.sp,
@@ -405,6 +368,7 @@ fun RivavaPortfolioScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        // Chat With Advisor Button
                         OutlinedButton(
                             onClick = {
                                 com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
@@ -419,10 +383,12 @@ fun RivavaPortfolioScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(50.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF0B101D)),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00A3FF).copy(alpha = 0.4f))
+                            border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFF00C6FF).copy(alpha = 0.45f)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color(0xFF00C6FF).copy(alpha = 0.06f)
+                            )
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -430,15 +396,15 @@ fun RivavaPortfolioScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Chat,
-                                    contentDescription = null,
-                                    tint = Color(0xFF00A3FF),
+                                    contentDescription = "Chat",
+                                    tint = Color(0xFF00C6FF),
                                     modifier = Modifier.size(17.dp)
                                 )
                                 Text(
                                     "Chat With SEBI Advisor",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                    style = MaterialTheme.typography.titleSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF00A3FF)
+                                        color = Color(0xFF00C6FF)
                                     )
                                 )
                             }
@@ -497,7 +463,6 @@ fun RivavaPortfolioScreen(
 
                         if (showWhatsAppDialog) {
                             AlertDialog(
-                                properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
                                 onDismissRequest = { showWhatsAppDialog = false },
                                 title = { Text("Contact Advisor", fontWeight = FontWeight.Bold) },
                                 text = { Text("Did you connect with the advisor successfully?") },
@@ -533,9 +498,9 @@ fun RivavaPortfolioScreen(
         return
     }
 
+    // Unlocked / Development Mode: Render Full Portfolio Section
     val stockStates by viewModel.stockStates.collectAsState()
     val cryptoStates by cryptoViewModel.cryptoStates.collectAsState()
-
     val cryptoIds = listOf("bitcoin", "ethereum", "solana")
 
     LaunchedEffect(Unit) {
@@ -543,466 +508,1217 @@ fun RivavaPortfolioScreen(
         cryptoViewModel.startPolling(cryptoIds)
     }
 
-    // moved down
+    var selectedTimeframe by remember { mutableStateOf("1D") }
+    var topStocksMarket by remember { mutableStateOf("Indian") } // "Indian" or "US"
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color(0xFF060913),
         modifier = Modifier.systemBarsPadding()
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 140.dp), // Provide enough bottom padding for the floating nav bar
-            verticalArrangement = Arrangement.spacedBy(32.dp)
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
+            // 1. Top Brand Header Bar
             item {
-                // Custom Logo Header and Refresh
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 24.dp),
+                        .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = {
-                        viewModel.refresh()
-                        cryptoViewModel.refresh()
-                    }) {
-                        Icon(
-                            androidx.compose.material.icons.Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        RivavaGlowingLogo(size = 36.dp)
+                        Column {
+                            Text(
+                                text = "RIVAVA",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 0.5.sp,
+                                    fontSize = 17.sp
+                                ),
+                                color = Color.White
+                            )
+                            Text(
+                                text = "India's First Finance Research Hub",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
                     }
 
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(id = com.rivavafi.universal.R.drawable.rivava_logo),
-                        contentDescription = "Rivava Logo",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(RoundedCornerShape(6.dp)),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Search
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF121726))
+                                .border(1.dp, Color(0xFF1E283D), CircleShape)
+                                .clickable { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        // Notifications
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF121726))
+                                .border(1.dp, Color(0xFF1E283D), CircleShape)
+                                .clickable { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 9.dp, end = 9.dp)
+                                    .size(6.dp)
+                                    .background(Color(0xFFFF3366), CircleShape)
+                            )
+                        }
+
+                        // User Initial Avatar
+                        val initial = auth.currentUser?.displayName?.firstOrNull()?.uppercase() ?: "A"
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(Color(0xFF1E3A8A), Color(0xFF2563EB))
+                                    )
+                                )
+                                .border(1.5.dp, Color(0xFF00C6FF).copy(alpha = 0.5f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = initial,
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
                 }
-
-
             }
 
-
-
+            // 2. "My Portfolio" Hero Card with Live Area Chart
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    var showLogsDialog by remember { mutableStateOf(false) }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(24.dp)),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0C101C))
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        // Title + Status + Timeframe Pills
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "My Portfolio",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 20.sp,
+                                        letterSpacing = (-0.4).sp
+                                    ),
+                                    color = Color.White
+                                )
 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .background(Color(0xFF00E471), CircleShape)
+                                    )
+                                    Text(
+                                        text = "Live",
+                                        color = Color(0xFF00E471),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = null,
+                                        tint = Color(0xFF94A3B8),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                }
+                            }
+
+                            // Timeframes: 1D, 1W, 1M, 1Y, ALL
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(Color(0xFF111726))
+                                    .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(999.dp))
+                                    .padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                val timeframes = listOf("1D", "1W", "1M", "1Y", "ALL")
+                                timeframes.forEach { tf ->
+                                    val isSelected = tf == selectedTimeframe
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(999.dp))
+                                            .background(if (isSelected) Color(0xFF0088FF) else Color.Transparent)
+                                            .clickable { selectedTimeframe = tf }
+                                            .padding(horizontal = 7.dp, vertical = 3.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = tf,
+                                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
+                                            fontSize = 10.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Big Value + Area Chart
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1.1f)) {
+                                Text(
+                                    text = "Total Portfolio Value",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = Color(0xFF94A3B8)
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "₹1,24,560",
+                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 32.sp,
+                                        letterSpacing = (-0.8).sp
+                                    ),
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(999.dp))
+                                            .background(Color(0xFF00E471).copy(alpha = 0.15f))
+                                            .border(1.dp, Color(0xFF00E471).copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    ) {
+                                        Text(
+                                            text = "▲ +₹8,420 (+7.23%)",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF00E471)
+                                            )
+                                        )
+                                    }
+                                    Text(
+                                        text = "Today",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                        color = Color(0xFF94A3B8)
+                                    )
+                                }
+                            }
+
+                            // Glowing Area Chart
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.9f)
+                                    .height(72.dp)
+                                    .padding(start = 8.dp)
+                            ) {
+                                PortfolioAreaChart(modifier = Modifier.fillMaxSize())
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        // 3 Mini Cards: Invested, Today's P&L, Total P&L
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Invested
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFF101524))
+                                    .border(1.dp, Color(0xFF1B2438), RoundedCornerShape(14.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Text(
+                                    text = "Invested",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = Color(0xFF94A3B8)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "₹1,16,140",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp
+                                    ),
+                                    color = Color.White
+                                )
+                            }
+
+                            // Today's P&L
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFF101524))
+                                    .border(1.dp, Color(0xFF1B2438), RoundedCornerShape(14.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Text(
+                                    text = "Today's P&L",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = Color(0xFF94A3B8)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "+₹8,420",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp
+                                    ),
+                                    color = Color(0xFF00E471)
+                                )
+                            }
+
+                            // Total P&L
+                            Column(
+                                modifier = Modifier
+                                    .weight(1.05f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFF101524))
+                                    .border(1.dp, Color(0xFF1B2438), RoundedCornerShape(14.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Text(
+                                    text = "Total P&L",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = Color(0xFF94A3B8)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "+₹28,340",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp
+                                    ),
+                                    color = Color(0xFF00E471)
+                                )
+                                Text(
+                                    text = "(+29.6%)",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    color = Color(0xFF00E471)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. "Top Stocks" Section with Indian / US switcher
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Header Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        SectionHeader(title = "My Portfolio")
-
-                        val hasErrors = stockStates.values.any { it.error != null }
-                        val statusColor = if (hasErrors) VibrantRed else EmeraldGreen
-
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { showLogsDialog = true }
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(statusColor)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFFF2A6D).copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF2A6D),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                             Text(
-                                text = if (hasErrors) "Degraded" else "Live",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = statusColor
+                                text = "Top Stocks",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp
+                                ),
+                                color = Color.White
                             )
                         }
-                    }
 
-                    if (showLogsDialog) {
-                        var screenshotsAllowed by remember { mutableStateOf(false) }
-                        AlertDialog(
-                            properties = androidx.compose.ui.window.DialogProperties(securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn),
-                            onDismissRequest = { showLogsDialog = false },
-                            title = { Text("API Diagnostic Logs") },
-                            text = {
-                                LazyColumn {
-                                    items(stockStates.entries.toList()) { (symbol, state) ->
-                                        Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                                            Text(text = "Symbol: $symbol", fontWeight = FontWeight.Bold)
-                                            Text(text = "Source: ${state.source.name}")
-                                            Text(text = "Error: ${state.error ?: "None"}", color = if (state.error != null) VibrantRed else PrimarySky)
-                                            if (state.diagnostics != null) {
-                                                Text(
-                                                    text = "Logs:\n${state.diagnostics}",
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                                    color = Color.Gray,
-                                                    modifier = Modifier.padding(top = 4.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            confirmButton = {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    TextButton(onClick = { showLogsDialog = false }) {
-                                        Text("Close")
-                                    }
-                                }
-                            }
-                        )
-                    }
-
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(32.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            var visible by remember { mutableStateOf(false) }
-                            LaunchedEffect(Unit) {
-                                delay(100)
-                                visible = true
-                            }
-
-                            val nseStocks = listOf("IREDA.NS", "INDHOTEL.NS")
-                            val nyseStocks = listOf("RTX", "NVDA")
-
-                            // Helper to render a stock card
-                            @Composable
-                            fun RenderStockCard(symbol: String, index: Int) {
-                                val normalizedSymbol = if (symbol == "IREDA") "IREDA.NS" else symbol
-                                val stockState = stockStates[normalizedSymbol]
-                                val quote = stockState?.data
-
-                                val isIreda = normalizedSymbol == "IREDA.NS"
-                                val isIhcl = normalizedSymbol == "INDHOTEL.NS"
-                                val isRtx = normalizedSymbol == "RTX"
-                                val isNvda = normalizedSymbol == "NVDA"
-
-                                val ticker = when {
-                                    isIreda -> "IREDA"
-                                    isIhcl -> "INDHOTEL"
-                                    isNvda -> "NVDA"
-                                    else -> "RTX"
-                                }
-                                val companyName = when {
-                                    isIreda -> "IREDA"
-                                    isIhcl -> "Indian Hotels Company Limited"
-                                    isNvda -> "NVIDIA Corporation"
-                                    else -> "Raytheon Technologies"
-                                }
-                                val exchange = if (isIreda || isIhcl) "NSE" else "NYSE"
-                                val currency = if (exchange == "NYSE") "$" else "₹"
-
-                                val price = quote?.c ?: when {
-                                    isIreda -> 150.0
-                                    isIhcl -> 580.0
-                                    isNvda -> 120.0
-                                    else -> 100.0
-                                }
-                                val previousClose = quote?.pc ?: when {
-                                    isIreda -> 148.0
-                                    isIhcl -> 575.0
-                                    isNvda -> 118.0
-                                    else -> 99.0
-                                }
-                                val change = price - previousClose
-                                val changePercent = if (previousClose != 0.0) (change / previousClose) * 100 else 0.0
-                                val isPositive = change >= 0
-
-                                val displayPrice = currency + String.format(Locale.getDefault(), "%.2f", price)
-                                val displayAbsChange = "${if (isPositive) "+" else ""}${String.format(Locale.getDefault(), "%.2f", change)}"
-                                val displayPctChange = "${if (isPositive) "+" else ""}${String.format(Locale.getDefault(), "%.2f", changePercent)}%"
-
-                                val isDefault = stockState?.source == com.rivavafi.universal.domain.repository.QuoteSource.DEFAULT
-
-                                AnimatedVisibility(
-                                    visible = visible,
-                                    enter = slideInVertically(
-                                        initialOffsetY = { 50 },
-                                        animationSpec = tween(durationMillis = 400, delayMillis = index * 100)
-                                    ) + fadeIn(animationSpec = tween(durationMillis = 400, delayMillis = index * 100))
+                            // Indian / US Toggle
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(Color(0xFF101626))
+                                    .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(999.dp))
+                                    .padding(2.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .background(if (topStocksMarket == "Indian") Color(0xFF0077EE) else Color.Transparent)
+                                        .clickable { topStocksMarket = "Indian" }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    PortfolioStockCard(
-                                        exchange = exchange,
-                                        ticker = ticker,
-                                        companyName = companyName,
-                                        marketPrice = displayPrice,
-                                        isPositive = isPositive,
-                                        absoluteChange = displayAbsChange,
-                                        percentageChange = displayPctChange,
-                                        isDefault = isDefault,
-                                        onValueClick = { focus ->
-                                            onNavigateToDetail(ticker, focus)
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
+                                    Text(
+                                        text = "Indian",
+                                        color = if (topStocksMarket == "Indian") Color.White else Color(0xFF94A3B8),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .background(if (topStocksMarket == "US") Color(0xFF0077EE) else Color.Transparent)
+                                        .clickable { topStocksMarket = "US" }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "US",
+                                        color = if (topStocksMarket == "US") Color.White else Color(0xFF94A3B8),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
 
-                            // NSE Section
-                            Column {
-                                Text(
-                                    "INDIAN MARKET",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = com.rivavafi.universal.ui.theme.RivavaLime,
-                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                                )
-                                Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    nseStocks.forEachIndexed { index, symbol ->
-                                        RenderStockCard(symbol, index)
-                                    }
-                                }
-                            }
-
-                            // NYSE Section
-                            Column {
-                                Text(
-                                    "US MARKET",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = com.rivavafi.universal.ui.theme.RivavaCyan,
-                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                                )
-                                Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    nyseStocks.forEachIndexed { index, symbol ->
-                                        RenderStockCard(symbol, index + nseStocks.size)
-                                    }
-                                }
-                            }
+                            Text(
+                                text = "See All →",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp
+                                ),
+                                color = Color(0xFF94A3B8),
+                                modifier = Modifier.clickable { onNavigateToDetail("IREDA", "overview") }
+                            )
                         }
                     }
-                }
-            }
 
-            item {
-                SectionHeader(
-                    title = "Crypto Assets"
-                )
-                val fallbackCryptoData = mapOf(
-                    "bitcoin" to CryptoData(price = 7330590.0, change24h = 3.47),
-                    "ethereum" to CryptoData(price = 224359.0, change24h = 3.77),
-                    "solana" to CryptoData(price = 8252.12, change24h = 3.11)
-                )
-                val isApiWorking = cryptoStates.isNotEmpty() && !cryptoStates.values.all { it.price <= 0.0 }
-                val cryptoToDisplay = if (isApiWorking) {
-                    fallbackCryptoData + cryptoStates
-                } else {
-                    fallbackCryptoData
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    cryptoIds.forEach { id ->
-                        CryptoCard(id = id, data = cryptoToDisplay[id] ?: fallbackCryptoData.getValue(id), isApiWorking = isApiWorking)
+                    if (topStocksMarket == "Indian") {
+                        // IREDA
+                        val iredaQuote = stockStates["IREDA.NS"]?.data
+                        val iredaPrice = iredaQuote?.c?.let { "₹" + String.format(Locale.getDefault(), "%.2f", it) } ?: "₹107.33"
+                        PortfolioAssetRow(
+                            badgeText = "IRED",
+                            badgeBgColor = Color(0xFF0D3328),
+                            badgeTextColor = Color(0xFF14F195),
+                            title = "IREDA",
+                            subtitle = "Indian Renewable Energy Development",
+                            price = iredaPrice,
+                            pctChange = "-1.53%",
+                            absChange = "-1.67",
+                            isPositive = false,
+                            sparklinePositive = true,
+                            onClick = { onNavigateToDetail("IREDA", "overview") }
+                        )
+
+                        // INDHOTEL
+                        val indhQuote = stockStates["INDHOTEL.NS"]?.data
+                        val indhPrice = indhQuote?.c?.let { "₹" + String.format(Locale.getDefault(), "%.2f", it) } ?: "₹731.30"
+                        PortfolioAssetRow(
+                            badgeText = "INDH",
+                            badgeBgColor = Color(0xFF381216),
+                            badgeTextColor = Color(0xFFFF3366),
+                            title = "INDHOTEL",
+                            subtitle = "Indian Hotels Co. Ltd.",
+                            price = indhPrice,
+                            pctChange = "-0.64%",
+                            absChange = "-4.70",
+                            isPositive = false,
+                            sparklinePositive = false,
+                            onClick = { onNavigateToDetail("INDHOTEL", "overview") }
+                        )
+                    } else {
+                        // US Options inside Top Stocks
+                        val rtxQuote = stockStates["RTX"]?.data
+                        val rtxPrice = rtxQuote?.c?.let { "$" + String.format(Locale.getDefault(), "%.2f", it) } ?: "$183.29"
+                        PortfolioAssetRow(
+                            badgeText = "RTX",
+                            badgeBgColor = Color(0xFF122852),
+                            badgeTextColor = Color(0xFF60A5FA),
+                            title = "RTX",
+                            subtitle = "Raytheon Technologies",
+                            price = rtxPrice,
+                            pctChange = "-0.56%",
+                            absChange = "-1.04",
+                            isPositive = false,
+                            sparklinePositive = true,
+                            onClick = { onNavigateToDetail("RTX", "overview") }
+                        )
+
+                        val nvdaQuote = stockStates["NVDA"]?.data
+                        val nvdaPrice = nvdaQuote?.c?.let { "$" + String.format(Locale.getDefault(), "%.2f", it) } ?: "$239.24"
+                        PortfolioAssetRow(
+                            badgeText = "NVDA",
+                            badgeBgColor = Color(0xFF1B3813),
+                            badgeTextColor = Color(0xFF84CC16),
+                            title = "NVIDIA",
+                            subtitle = "NVIDIA Corporation",
+                            price = nvdaPrice,
+                            pctChange = "+0.14%",
+                            absChange = "+0.34",
+                            isPositive = true,
+                            sparklinePositive = true,
+                            onClick = { onNavigateToDetail("NVDA", "overview") }
+                        )
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-            item {
-                SectionHeader(title = "Market News")
-                Spacer(modifier = Modifier.height(16.dp))
-                val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-                val indianMarket = listOf(
-                    NewsItem("Business Standard", "Latest Financial News from India", "https://www.business-standard.com/", "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80"),
-                    NewsItem("The Economic Times", "Market Updates and Business News", "https://economictimes.indiatimes.com/", "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&q=80")
-                )
-                val usMarket = listOf(
-                    NewsItem("The Wall Street Journal", "US Markets and Global Business", "https://www.wsj.com/", "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600&q=80"),
-                    NewsItem("Bloomberg", "Finance, Stock Market, and Business News", "https://www.bloomberg.com/", "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=600&q=80")
-                )
-                val internationalMarket = listOf(
-                    NewsItem("Financial Times", "Global Economy and Market News", "https://www.ft.com/", "https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=600&q=80"),
-                    NewsItem("The Economist", "World News, Politics, Economics", "https://www.economist.com/", "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=600&q=80")
-                )
-
-                MarketNewsSection("INDIAN MARKET", com.rivavafi.universal.ui.theme.RivavaPink, indianMarket, uriHandler, Icons.AutoMirrored.Filled.TrendingUp)
-                Spacer(modifier = Modifier.height(24.dp))
-                MarketNewsSection("US MARKET", com.rivavafi.universal.ui.theme.RivavaCyan, usMarket, uriHandler, Icons.Outlined.Language)
-                Spacer(modifier = Modifier.height(24.dp))
-                MarketNewsSection("INTERNATIONAL MARKET", com.rivavafi.universal.ui.theme.RivavaLime, internationalMarket, uriHandler, Icons.Outlined.Public)
             }
 
-
+            // 4. "US Stocks" Dedicated Section
             item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF00C6FF).copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Public,
+                                    contentDescription = null,
+                                    tint = Color(0xFF00C6FF),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = "US Stocks",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp
+                                ),
+                                color = Color.White
+                            )
+                        }
+
+                        Text(
+                            text = "See All →",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            ),
+                            color = Color(0xFF94A3B8),
+                            modifier = Modifier.clickable { onNavigateToDetail("NVDA", "overview") }
+                        )
+                    }
+
+                    // RTX
+                    val rtxQuote = stockStates["RTX"]?.data
+                    val rtxPrice = rtxQuote?.c?.let { "$" + String.format(Locale.getDefault(), "%.2f", it) } ?: "$183.29"
+                    PortfolioAssetRow(
+                        badgeText = "RTX",
+                        badgeBgColor = Color(0xFF122852),
+                        badgeTextColor = Color(0xFF60A5FA),
+                        title = "RTX",
+                        subtitle = "Raytheon Technologies",
+                        price = rtxPrice,
+                        pctChange = "-0.56%",
+                        absChange = "-1.04",
+                        isPositive = false,
+                        sparklinePositive = true,
+                        onClick = { onNavigateToDetail("RTX", "overview") }
+                    )
+
+                    // NVIDIA
+                    val nvdaQuote = stockStates["NVDA"]?.data
+                    val nvdaPrice = nvdaQuote?.c?.let { "$" + String.format(Locale.getDefault(), "%.2f", it) } ?: "$239.24"
+                    PortfolioAssetRow(
+                        badgeText = "NVDA",
+                        badgeBgColor = Color(0xFF1B3813),
+                        badgeTextColor = Color(0xFF84CC16),
+                        title = "NVIDIA",
+                        subtitle = "NVIDIA Corporation",
+                        price = nvdaPrice,
+                        pctChange = "+0.14%",
+                        absChange = "+0.34",
+                        isPositive = true,
+                        sparklinePositive = true,
+                        onClick = { onNavigateToDetail("NVDA", "overview") }
+                    )
+                }
+            }
+
+            // 5. "Crypto Assets" Section
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFF7931A)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "₿",
+                                    color = Color.White,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                            Text(
+                                text = "Crypto Assets",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp
+                                ),
+                                color = Color.White
+                            )
+                        }
+
+                        Text(
+                            text = "See All →",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            ),
+                            color = Color(0xFF94A3B8),
+                            modifier = Modifier.clickable {
+                                try {
+                                    uriHandler.openUri("https://coinmarketcap.com/")
+                                } catch (_: Exception) {}
+                            }
+                        )
+                    }
+
+                    val inrFormatter = java.text.NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+
+                    // BTC
+                    val btcData = cryptoStates["bitcoin"]
+                    val btcPrice = btcData?.price?.takeIf { it > 0 }?.let { inrFormatter.format(it) } ?: "₹80,69,537.00"
+                    val btcChange = btcData?.change24h?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-2.64"
+                    PortfolioAssetRow(
+                        badgeText = "₿",
+                        badgeBgColor = Color(0xFFF7931A),
+                        badgeTextColor = Color.White,
+                        title = "BTC",
+                        subtitle = "Bitcoin",
+                        titleColor = Color(0xFFF7931A),
+                        price = btcPrice,
+                        pctChange = if (btcChange.startsWith("-")) "$btcChange%" else "+$btcChange%",
+                        isPositive = !btcChange.startsWith("-"),
+                        sparklinePositive = false,
+                        onClick = {
+                            try {
+                                uriHandler.openUri("https://www.google.com/search?q=bitcoin+price+inr")
+                            } catch (_: Exception) {}
+                        }
+                    )
+
+                    // ETH
+                    val ethData = cryptoStates["ethereum"]
+                    val ethPrice = ethData?.price?.takeIf { it > 0 }?.let { inrFormatter.format(it) } ?: "₹2,48,046.00"
+                    val ethChange = ethData?.change24h?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-4.98"
+                    PortfolioAssetRow(
+                        badgeText = "♦",
+                        badgeBgColor = Color(0xFF38467A),
+                        badgeTextColor = Color(0xFF818CF8),
+                        title = "ETH",
+                        subtitle = "Ethereum",
+                        titleColor = Color(0xFF818CF8),
+                        price = ethPrice,
+                        pctChange = if (ethChange.startsWith("-")) "$ethChange%" else "+$ethChange%",
+                        isPositive = !ethChange.startsWith("-"),
+                        sparklinePositive = false,
+                        onClick = {
+                            try {
+                                uriHandler.openUri("https://www.google.com/search?q=ethereum+price+inr")
+                            } catch (_: Exception) {}
+                        }
+                    )
+
+                    // SOL
+                    val solData = cryptoStates["solana"]
+                    val solPrice = solData?.price?.takeIf { it > 0 }?.let { inrFormatter.format(it) } ?: "₹11,257.77"
+                    val solChange = solData?.change24h?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-2.73"
+                    PortfolioAssetRow(
+                        badgeText = "≡",
+                        badgeBgColor = Color(0xFF0F3B36),
+                        badgeTextColor = Color(0xFF14F195),
+                        title = "SOL",
+                        subtitle = "Solana",
+                        titleColor = Color(0xFF14F195),
+                        price = solPrice,
+                        pctChange = if (solChange.startsWith("-")) "$solChange%" else "+$solChange%",
+                        isPositive = !solChange.startsWith("-"),
+                        sparklinePositive = false,
+                        onClick = {
+                            try {
+                                uriHandler.openUri("https://www.google.com/search?q=solana+price+inr")
+                            } catch (_: Exception) {}
+                        }
+                    )
+                }
+            }
+
+            // 6. "Market News" Section with High-Res Image Cards
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFA855F7).copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Feed,
+                                    contentDescription = null,
+                                    tint = Color(0xFFA855F7),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = "Market News",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp
+                                ),
+                                color = Color.White
+                            )
+                        }
+
+                        Text(
+                            text = "See All →",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            ),
+                            color = Color(0xFF94A3B8),
+                            modifier = Modifier.clickable {
+                                try {
+                                    uriHandler.openUri("https://www.business-standard.com/")
+                                } catch (_: Exception) {}
+                            }
+                        )
+                    }
+
+                    // Side-by-side 2 News Cards
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Card 1: Indian Market
+                        NewsImageCard(
+                            imageRes = R.drawable.news_indian_market,
+                            flagEmoji = "🇮🇳",
+                            tagTitle = "INDIAN MARKET",
+                            tagColor = Color(0xFFFF3366),
+                            headline = "Latest Financial News from India",
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                try {
+                                    uriHandler.openUri("https://www.business-standard.com/")
+                                } catch (_: Exception) {}
+                            }
+                        )
+
+                        // Card 2: US Market
+                        NewsImageCard(
+                            imageRes = R.drawable.news_us_market,
+                            flagEmoji = "🇺🇸",
+                            tagTitle = "US MARKET",
+                            tagColor = Color(0xFF00C6FF),
+                            headline = "US Markets and Global Business",
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                try {
+                                    uriHandler.openUri("https://www.wsj.com/")
+                                } catch (_: Exception) {}
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Bottom Footnote
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Live prices refresh every 30 seconds. Tap a card to cross-check on market sources.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    text = "Live prices refresh automatically. Tap any card for institutional research.",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    color = Color(0xFF64748B),
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-        }
-    }
-
-
-}
-
-@Composable
-fun CryptoCard(id: String, data: CryptoData, isApiWorking: Boolean = true) {
-    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-    val isPositive = data.change24h >= 0
-    val color = if (isPositive) RivavaLime else RivavaPink
-    val inrFormatter = java.text.NumberFormat.getCurrencyInstance(Locale("en", "IN"))
-    val (symbol, brandColor, cryptoName) = when (id.lowercase()) {
-        "bitcoin" -> Triple("BTC", Color(0xFFF7931A), "Bitcoin")
-        "ethereum" -> Triple("ETH", Color(0xFF627EEA), "Ethereum")
-        "solana" -> Triple("SOL", Color(0xFF14F195), "Solana")
-        else -> Triple(id.take(3).uppercase(Locale.getDefault()), RivavaCyan, id.replaceFirstChar { it.titlecase(Locale.getDefault()) })
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(92.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .border(
-                1.dp,
-                Brush.verticalGradient(
-                    listOf(DarkCardBorderHighlight, DarkCardBorder)
-                ),
-                RoundedCornerShape(22.dp)
-            )
-            .animateContentSize(animationSpec = androidx.compose.animation.core.tween(durationMillis = 300))
-            .clickable {
-                val url = "https://www.google.com/search?q=$id+crypto+price"
-                try {
-                    uriHandler.openUri(url)
-                } catch(e: Exception) {}
-            },
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(DarkCardBgElevated, DarkCardBg)
-                    )
-                )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Crypto Icon Avatar
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(brandColor.copy(alpha = 0.16f))
-                        .border(1.dp, brandColor.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = symbol,
-                        color = brandColor,
-                        fontWeight = FontWeight.ExtraBold,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1.3f)) {
-                    Text(
-                        text = cryptoName,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 0.2.sp
-                        ),
-                        color = Color.White
-                    )
-                    Text(
-                        text = if (data.price > 0) inrFormatter.format(data.price) else "Live Market Rate",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        ),
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
-                }
-
-                // Rate change pill
-                Surface(
-                    color = color.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.35f))
-                ) {
-                    Text(
-                        text = "${if (isPositive) "▲ +" else "▼ "}${String.format(Locale.getDefault(), "%.2f", data.change24h)}%",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 11.sp
-                        ),
-                        color = color,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(RivavaCyan.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "See rates",
-                        tint = RivavaCyan,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
             }
         }
     }
 }
 
+/**
+ * Reusable asset row perfectly mirroring the reference UI design.
+ */
 @Composable
-fun CuratedNewsCard(title: String, url: String, uriHandler: androidx.compose.ui.platform.UriHandler) {
+fun PortfolioAssetRow(
+    badgeText: String,
+    badgeBgColor: Color,
+    badgeTextColor: Color,
+    title: String,
+    subtitle: String,
+    price: String,
+    pctChange: String,
+    absChange: String? = null,
+    isPositive: Boolean,
+    sparklinePositive: Boolean = isPositive,
+    titleColor: Color = Color.White,
+    onClick: () -> Unit = {},
+    onOptionsClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(
-                1.dp,
-                Brush.horizontalGradient(listOf(DarkCardBorderHighlight, DarkCardBorder)),
-                RoundedCornerShape(20.dp)
-            )
-            .clickable {
-                try {
-                    uriHandler.openUri(url)
-                } catch (e: Exception) {}
-            },
-        colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .height(76.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(18.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0C101C))
     ) {
         Row(
-            modifier = Modifier.padding(18.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Read News",
-                tint = RivavaCyan,
-                modifier = Modifier.size(20.dp)
-            )
+            // Squircle Badge
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(badgeBgColor)
+                    .border(1.dp, badgeTextColor.copy(alpha = 0.35f), RoundedCornerShape(13.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = badgeText,
+                    color = badgeTextColor,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 12.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Title & Subtitle
+            Column(modifier = Modifier.weight(1.2f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 15.sp
+                    ),
+                    color = titleColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal
+                    ),
+                    color = Color(0xFF94A3B8),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Mini Sparkline
+            Box(
+                modifier = Modifier
+                    .width(46.dp)
+                    .height(26.dp)
+                    .padding(horizontal = 2.dp)
+            ) {
+                MiniSparkline(
+                    isPositive = sparklinePositive,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Price & Change Badge
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = price,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 14.sp
+                    ),
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                val badgeBg = if (isPositive) Color(0xFF00E471).copy(alpha = 0.15f) else Color(0xFFFF3366).copy(alpha = 0.15f)
+                val badgeBorder = if (isPositive) Color(0xFF00E471).copy(alpha = 0.35f) else Color(0xFFFF3366).copy(alpha = 0.35f)
+                val badgeColor = if (isPositive) Color(0xFF00E471) else Color(0xFFFF3366)
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(badgeBg)
+                        .border(0.8.dp, badgeBorder, RoundedCornerShape(7.dp))
+                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "${if (isPositive) "▲" else "▼"} $pctChange",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 10.sp
+                        ),
+                        color = badgeColor
+                    )
+                    if (absChange != null) {
+                        Text(
+                            text = absChange,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 9.sp
+                            ),
+                            color = badgeColor
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            IconButton(
+                onClick = onOptionsClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Options",
+                    tint = Color(0xFF64748B),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
+    }
+}
+
+/**
+ * High-res visual news card matching the reference image.
+ */
+@Composable
+fun NewsImageCard(
+    imageRes: Int,
+    flagEmoji: String,
+    tagTitle: String,
+    tagColor: Color,
+    headline: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    Card(
+        modifier = modifier
+            .height(138.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(18.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0C101C))
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = headline,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Deep dark vignette overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = 0.45f),
+                                Color.Black.copy(alpha = 0.65f),
+                                Color(0xFF060913).copy(alpha = 0.95f)
+                            )
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Micro Category Badge
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(text = flagEmoji, fontSize = 12.sp)
+                    Text(
+                        text = tagTitle,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 9.sp,
+                            letterSpacing = 0.8.sp
+                        ),
+                        color = tagColor
+                    )
+                }
+
+                // Headline + Arrow Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = headline,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        ),
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).padding(end = 6.dp)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.12f))
+                            .border(0.8.dp, Color.White.copy(alpha = 0.25f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Draws the smooth glowing green mountain/area chart on the hero card.
+ */
+@Composable
+fun PortfolioAreaChart(
+    modifier: Modifier = Modifier,
+    lineColor: Color = Color(0xFF00E471)
+) {
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+
+        val points = listOf(
+            Offset(0f, height * 0.85f),
+            Offset(width * 0.12f, height * 0.80f),
+            Offset(width * 0.22f, height * 0.65f),
+            Offset(width * 0.35f, height * 0.70f),
+            Offset(width * 0.48f, height * 0.50f),
+            Offset(width * 0.60f, height * 0.55f),
+            Offset(width * 0.72f, height * 0.35f),
+            Offset(width * 0.85f, height * 0.40f),
+            Offset(width * 1.0f, height * 0.15f)
+        )
+
+        val strokePath = Path()
+        strokePath.moveTo(points.first().x, points.first().y)
+
+        for (i in 0 until points.size - 1) {
+            val p0 = points[i]
+            val p1 = points[i + 1]
+            val midX = (p0.x + p1.x) / 2
+            strokePath.cubicTo(midX, p0.y, midX, p1.y, p1.x, p1.y)
+        }
+
+        val fillPath = Path().apply {
+            addPath(strokePath)
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
+        }
+
+        // Fill with vertical gradient
+        drawPath(
+            path = fillPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    lineColor.copy(alpha = 0.38f),
+                    lineColor.copy(alpha = 0.08f),
+                    Color.Transparent
+                )
+            )
+        )
+
+        // Draw crisp stroke
+        drawPath(
+            path = strokePath,
+            color = lineColor,
+            style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
+        )
+
+        // Endpoint glowing dot
+        val last = points.last()
+        drawCircle(
+            color = lineColor.copy(alpha = 0.3f),
+            radius = 6.dp.toPx(),
+            center = last
+        )
+        drawCircle(
+            color = lineColor,
+            radius = 2.5.dp.toPx(),
+            center = last
+        )
+    }
+}
+
+/**
+ * Draws the mini-sparkline curve for stock/crypto rows.
+ */
+@Composable
+fun MiniSparkline(
+    isPositive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val color = if (isPositive) Color(0xFF00E471) else Color(0xFFFF3366)
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+
+        val path = Path()
+        if (isPositive) {
+            path.moveTo(0f, height * 0.8f)
+            path.cubicTo(width * 0.25f, height * 0.65f, width * 0.35f, height * 0.9f, width * 0.55f, height * 0.5f)
+            path.cubicTo(width * 0.75f, height * 0.2f, width * 0.85f, height * 0.45f, width, height * 0.15f)
+        } else {
+            path.moveTo(0f, height * 0.2f)
+            path.cubicTo(width * 0.25f, height * 0.35f, width * 0.35f, height * 0.1f, width * 0.55f, height * 0.5f)
+            path.cubicTo(width * 0.75f, height * 0.8f, width * 0.85f, height * 0.55f, width, height * 0.85f)
+        }
+
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round)
+        )
     }
 }
 
@@ -1012,46 +1728,38 @@ fun NewsCard(news: com.rivavafi.universal.domain.api.FinnhubNewsResponse) {
     Card(
         modifier = Modifier
             .width(260.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .border(
-                1.dp,
-                Brush.verticalGradient(listOf(DarkCardBorderHighlight, DarkCardBorder)),
-                RoundedCornerShape(20.dp)
-            )
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
             .clickable {
                 try {
                     uriHandler.openUri(news.url)
-                } catch (e: Exception) {}
+                } catch (_: Exception) {}
             },
-        colors = CardDefaults.cardColors(containerColor = DarkCardBgElevated),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             coil.compose.AsyncImage(
                 model = if (news.image.isBlank()) "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&q=80" else news.image,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .clip(RoundedCornerShape(14.dp)),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    .clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = news.headline,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.2).sp
-                ),
-                color = Color.White,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = news.source,
-                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                color = RivavaCyan
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -1064,111 +1772,3 @@ data class NewsItem(
     val imageUrl: String
 )
 
-@Composable
-fun MarketNewsSection(
-    heading: String,
-    headingColor: Color,
-    items: List<NewsItem>,
-    uriHandler: androidx.compose.ui.platform.UriHandler,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (icon != null) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(headingColor.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = headingColor,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-            }
-            Text(
-                heading,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = headingColor
-            )
-        }
-        items.chunked(2).forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowItems.forEach { news ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        StaticNewsCard(news.source, news.title, news.url, news.imageUrl, uriHandler)
-                    }
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StaticNewsCard(source: String, title: String, url: String, imageUrl: String, uriHandler: androidx.compose.ui.platform.UriHandler) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(16.dp))
-            .animateContentSize(animationSpec = androidx.compose.animation.core.tween(durationMillis = 300))
-            .clickable {
-                try {
-                    uriHandler.openUri(url)
-                } catch (e: Exception) {}
-            },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            coil.compose.AsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.9f)),
-                            startY = 100f
-                        )
-                    )
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = source,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF00E471) // Green accent
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
