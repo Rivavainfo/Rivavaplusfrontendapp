@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -236,25 +237,28 @@ fun PremiumUnlockDialog(
                                 Text("Verify & Unlock", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.White))
                             }
 
-                            Button(
+                            OutlinedButton(
                                 onClick = {
-                                    if (onPayClick != null) {
-                                        onPayClick()
-                                    } else {
-                                        val intent = android.content.Intent(context, PaymentActivity::class.java).apply {
-                                            putExtra("plan", "portfolio_premium")
-                                            putExtra("amountPaise", 39900)
-                                            putExtra("title", "Rivava Portfolio Premium")
-                                        }
-                                        context.startActivity(intent)
-                                    }
+                                    val requestMsg = "Hello Rivava Team, I would like to speak with an advisor regarding Rivava Elite Portfolio access. Please guide me through the activation process."
+                                    com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, requestMsg)
                                 },
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37), contentColor = Color.Black),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF00C6FF).copy(alpha = 0.08f)),
                                 shape = RoundedCornerShape(18.dp),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp)
+                                border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFF00C6FF).copy(alpha = 0.5f))
                             ) {
-                                Text("Pay ₹399 & Unlock Instantly", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.Black))
+                                Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = Color(0xFF00C6FF))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Chat with Advisor on WhatsApp", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00C6FF)))
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    val keyReqMsg = "Hello Rivava Team, I am requesting a secret activation key for my Rivava Elite Portfolio access."
+                                    com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, keyReqMsg)
+                                }
+                            ) {
+                                Text("Request Secret Key via WhatsApp", color = Color(0xFF94A3B8), fontSize = 12.sp)
                             }
 
                             OutlinedButton(
