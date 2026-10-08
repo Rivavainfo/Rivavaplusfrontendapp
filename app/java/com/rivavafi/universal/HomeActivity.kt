@@ -7,14 +7,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.outlined.ListAlt
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -33,6 +32,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
 import androidx.compose.animation.AnimatedVisibility
@@ -40,6 +40,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.rivavafi.universal.ui.theme.bounceClick
@@ -78,35 +79,41 @@ import kotlinx.coroutines.runBlocking
 import androidx.compose.foundation.layout.fillMaxSize
 import javax.inject.Inject
 
-sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    object Auth : Screen("auth", "Auth", Icons.Outlined.Home)
-    object Welcome : Screen("welcome", "Welcome", Icons.Outlined.Home)
-    object Greeting : Screen("greeting", "Greeting", Icons.Outlined.Home)
-    object PhoneInput : Screen("phone_input", "Phone Input", Icons.Outlined.Home)
-    object OtpVerification : Screen("otp_verification", "OTP Verification", Icons.Outlined.Home)
-    object SmsOptIn : Screen("sms_opt_in", "SmsOptIn", Icons.Outlined.Home)
-    object SmsConsent : Screen("sms_consent", "SmsConsent", Icons.Outlined.Home)
-    object Scanning : Screen("scanning", "Scanning", Icons.Outlined.Home)
-    object Home : Screen("home", "Home", Icons.Outlined.Home)
-    object Transactions : Screen("transactions", "History", Icons.AutoMirrored.Outlined.ListAlt)
-    object Analytics : Screen("analytics", "Insights", Icons.Outlined.Analytics)
-    object AiReview : Screen("ai_review", "AI Review", Icons.Outlined.AutoAwesome)
-    object Settings : Screen("settings", "Settings", Icons.Outlined.Settings)
-    object Profile : Screen("profile", "Profile", Icons.Outlined.Person)
-    object RivavaPortfolio : Screen("portfolio_screen", "Rivava Portfolio", Icons.Outlined.AccountBalanceWallet)
-    object HelpCenter : Screen("help_center", "Help Center", Icons.Outlined.Info)
-    object StockDetail : Screen("stock_detail", "Stock Detail", Icons.Outlined.AccountBalanceWallet)
-    object TransactionDetail : Screen("transaction_detail", "Transaction Detail", Icons.AutoMirrored.Outlined.ListAlt)
-    object Calculators : Screen("calculators", "Tools", Icons.Outlined.Calculate)
-    object VerifyEmail : Screen("verify_email", "Verify Email", Icons.Outlined.Home)
-    object ResetPassword : Screen("reset_password", "Reset Password", Icons.Outlined.Home)
+sealed class Screen(
+    val route: String,
+    val title: String,
+    val icon: ImageVector,
+    val selectedIcon: ImageVector = icon
+) {
+    object Auth : Screen("auth", "Auth", Icons.Outlined.Home, Icons.Filled.Home)
+    object Welcome : Screen("welcome", "Welcome", Icons.Outlined.Home, Icons.Filled.Home)
+    object Greeting : Screen("greeting", "Greeting", Icons.Outlined.Home, Icons.Filled.Home)
+    object PhoneInput : Screen("phone_input", "Phone Input", Icons.Outlined.Home, Icons.Filled.Home)
+    object OtpVerification : Screen("otp_verification", "OTP Verification", Icons.Outlined.Home, Icons.Filled.Home)
+    object SmsOptIn : Screen("sms_opt_in", "SmsOptIn", Icons.Outlined.Home, Icons.Filled.Home)
+    object SmsConsent : Screen("sms_consent", "SmsConsent", Icons.Outlined.Home, Icons.Filled.Home)
+    object Scanning : Screen("scanning", "Scanning", Icons.Outlined.Home, Icons.Filled.Home)
+    object Home : Screen("home", "Home", Icons.Outlined.Home, Icons.Filled.Home)
+    object Transactions : Screen("transactions", "Reports", Icons.Outlined.ReceiptLong, Icons.Filled.ReceiptLong)
+    object Analytics : Screen("analytics", "Analytics", Icons.Outlined.Analytics, Icons.Filled.Analytics)
+    object AiReview : Screen("ai_review", "AI Review", Icons.Outlined.AutoAwesome, Icons.Filled.AutoAwesome)
+    object Settings : Screen("settings", "Settings", Icons.Outlined.Settings, Icons.Filled.Settings)
+    object Profile : Screen("profile", "Profile", Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
+    object RivavaPortfolio : Screen("portfolio_screen", "Portfolio", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp)
+    object HelpCenter : Screen("help_center", "Help Center", Icons.Outlined.Info, Icons.Filled.Info)
+    object StockDetail : Screen("stock_detail", "Stock Detail", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet)
+    object TransactionDetail : Screen("transaction_detail", "Transaction Detail", Icons.Outlined.ReceiptLong, Icons.Filled.ReceiptLong)
+    object Calculators : Screen("calculators", "Tools", Icons.Outlined.Calculate, Icons.Filled.Calculate)
+    object VerifyEmail : Screen("verify_email", "Verify Email", Icons.Outlined.Home, Icons.Filled.Home)
+    object ResetPassword : Screen("reset_password", "Reset Password", Icons.Outlined.Home, Icons.Filled.Home)
 }
 
 val BaseBottomNavigationItems = listOf(
     Screen.Home,
-    Screen.Transactions,
-    Screen.Calculators,
     Screen.RivavaPortfolio,
+    Screen.Calculators,
+    Screen.Transactions,
+    Screen.Analytics,
     Screen.Profile
 )
 
@@ -124,15 +131,15 @@ class HomeActivity : ComponentActivity() {
 
         setContent {
             val isPremiumUser = preferencesRepository.isPremiumUserFlow.collectAsState(initial = false).value
-            val hasCompletedOnboardingState = preferencesRepository.hasCompletedOnboardingFlow.collectAsState(initial = null)
+            val hasCompletedOnboardingState = preferencesRepository.hasCompletedOnboardingFlow.collectAsState(initial = true)
             val hasCompletedOnboarding = hasCompletedOnboardingState.value
 
             RivavaTheme(isPremium = isPremiumUser) {
-                if (hasCompletedOnboarding != null) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     RivavaAppContent(hasCompletedOnboarding, preferencesRepository, isNewUser)
-                } else {
-                    // Show a minimal loading state or nothing while reading preferences
-                    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }
@@ -152,7 +159,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
     val activity = localCtx as? android.app.Activity ?: (localCtx as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
 
     LaunchedEffect(isSecureRoute) {
-        if (isSecureRoute) {
+        if (!com.rivavafi.universal.BuildConfig.DEBUG && isSecureRoute) {
             activity?.window?.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         } else {
             activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
@@ -209,7 +216,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
         }
     }
 
-    val bottomNavigationItems = listOf(Screen.Home, Screen.Transactions, Screen.Calculators, Screen.RivavaPortfolio, Screen.Analytics, Screen.Profile)
+    val bottomNavigationItems = BaseBottomNavigationItems
 
     val isBottomBarVisible = currentRoute in bottomNavigationItems.map { it.route }
 
@@ -225,45 +232,83 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(androidx.compose.ui.graphics.Color.Transparent)
-                        .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
+                        .padding(
+                            start = 8.dp,
+                            end = 8.dp,
+                            bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 8.dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(
+                    Surface(
                         modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(androidx.compose.ui.graphics.Color(0xFF161616).copy(alpha = 0.85f))
-                            .glassMorphism(cornerRadius = 999f, alpha = 0.05f, strokeAlpha = 0.05f)
-                            .padding(horizontal = 24.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxWidth()
+                            .shadow(
+                                elevation = 22.dp,
+                                shape = RoundedCornerShape(28.dp),
+                                spotColor = androidx.compose.ui.graphics.Color(0xFF00A3FF).copy(alpha = 0.22f),
+                                ambientColor = androidx.compose.ui.graphics.Color.Black
+                            ),
+                        shape = RoundedCornerShape(28.dp),
+                        color = androidx.compose.ui.graphics.Color.Transparent
                     ) {
-                        bottomNavigationItems.forEach { screen ->
-                            val isSelected = currentRoute == screen.route
-                            val isLocked = screen.route == Screen.RivavaPortfolio.route && !isPortfolioUnlocked
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(28.dp))
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                                        listOf(
+                                            androidx.compose.ui.graphics.Color(0xFF111726).copy(alpha = 0.96f),
+                                            androidx.compose.ui.graphics.Color(0xFF080C16).copy(alpha = 0.98f)
+                                        )
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                        listOf(
+                                            androidx.compose.ui.graphics.Color(0xFF283A58).copy(alpha = 0.90f),
+                                            androidx.compose.ui.graphics.Color(0xFF121B2C).copy(alpha = 0.50f)
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(28.dp)
+                                )
+                                .padding(horizontal = 4.dp, vertical = 6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                bottomNavigationItems.forEach { screen ->
+                                    val isSelected = currentRoute == screen.route
+                                    val isLocked = screen.route == Screen.RivavaPortfolio.route && !isPortfolioUnlocked
 
-                            CustomBottomNavItem(
-                                screen = screen,
-                                isSelected = isSelected,
-                                isLocked = isLocked,
-                                onClick = {
-                                    if (!isSelected) {
-                                        navController.navigate(screen.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                                    CustomBottomNavItem(
+                                        modifier = Modifier.weight(1f),
+                                        screen = screen,
+                                        isSelected = isSelected,
+                                        isLocked = isLocked,
+                                        onClick = {
+                                            if (!isSelected) {
+                                                navController.navigate(screen.route) {
+                                                    popUpTo(navController.graph.findStartDestination().id) {
+                                                        saveState = true
+                                                    }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
                                         }
-                                    }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
             }
         },
-        containerColor = androidx.compose.ui.graphics.Color(0xFF0A0A0A)
+        containerColor = com.rivavafi.universal.ui.theme.AmoledBlack
     ) { _ ->
         NavHost(
             navController = navController,
@@ -351,6 +396,15 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                     },
                     onNavigateToCalculators = {
                         navController.navigate(Screen.Calculators.route)
+                    },
+                    onNavigateToTransactions = {
+                        navController.navigate(Screen.Transactions.route)
+                    },
+                    onNavigateToAnalytics = {
+                        navController.navigate(Screen.Analytics.route)
+                    },
+                    onNavigateToHelpCenter = {
+                        navController.navigate(Screen.HelpCenter.route)
                     }
                 )
             }
@@ -443,6 +497,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
 
 @Composable
 fun CustomBottomNavItem(
+    modifier: Modifier = Modifier,
     screen: Screen,
     isSelected: Boolean,
     isLocked: Boolean = false,
@@ -451,65 +506,146 @@ fun CustomBottomNavItem(
     val haptic = LocalHapticFeedback.current
 
     val iconColor by animateColorAsState(
-        targetValue = if (isLocked && !isSelected) {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-        } else if (isSelected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        },
-        animationSpec = tween(300),
+        targetValue = if (isSelected) androidx.compose.ui.graphics.Color(0xFF00A3FF) else androidx.compose.ui.graphics.Color(0xFF869AB8),
+        animationSpec = tween(200),
         label = "iconColor"
     )
 
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .selectable(
-                selected = isSelected,
+    val textColor by animateColorAsState(
+        targetValue = if (isSelected) androidx.compose.ui.graphics.Color(0xFF00A3FF) else androidx.compose.ui.graphics.Color(0xFF869AB8),
+        animationSpec = tween(200),
+        label = "textColor"
+    )
+
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.06f else 1.0f,
+        animationSpec = tween(200),
+        label = "itemScale"
+    )
+
+    val indicatorWidth by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (isSelected) 12.dp else 0.dp,
+        animationSpec = tween(220),
+        label = "indicatorWidth"
+    )
+
+    Column(
+        modifier = modifier
+            .clickable(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onClick()
-                },
-                interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = true, radius = 24.dp)
-            ),
-        contentAlignment = Alignment.Center
+                }
+            )
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        // Icon squircle badge with soft obsidian glow + unclipped lock badge
+        Box(
+            modifier = Modifier.scale(scale),
+            contentAlignment = Alignment.Center
         ) {
-            Box(contentAlignment = Alignment.TopEnd) {
+            Box(
+                modifier = Modifier
+                    .size(width = 40.dp, height = 28.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(
+                        if (isSelected) {
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(
+                                    androidx.compose.ui.graphics.Color(0xFF00A3FF).copy(alpha = 0.20f),
+                                    androidx.compose.ui.graphics.Color(0xFF0055D4).copy(alpha = 0.08f)
+                                )
+                            )
+                        } else {
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(
+                                    androidx.compose.ui.graphics.Color.Transparent,
+                                    androidx.compose.ui.graphics.Color.Transparent
+                                )
+                            )
+                        }
+                    )
+                    .border(
+                        width = if (isSelected) 1.dp else 0.dp,
+                        brush = if (isSelected) {
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(
+                                    androidx.compose.ui.graphics.Color(0xFF00A3FF).copy(alpha = 0.70f),
+                                    androidx.compose.ui.graphics.Color(0xFF0055D4).copy(alpha = 0.25f)
+                                )
+                            )
+                        } else {
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(
+                                    androidx.compose.ui.graphics.Color.Transparent,
+                                    androidx.compose.ui.graphics.Color.Transparent
+                                )
+                            )
+                        },
+                        shape = RoundedCornerShape(11.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    imageVector = screen.icon,
+                    imageVector = if (isSelected) screen.selectedIcon else screen.icon,
                     contentDescription = screen.title,
                     tint = iconColor,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(19.dp)
                 )
-                if (isLocked) {
+            }
+
+            if (isLocked) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
+                        .size(13.dp)
+                        .clip(CircleShape)
+                        .background(androidx.compose.ui.graphics.Color(0xFFFFB800))
+                        .border(1.2.dp, androidx.compose.ui.graphics.Color(0xFF090D17), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Filled.Lock,
+                        imageVector = Icons.Default.Lock,
                         contentDescription = "Locked",
-                        tint = com.rivavafi.universal.ui.theme.SecondaryPink,
-                        modifier = Modifier
-                            .size(12.dp)
-                            .offset(x = 6.dp, y = (-2).dp)
-                            .background(MaterialTheme.colorScheme.background, CircleShape)
-                            .padding(1.dp)
+                        tint = androidx.compose.ui.graphics.Color(0xFF0F172A),
+                        modifier = Modifier.size(8.dp)
                     )
                 }
             }
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
         }
+
+        Spacer(modifier = Modifier.height(3.dp))
+
+        Text(
+            text = screen.title,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 9.sp,
+                fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.ExtraBold else androidx.compose.ui.text.font.FontWeight.SemiBold,
+                color = textColor,
+                letterSpacing = 0.05.sp
+            ),
+            maxLines = 1,
+            softWrap = false
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Box(
+            modifier = Modifier
+                .height(2.5.dp)
+                .width(indicatorWidth)
+                .clip(CircleShape)
+                .background(
+                    androidx.compose.ui.graphics.Brush.horizontalGradient(
+                        listOf(
+                            androidx.compose.ui.graphics.Color(0xFF00E5FF),
+                            androidx.compose.ui.graphics.Color(0xFF0066FF)
+                        )
+                    )
+                )
+        )
     }
 }

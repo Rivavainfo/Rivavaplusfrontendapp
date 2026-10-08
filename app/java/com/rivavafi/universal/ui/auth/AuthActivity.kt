@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Email
@@ -45,7 +46,9 @@ import com.rivavafi.universal.ui.theme.*
 import androidx.compose.ui.draw.shadow
 import com.rivavafi.universal.ui.theme.glassMorphism
 import com.rivavafi.universal.ui.components.RivavaBrandDisplay
+import com.rivavafi.universal.ui.components.RivavaGlowingLogo
 import com.rivavafi.universal.ui.components.RivavaLoadingOverlay
+import androidx.compose.ui.draw.alpha
 import dagger.hilt.android.AndroidEntryPoint
 import android.util.Patterns
 import androidx.compose.foundation.shape.CircleShape
@@ -313,8 +316,9 @@ fun AuthScreenContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(280.dp)
+                    .height(290.dp)
             ) {
+                // Background Image Pager (subtle photography)
                 androidx.compose.foundation.pager.HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
@@ -324,33 +328,97 @@ fun AuthScreenContent(
                             model = images[page],
                             contentDescription = null,
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(Color.Transparent, Color(0xFF0A0A0A)),
-                                        startY = 100f
-                                    )
-                                )
-                        )
-                        Text(
-                            text = titles[page],
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White
-                            ),
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(24.dp)
+                                .alpha(0.32f)
                         )
                     }
                 }
+
+                // Ambient Radial Neon Glows
+                Box(
+                    modifier = Modifier
+                        .size(240.dp)
+                        .align(Alignment.TopCenter)
+                        .offset(y = (-40).dp)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(RivavaCyan.copy(alpha = 0.28f), Color.Transparent)
+                            ),
+                            CircleShape
+                        )
+                )
+
+                // Gradient mask to amoled black
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color(0xCC08080B), AmoledBlack),
+                                startY = 80f
+                            )
+                        )
+                )
+
+                // Foreground Branded Elements
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    RivavaGlowingLogo(size = 46.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "RIVAVA",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 3.sp,
+                                color = Color.White
+                            )
+                        )
+                        Surface(
+                            color = RivavaCyan.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(4.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, RivavaCyan.copy(alpha = 0.45f)),
+                            modifier = Modifier.padding(start = 5.dp)
+                        ) {
+                            Text(
+                                text = "+",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = RivavaCyan,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = titles[pagerState.currentPage],
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            letterSpacing = (-0.5).sp
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Automated Wealth & Portfolio Intelligence",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = RivavaCyan.copy(alpha = 0.9f),
+                            letterSpacing = 1.2.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             if (showCachedUser && cachedUser != null) {
                 Column(
@@ -386,7 +454,7 @@ fun AuthScreenContent(
             var startAnimation by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) { startAnimation = true }
 
-            // Glassmorphism Login Container
+            // Glassmorphism Login Container with Radiant Neon Rim
             androidx.compose.animation.AnimatedVisibility(
                 visible = startAnimation,
                 enter = androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(1000)) +
@@ -395,301 +463,355 @@ fun AuthScreenContent(
                             animationSpec = androidx.compose.animation.core.tween(1000)
                         )
             ) {
-                androidx.compose.material3.Card(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp)),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF111111)),
-                    elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 6.dp)
+                        .clip(RoundedCornerShape(26.dp))
+                        .border(
+                            width = 1.2.dp,
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    RivavaCyan.copy(alpha = 0.7f),
+                                    RivavaPink.copy(alpha = 0.45f),
+                                    RivavaLime.copy(alpha = 0.35f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(26.dp)
+                        ),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    var selectedAuthTab by remember { mutableStateOf(0) } // 0: Google, 1: Email, 2: Phone
-                    var isEmailSignUp by remember { mutableStateOf(false) }
-                    var emailInput by remember { mutableStateOf("") }
-                    var passwordInput by remember { mutableStateOf("") }
-                    var nameInput by remember { mutableStateOf("") }
-                    var phoneInput by remember { mutableStateOf("") }
-                    var otpInput by remember { mutableStateOf("") }
-                    var isOtpSent by remember { mutableStateOf(false) }
-
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0xFF17192A), Color(0xFF0F101A))
+                                )
+                            )
                     ) {
-                        Text(
-                            text = if (selectedAuthTab == 1 && isEmailSignUp) "Create Account" else "Welcome to Rivava",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
+                        var selectedAuthTab by remember { mutableStateOf(0) } // 0: Google, 1: Email, 2: Phone
+                        var isEmailSignUp by remember { mutableStateOf(false) }
+                        var emailInput by remember { mutableStateOf("") }
+                        var passwordInput by remember { mutableStateOf("") }
+                        var nameInput by remember { mutableStateOf("") }
+                        var phoneInput by remember { mutableStateOf("") }
+                        var otpInput by remember { mutableStateOf("") }
+                        var isOtpSent by remember { mutableStateOf(false) }
 
-                        RivavaBrandDisplay(showQuote = false)
-
-                        // Auth Method Selector Tabs
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF1E1E1E))
-                                .padding(3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                .padding(22.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            listOf("⚡ Fast", "✉️ Email", "📱 Phone").forEachIndexed { index, label ->
-                                val isSelected = selectedAuthTab == index
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) Color(0xFF3B82F6) else Color.Transparent)
-                                        .clickable { selectedAuthTab = index }
-                                        .padding(vertical = 8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                        ),
-                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
-                        }
+                            Text(
+                                text = if (selectedAuthTab == 1 && isEmailSignUp) "Create Account" else "Welcome to Rivava",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White
+                            )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                            RivavaBrandDisplay(showQuote = false)
 
-                        when (selectedAuthTab) {
-                            0 -> {
-                                // 1. Fast Google Sign-in
-                                Text(
-                                    text = "One-tap secure authentication",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.6f)
+                            // Auth Method Selector Tabs with Cyan Glow
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFF12131E))
+                                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                val authTabs = listOf(
+                                    Triple("Fast", Icons.Default.Bolt, 0),
+                                    Triple("Email", Icons.Outlined.Email, 1),
+                                    Triple("Phone", Icons.Outlined.Phone, 2)
                                 )
-
-                                Button(
-                                    onClick = { launchGoogleSignIn() },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(54.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                                    shape = RoundedCornerShape(16.dp),
-                                    enabled = authState != AuthState.LOADING
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
+                                authTabs.forEach { (label, icon, index) ->
+                                    val isSelected = selectedAuthTab == index
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(11.dp))
+                                            .background(
+                                                if (isSelected) Brush.horizontalGradient(
+                                                    listOf(RivavaCyan, Color(0xFF0072FF))
+                                                ) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
+                                            )
+                                            .clickable { selectedAuthTab = index }
+                                            .padding(vertical = 9.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.AccountCircle,
-                                            contentDescription = "Google",
-                                            modifier = Modifier.size(24.dp),
-                                            tint = AmoledBlack
-                                        )
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Text("Continue with Google", color = AmoledBlack, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                    }
-                                }
-                            }
-
-                            1 -> {
-                                // 2. Email Sign In / Sign Up
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (isEmailSignUp) "New User Registration" else "Sign in with password",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = Color.White.copy(alpha = 0.7f)
-                                    )
-                                    TextButton(onClick = { isEmailSignUp = !isEmailSignUp }) {
-                                        Text(
-                                            text = if (isEmailSignUp) "Existing user? Sign In" else "New here? Sign Up",
-                                            color = PrimarySky,
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                                        )
-                                    }
-                                }
-
-                                if (isEmailSignUp) {
-                                    OutlinedTextField(
-                                        value = nameInput,
-                                        onValueChange = { nameInput = it },
-                                        label = { Text("Full Name", color = Color.White.copy(0.6f)) },
-                                        singleLine = true,
-                                        leadingIcon = { Icon(Icons.Outlined.AccountCircle, contentDescription = null, tint = Color.White.copy(0.6f)) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White,
-                                            focusedBorderColor = Color(0xFF3B82F6),
-                                            unfocusedBorderColor = Color.White.copy(0.2f)
-                                        )
-                                    )
-                                }
-
-                                OutlinedTextField(
-                                    value = emailInput,
-                                    onValueChange = { emailInput = it },
-                                    label = { Text("Email Address", color = Color.White.copy(0.6f)) },
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-                                    leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = Color.White.copy(0.6f)) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
-                                        focusedBorderColor = Color(0xFF3B82F6),
-                                        unfocusedBorderColor = Color.White.copy(0.2f)
-                                    )
-                                )
-
-                                OutlinedTextField(
-                                    value = passwordInput,
-                                    onValueChange = { passwordInput = it },
-                                    label = { Text("Password (min 6 chars)", color = Color.White.copy(0.6f)) },
-                                    singleLine = true,
-                                    visualTransformation = PasswordVisualTransformation(),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
-                                        focusedBorderColor = Color(0xFF3B82F6),
-                                        unfocusedBorderColor = Color.White.copy(0.2f)
-                                    )
-                                )
-
-                                Button(
-                                    onClick = {
-                                        if (isEmailSignUp) {
-                                            viewModel.onEmailRegister(emailInput.trim(), passwordInput, nameInput.trim()) {
-                                                Toast.makeText(context, "Verification email sent to $emailInput", Toast.LENGTH_LONG).show()
-                                            }
-                                        } else {
-                                            viewModel.onEmailLogin(emailInput.trim(), passwordInput)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(15.dp)
+                                            )
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                ),
+                                                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f)
+                                            )
                                         }
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(52.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
-                                    shape = RoundedCornerShape(16.dp),
-                                    enabled = authState != AuthState.LOADING && emailInput.isNotBlank() && passwordInput.isNotBlank()
-                                ) {
-                                    Text(
-                                        text = if (isEmailSignUp) "Create Account & Send Email" else "Sign In",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp
-                                    )
+                                    }
                                 }
                             }
 
-                            2 -> {
-                                // 3. Phone Number OTP Login
-                                Text(
-                                    text = if (!isOtpSent) "Enter your mobile number to get an OTP" else "Enter the OTP sent to your phone",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.6f)
-                                )
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                                OutlinedTextField(
-                                    value = phoneInput,
-                                    onValueChange = { phoneInput = it },
-                                    label = { Text("Mobile Number (e.g. 9876543210)", color = Color.White.copy(0.6f)) },
-                                    singleLine = true,
-                                    enabled = !isOtpSent,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                                    leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = Color.White.copy(0.6f)) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
-                                        focusedBorderColor = Color(0xFF3B82F6),
-                                        unfocusedBorderColor = Color.White.copy(0.2f)
-                                    )
-                                )
-
-                                if (isOtpSent) {
-                                    OutlinedTextField(
-                                        value = otpInput,
-                                        onValueChange = { otpInput = it },
-                                        label = { Text("Enter 6-digit OTP", color = Color.White.copy(0.6f)) },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White,
-                                            focusedBorderColor = Color(0xFF3B82F6),
-                                            unfocusedBorderColor = Color.White.copy(0.2f)
-                                        )
+                            when (selectedAuthTab) {
+                                0 -> {
+                                    // 1. Fast Google Sign-in
+                                    Text(
+                                        text = "One-tap instant & secure sign-in",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.6f)
                                     )
 
+                                    Button(
+                                        onClick = { launchGoogleSignIn() },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(54.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                                        shape = RoundedCornerShape(16.dp),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                                        enabled = authState != AuthState.LOADING
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.AccountCircle,
+                                                contentDescription = "Google",
+                                                modifier = Modifier.size(24.dp),
+                                                tint = AmoledBlack
+                                            )
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Text("Continue with Google", color = AmoledBlack, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        }
+                                    }
+                                }
+
+                                1 -> {
+                                    // 2. Email Sign In / Sign Up
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        TextButton(onClick = {
-                                            isOtpSent = false
-                                            otpInput = ""
-                                        }) {
-                                            Text("Change Number", color = Color.White.copy(0.6f), style = MaterialTheme.typography.labelSmall)
+                                        Text(
+                                            text = if (isEmailSignUp) "New User Registration" else "Sign in with password",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = Color.White.copy(alpha = 0.7f)
+                                        )
+                                        TextButton(onClick = { isEmailSignUp = !isEmailSignUp }) {
+                                            Text(
+                                                text = if (isEmailSignUp) "Existing user? Sign In" else "New here? Sign Up",
+                                                color = RivavaCyan,
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                            )
                                         }
+                                    }
 
-                                        TextButton(onClick = {
-                                            val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
-                                            val activity = context as? android.app.Activity
-                                            viewModel.resendOtp(activity, norm) {
-                                                Toast.makeText(context, "OTP Resent successfully", Toast.LENGTH_SHORT).show()
+                                    if (isEmailSignUp) {
+                                        OutlinedTextField(
+                                            value = nameInput,
+                                            onValueChange = { nameInput = it },
+                                            label = { Text("Full Name", color = Color.White.copy(0.6f)) },
+                                            singleLine = true,
+                                            leadingIcon = { Icon(Icons.Outlined.AccountCircle, contentDescription = null, tint = RivavaCyan) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White,
+                                                focusedBorderColor = RivavaCyan,
+                                                unfocusedBorderColor = Color.White.copy(0.2f),
+                                                cursorColor = RivavaCyan,
+                                                focusedLabelColor = RivavaCyan
+                                            )
+                                        )
+                                    }
+
+                                    OutlinedTextField(
+                                        value = emailInput,
+                                        onValueChange = { emailInput = it },
+                                        label = { Text("Email Address", color = Color.White.copy(0.6f)) },
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                                        leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = RivavaCyan) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = RivavaCyan,
+                                            unfocusedBorderColor = Color.White.copy(0.2f),
+                                            cursorColor = RivavaCyan,
+                                            focusedLabelColor = RivavaCyan
+                                        )
+                                    )
+
+                                    OutlinedTextField(
+                                        value = passwordInput,
+                                        onValueChange = { passwordInput = it },
+                                        label = { Text("Password (min 6 chars)", color = Color.White.copy(0.6f)) },
+                                        singleLine = true,
+                                        visualTransformation = PasswordVisualTransformation(),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = RivavaCyan,
+                                            unfocusedBorderColor = Color.White.copy(0.2f),
+                                            cursorColor = RivavaCyan,
+                                            focusedLabelColor = RivavaCyan
+                                        )
+                                    )
+
+                                    Button(
+                                        onClick = {
+                                            if (isEmailSignUp) {
+                                                viewModel.onEmailRegister(emailInput.trim(), passwordInput, nameInput.trim()) {
+                                                    Toast.makeText(context, "Verification email sent to $emailInput", Toast.LENGTH_LONG).show()
+                                                }
+                                            } else {
+                                                viewModel.onEmailLogin(emailInput.trim(), passwordInput)
                                             }
-                                        }) {
-                                            Text("Resend OTP", color = PrimarySky, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
-                                        }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(52.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = RivavaCyan),
+                                        shape = RoundedCornerShape(16.dp),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                                        enabled = authState != AuthState.LOADING && emailInput.isNotBlank() && passwordInput.isNotBlank()
+                                    ) {
+                                        Text(
+                                            text = if (isEmailSignUp) "Create Account & Send Email" else "Sign In",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp
+                                        )
                                     }
                                 }
 
-                                Button(
-                                    onClick = {
-                                        val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
-                                        val activity = context as? android.app.Activity
-                                        if (!isOtpSent) {
-                                            viewModel.startPhoneVerification(activity, norm) {
-                                                isOtpSent = true
-                                                Toast.makeText(context, "OTP sent to $phoneInput", Toast.LENGTH_SHORT).show()
-                                            }
-                                        } else {
-                                            viewModel.verifyOtp(otpInput.trim(), norm, null, onSuccess = {}, onError = {})
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(52.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
-                                    shape = RoundedCornerShape(16.dp),
-                                    enabled = authState != AuthState.LOADING && phoneInput.isNotBlank() && (!isOtpSent || otpInput.isNotBlank())
-                                ) {
+                                2 -> {
+                                    // 3. Phone Number OTP Login
                                     Text(
-                                        text = if (!isOtpSent) "Send OTP" else "Verify & Sign In",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp
+                                        text = if (!isOtpSent) "Enter your mobile number to get an OTP" else "Enter the OTP sent to your phone",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.6f)
                                     )
+
+                                    OutlinedTextField(
+                                        value = phoneInput,
+                                        onValueChange = { phoneInput = it },
+                                        label = { Text("Mobile Number (e.g. 9876543210)", color = Color.White.copy(0.6f)) },
+                                        singleLine = true,
+                                        enabled = !isOtpSent,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                                        leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = RivavaCyan) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedBorderColor = RivavaCyan,
+                                            unfocusedBorderColor = Color.White.copy(0.2f),
+                                            cursorColor = RivavaCyan,
+                                            focusedLabelColor = RivavaCyan
+                                        )
+                                    )
+
+                                    if (isOtpSent) {
+                                        OutlinedTextField(
+                                            value = otpInput,
+                                            onValueChange = { otpInput = it },
+                                            label = { Text("Enter 6-digit OTP", color = Color.White.copy(0.6f)) },
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White,
+                                                focusedBorderColor = RivavaCyan,
+                                                unfocusedBorderColor = Color.White.copy(0.2f),
+                                                cursorColor = RivavaCyan,
+                                                focusedLabelColor = RivavaCyan
+                                            )
+                                        )
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            TextButton(onClick = {
+                                                isOtpSent = false
+                                                otpInput = ""
+                                            }) {
+                                                Text("Change Number", color = Color.White.copy(0.6f), style = MaterialTheme.typography.labelSmall)
+                                            }
+
+                                            TextButton(onClick = {
+                                                val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
+                                                val activity = context as? android.app.Activity
+                                                viewModel.resendOtp(activity, norm) {
+                                                    Toast.makeText(context, "OTP Resent successfully", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }) {
+                                                Text("Resend OTP", color = RivavaCyan, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                            }
+                                        }
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
+                                            val activity = context as? android.app.Activity
+                                            if (!isOtpSent) {
+                                                viewModel.startPhoneVerification(activity, norm) {
+                                                    isOtpSent = true
+                                                    Toast.makeText(context, "OTP sent to $phoneInput", Toast.LENGTH_SHORT).show()
+                                                }
+                                            } else {
+                                                viewModel.verifyOtp(otpInput.trim(), norm, null, onSuccess = {}, onError = {})
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(52.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = RivavaCyan),
+                                        shape = RoundedCornerShape(16.dp),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                                        enabled = authState != AuthState.LOADING && phoneInput.isNotBlank() && (!isOtpSent || otpInput.isNotBlank())
+                                    ) {
+                                        Text(
+                                            text = if (!isOtpSent) "Send OTP" else "Verify & Sign In",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp
+                                        )
+                                    }
                                 }
                             }
-                        }
 
                         // Forgot Password Link (Only shown when Email auth tab is selected and in sign-in mode)
                         if (selectedAuthTab == 1 && !isEmailSignUp) {
