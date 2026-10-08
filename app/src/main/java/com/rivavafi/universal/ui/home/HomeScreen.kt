@@ -117,7 +117,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToTransactionDetail: (Long) -> Unit = {},
     onNavigateToRivavaPortfolio: () -> Unit = {},
-    onNavigateToCalculators: () -> Unit = {},
+    onNavigateToCalculators: (String?) -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToAnalytics: () -> Unit = {},
     onNavigateToHelpCenter: () -> Unit = {}
@@ -268,14 +268,13 @@ fun HomeScreen(
                 )
             }
 
-            // 4. Quick Actions 4-Item Row Matching Reference Image
+            // 4. Quick Actions 4-Item Row
             item {
                 HomeQuickActionsSection(
-                    onSeeAllClick = { onNavigateToTransactions() },
-                    onPayEarnClick = { showAddSheet = true },
-                    onBillsRechargeClick = { onNavigateToTransactions() },
-                    onMyUpiClick = { onNavigateToRivavaPortfolio() },
-                    onCreditScoreClick = { onNavigateToAnalytics() }
+                    onAddTransactionClick = { showAddSheet = true },
+                    onAnalyticsClick = { onNavigateToAnalytics() },
+                    onPortfolioClick = { onNavigateToRivavaPortfolio() },
+                    onToolsClick = { onNavigateToCalculators(null) }
                 )
             }
 
@@ -295,8 +294,8 @@ fun HomeScreen(
             // 6. Financial Tools & Calculators 8-Grid Section Matching Reference Image
             item {
                 HomeFinancialToolsSection(
-                    onSeeAllClick = { onNavigateToCalculators() },
-                    onToolClick = { _ -> onNavigateToCalculators() }
+                    onSeeAllClick = { onNavigateToCalculators(null) },
+                    onToolClick = { toolName -> onNavigateToCalculators(toolName) }
                 )
             }
 

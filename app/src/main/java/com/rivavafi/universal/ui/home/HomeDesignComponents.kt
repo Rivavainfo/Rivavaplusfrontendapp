@@ -940,15 +940,14 @@ fun HomeAdvisorMicroBanner(
 }
 
 /**
- * 3. Quick Actions 4-Card Row Matching Reference Image
+ * 3. Quick Actions 4-Card Grid
  */
 @Composable
 fun HomeQuickActionsSection(
-    onSeeAllClick: () -> Unit = {},
-    onPayEarnClick: () -> Unit = {},
-    onBillsRechargeClick: () -> Unit = {},
-    onMyUpiClick: () -> Unit = {},
-    onCreditScoreClick: () -> Unit = {},
+    onAddTransactionClick: () -> Unit = {},
+    onAnalyticsClick: () -> Unit = {},
+    onPortfolioClick: () -> Unit = {},
+    onToolsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -966,31 +965,16 @@ fun HomeQuickActionsSection(
                     color = Color.White
                 )
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { onSeeAllClick() },
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    text = "See All",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.65f)
-                    )
-                )
-                Text("→", fontSize = 12.sp, color = Color.White.copy(alpha = 0.65f))
-            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 4 Action Cards in a horizontal row
+        // 4 Action Cards in an evenly aligned grid
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            // Card 1: Pay & Earn
+            // Card 1: Add Transaction
             HomeActionCard(
                 modifier = Modifier.weight(1f),
                 iconContent = {
@@ -1001,21 +985,21 @@ fun HomeQuickActionsSection(
                             .background(Color(0xFF00E575)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "₹",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF042817)
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Color(0xFF042817),
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
-                title = "Pay & Earn",
-                subtitle = "Win Rewards",
+                title = "Add Transaction",
+                subtitle = "Debit & Credit",
                 subtitleColor = Color(0xFF00E575),
-                onClick = onPayEarnClick
+                onClick = onAddTransactionClick
             )
 
-            // Card 2: Bills & Recharge
+            // Card 2: Analytics
             HomeActionCard(
                 modifier = Modifier.weight(1f),
                 iconContent = {
@@ -1031,20 +1015,20 @@ fun HomeQuickActionsSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ReceiptLong,
+                            imageVector = Icons.Default.BarChart,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
-                title = "Bills & Recharge",
-                subtitle = "Electricity, Mobile",
+                title = "Analytics",
+                subtitle = "Charts & Insights",
                 subtitleColor = Color.White.copy(alpha = 0.55f),
-                onClick = onBillsRechargeClick
+                onClick = onAnalyticsClick
             )
 
-            // Card 3: My UPI
+            // Card 3: Portfolio
             HomeActionCard(
                 modifier = Modifier.weight(1f),
                 iconContent = {
@@ -1059,19 +1043,21 @@ fun HomeQuickActionsSection(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        UpiPhoneBoltIcon(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
-                title = "My UPI",
-                subtitle = "Bank Accounts",
+                title = "Portfolio",
+                subtitle = "Stocks & Crypto",
                 subtitleColor = Color.White.copy(alpha = 0.55f),
-                onClick = onMyUpiClick
+                onClick = onPortfolioClick
             )
 
-            // Card 4: Credit Score
+            // Card 4: Tools
             HomeActionCard(
                 modifier = Modifier.weight(1f),
                 iconContent = {
@@ -1086,16 +1072,18 @@ fun HomeQuickActionsSection(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        SpeedometerGaugeIcon(
-                            modifier = Modifier.size(26.dp),
-                            color = Color.White
+                        Icon(
+                            imageVector = Icons.Default.Calculate,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
-                title = "Credit Score",
-                subtitle = "Free Report",
+                title = "Tools",
+                subtitle = "Calculators",
                 subtitleColor = Color.White.copy(alpha = 0.55f),
-                onClick = onCreditScoreClick
+                onClick = onToolsClick
             )
         }
     }

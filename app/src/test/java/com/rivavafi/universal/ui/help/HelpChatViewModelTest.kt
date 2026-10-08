@@ -29,11 +29,9 @@ class HelpChatViewModelTest {
     }
 
     @Test
-    fun testSendMessageReturnsSupportNumber() {
+    fun testInitialMessagePresent() {
         val viewModel = HelpChatViewModel()
-
-        // Initially there should be one welcome message
-        var messages = viewModel.messages.value
+        val messages = viewModel.messages.value
         assertEquals(1, messages.size)
         assertEquals("Hello! I'm your Rivava+ AI Financial Assistant. How can I help you today?", messages[0].text)
         assertEquals(false, messages[0].isUser)
