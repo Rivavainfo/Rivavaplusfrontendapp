@@ -157,11 +157,19 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
     val localCtx = androidx.compose.ui.platform.LocalContext.current
     val activity = localCtx as? android.app.Activity ?: (localCtx as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
 
-    LaunchedEffect(isSecureRoute) {
-        if (!com.rivavafi.universal.BuildConfig.DEBUG && isSecureRoute) {
-            activity?.window?.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+    DisposableEffect(isSecureRoute) {
+        if (isSecureRoute) {
+            activity?.window?.setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+            )
         } else {
             activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            if (isSecureRoute) {
+                activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
     }
 

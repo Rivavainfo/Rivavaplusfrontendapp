@@ -5,8 +5,10 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Psychology
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,19 +42,46 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Color
 import com.rivavafi.universal.R
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Policy
+import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Shield
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
+    profileViewModel: com.rivavafi.universal.ui.profile.ProfileViewModel = hiltViewModel(),
     onRestartApp: () -> Unit
 ) {
     val context = LocalContext.current
     val activity = context as? android.app.Activity
     val isLoading by viewModel.isLoading.collectAsState()
-    val layoutPreset by viewModel.homeLayoutPreset.collectAsState()
     val banksDetected by viewModel.banksDetected.collectAsState()
     val showSmsDetails by viewModel.showSmsDetails.collectAsState()
     val terminologyMode by viewModel.terminologyMode.collectAsState()
+    val profileState by profileViewModel.profileState.collectAsState()
+
+    val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+    val userModel = profileState.userModel
+
+    val displayName = userModel?.name?.takeIf { it.isNotBlank() } ?: currentUser?.displayName ?: "Rivava User"
+    val userEmail = userModel?.email?.takeIf { it.isNotBlank() } ?: currentUser?.email ?: "Not connected"
+    val isGoogleOnly = currentUser?.providerData?.any { it.providerId == "google.com" } == true && currentUser.providerData.none { it.providerId == "password" }
+
+    val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", android.content.Context.MODE_PRIVATE)
+    val isPremium = prefs.getBoolean("isPremium", false)
+
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showSmsRationaleDialog by remember { mutableStateOf(false) }
     var showSmsSettingsDialog by remember { mutableStateOf(false) }
@@ -106,7 +135,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFF131313),
+        containerColor = Color(0xFF06070B),
         modifier = Modifier.systemBarsPadding()
     ) { paddingValues ->
         Column(
@@ -114,380 +143,272 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            // Header Title
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    fontSize = 28.sp
+                )
+            )
+
+            // TOP SECTION: User Profile Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(22.dp)),
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.rivava_logo),
-                    contentDescription = "Rivava Logo",
+                Row(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Rivava+",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF98CBFF)
-                    )
-                )
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
-                    ),
-                    letterSpacing = androidx.compose.ui.unit.TextUnit(-1f, androidx.compose.ui.unit.TextUnitType.Sp)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Manage your financial data and privacy preferences.",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = Color(0xFFBEC7D4)
-                )
-            }
-
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .glassMorphism(cornerRadius = 24f, alpha = 0.05f),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Data",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    ListItem(
-                        headlineContent = { Text("Export to CSV") },
-                        supportingContent = { Text("Offline backup of all your transactions") },
-                        leadingContent = { Icon(Icons.Default.Download, contentDescription = null) },
-                        modifier = Modifier.clickable {
-                            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
-                            csvExportLauncher.launch("Rivava_Backup_$timestamp.csv")
-                        }
-                    )
-
-                    ListItem(
-                        headlineContent = { Text("Import from CSV") },
-                        supportingContent = { Text("Restore transactions from a backup file") },
-                        leadingContent = { Icon(Icons.Default.Upload, contentDescription = null) },
-                        modifier = Modifier.clickable {
-                            csvImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv", "text/plain", "application/vnd.ms-excel", "*/*"))
-                        }
-                    )
-
-                    ListItem(
-                        headlineContent = { Text("Reset AI Learning") },
-                        supportingContent = { Text("Clear merchant category corrections") },
-                        leadingContent = { Icon(Icons.Default.Psychology, contentDescription = null) },
-                        modifier = Modifier.clickable {
-                            viewModel.clearAiLearning()
-                            Toast.makeText(context, "Learning data reset.", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1B1B1B))
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Privacy",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            color = Color(0xFF00A3FF).copy(alpha = 0.8f),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    val initial = displayName.firstOrNull()?.uppercase() ?: "U"
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF00A3FF), Color(0xFF0066FF))
+                                )
+                            )
+                            .border(1.5.dp, Color(0xFF60A5FA), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Show Transaction Details",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                color = Color.White
-                            )
-                            Text(
-                                text = "Display merchant, category, and date",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFBEC7D4)
-                            )
-                        }
-                        Switch(
-                            checked = showSmsDetails,
-                            onCheckedChange = { isChecked ->
-                                viewModel.setShowSmsDetails(isChecked)
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = Color(0xFF00A3FF)
+                        Text(
+                            text = initial,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                fontSize = 22.sp
                             )
                         )
                     }
 
-                }
-            }
-
-
-            if (banksDetected.isNotEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp)),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Analytics Options",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold
+                            text = displayName,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 17.sp
+                            ),
+                            maxLines = 1
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = userEmail,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = Color(0xFF869AB8),
+                                fontSize = 12.sp
+                            ),
+                            maxLines = 1
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(
+                                if (isPremium) Color(0xFF00E471).copy(alpha = 0.16f)
+                                else Color(0xFF00A3FF).copy(alpha = 0.16f)
+                            )
+                            .border(
+                                1.dp,
+                                if (isPremium) Color(0xFF00E471).copy(alpha = 0.4f)
+                                else Color(0xFF00A3FF).copy(alpha = 0.4f),
+                                RoundedCornerShape(999.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (isPremium) "ELITE VIP" else "STANDARD",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 10.sp,
+                                color = if (isPremium) Color(0xFF00E471) else Color(0xFF00A3FF)
                             )
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        banksDetected.forEach { bank ->
-                            Text(
-                                text = bank,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-                        }
                     }
                 }
             }
 
+            // ACCOUNT SECTION
+            SettingsGroupCard(title = "ACCOUNT") {
+                SettingsRowItem(
+                    icon = Icons.Default.Person,
+                    title = "Account Information",
+                    subtitle = "View connected email & authentication type",
+                    onClick = {
+                        Toast.makeText(context, "Logged in as $userEmail", Toast.LENGTH_SHORT).show()
+                    }
+                )
 
-            if (com.rivavafi.universal.BuildConfig.FLAVOR != "play") {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp)),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            text = "SMS Tracking",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        val smsMode by viewModel.smsTrackingMode.collectAsState()
-                        var expanded by remember { mutableStateOf(false) }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Tracking Mode", color = MaterialTheme.colorScheme.onSurface)
-                            Box {
-                                TextButton(onClick = { expanded = true }) {
-                                    Text(smsMode)
-                                }
-                                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                    listOf("OFF", "CREDIT_ONLY", "DEBIT_ONLY", "BOTH").forEach { mode ->
-                                        DropdownMenuItem(
-                                            text = { Text(mode) },
-                                            onClick = {
-                                                if (mode != "OFF") {
-                                                    val hasRead = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-                                                    val hasReceive = ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-                                                    if (!hasRead || !hasReceive) {
-                                                        val shouldShowRationale = (activity != null && ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.READ_SMS))
-                                                        if (shouldShowRationale) {
-                                                            showSmsRationaleDialog = true
-                                                        } else {
-                                                            viewModel.setSmsTrackingMode(mode)
-                                                            permissionLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS))
-                                                        }
-                                                    } else {
-                                                        viewModel.setSmsTrackingMode(mode)
-                                                    }
-                                                } else {
-                                                    viewModel.setSmsTrackingMode(mode)
-                                                }
-                                                expanded = false
-                                            }
-                                        )
-                                    }
-                                }
+                if (!isGoogleOnly) {
+                    SettingsRowItem(
+                        icon = Icons.Default.Lock,
+                        title = "Password Settings",
+                        subtitle = "Request password reset link",
+                        onClick = {
+                            if (!currentUser?.email.isNullOrBlank()) {
+                                auth.sendPasswordResetEmail(currentUser!!.email!!)
+                                Toast.makeText(context, "Password reset email sent to ${currentUser.email}", Toast.LENGTH_LONG).show()
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable { viewModel.setShowSmsDetails(!showSmsDetails) },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Show SMS Details", color = MaterialTheme.colorScheme.onSurface)
-                            Switch(
-                                checked = showSmsDetails,
-                                onCheckedChange = { viewModel.setShowSmsDetails(it) }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                val hasRead = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-                                if (hasRead) {
-                                    viewModel.rescanSms(context)
-                                    Toast.makeText(context, "Rescanning inbox...", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    val shouldShowRationale = (activity != null && ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.READ_SMS))
-                                    if (shouldShowRationale) {
-                                        showSmsRationaleDialog = true
-                                    } else {
-                                        permissionLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS))
-                                    }
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Rescan SMS Inbox")
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Advanced",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "All data is securely stored locally on your device. We do not use any tracking analytics or cloud services.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { viewModel.toggleTerminology() },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Use Credit/Debit terminology", color = MaterialTheme.colorScheme.onSurface)
-                        Switch(
-                            checked = terminologyMode == "CREDIT_DEBIT",
-                            onCheckedChange = { viewModel.toggleTerminology() }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = {
-                            viewModel.logout()
-                            onRestartApp()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            "Logout",
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
                 }
             }
 
-            Card(
+            // PREFERENCES SECTION
+            SettingsGroupCard(title = "PREFERENCES") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Show Transaction Details", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp))
+                        Text("Display merchant, category & date", style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF869AB8), fontSize = 11.sp))
+                    }
+                    Switch(
+                        checked = showSmsDetails,
+                        onCheckedChange = { viewModel.setShowSmsDetails(it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF00A3FF))
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Credit/Debit Terminology", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp))
+                        Text("Toggle formal banking terminology", style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF869AB8), fontSize = 11.sp))
+                    }
+                    Switch(
+                        checked = terminologyMode == "CREDIT_DEBIT",
+                        onCheckedChange = { viewModel.toggleTerminology() },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF00A3FF))
+                    )
+                }
+
+                SettingsRowItem(
+                    icon = Icons.Default.Download,
+                    title = "Export Transactions (CSV)",
+                    subtitle = "Offline backup of all logged transactions",
+                    onClick = {
+                        val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                        csvExportLauncher.launch("Rivava_Backup_$timestamp.csv")
+                    }
+                )
+
+                SettingsRowItem(
+                    icon = Icons.Default.Upload,
+                    title = "Import Transactions (CSV)",
+                    subtitle = "Restore transactions from a backup CSV file",
+                    onClick = {
+                        csvImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv", "text/plain", "application/vnd.ms-excel", "*/*"))
+                    }
+                )
+            }
+
+            // SUPPORT SECTION
+            SettingsGroupCard(title = "SUPPORT & LEGAL") {
+                SettingsRowItem(
+                    icon = Icons.AutoMirrored.Filled.Chat,
+                    title = "Chat with Advisor",
+                    subtitle = "Connect directly with Rivava financial team on WhatsApp",
+                    onClick = {
+                        com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(
+                            context = context,
+                            customMessage = "Hello Rivava Team, I need assistance regarding my Rivava app."
+                        )
+                    }
+                )
+
+                SettingsRowItem(
+                    icon = Icons.Default.HelpOutline,
+                    title = "Help & Support Center",
+                    subtitle = "FAQs & direct chat support",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://therivava.com/help"))
+                        try { context.startActivity(intent) } catch (_: Exception) {}
+                    }
+                )
+
+                SettingsRowItem(
+                    icon = Icons.Default.Shield,
+                    title = "Privacy Policy",
+                    subtitle = "Read about data protection & encryption",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://therivava.com/privacy"))
+                        try { context.startActivity(intent) } catch (_: Exception) {}
+                    }
+                )
+
+                SettingsRowItem(
+                    icon = Icons.Default.Article,
+                    title = "Terms & Conditions",
+                    subtitle = "App usage & subscription terms",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://therivava.com/terms"))
+                        try { context.startActivity(intent) } catch (_: Exception) {}
+                    }
+                )
+            }
+
+            // DANGER ZONE & LOGOUT
+            SettingsGroupCard(title = "ACCOUNT ACTIONS") {
+                SettingsRowItem(
+                    icon = Icons.Default.ExitToApp,
+                    title = "Logout",
+                    subtitle = "Sign out from this device safely",
+                    titleColor = Color(0xFFFF9800),
+                    onClick = {
+                        viewModel.logout()
+                        onRestartApp()
+                    }
+                )
+
+                SettingsRowItem(
+                    icon = Icons.Default.ExitToApp,
+                    title = "Clear Transaction History",
+                    subtitle = "Permanently clear logged transaction records",
+                    titleColor = Color(0xFFFF3366),
+                    onClick = { showClearDataDialog = true }
+                )
+            }
+
+            // APP VERSION FOOTER
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f))
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Danger Zone",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Actions here are irreversible and will permanently delete your data.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { showClearDataDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                "Clear History",
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-
-                        Button(
-                            onClick = { showDeleteAccountStep1Dialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                "Delete Account",
-                                color = MaterialTheme.colorScheme.onError
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = "Rivava Finance • Version ${com.rivavafi.universal.BuildConfig.VERSION_NAME} (${com.rivavafi.universal.BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF64748B), fontSize = 11.sp)
+                )
+                Text(
+                    text = "Encrypted Local Storage & Bank-Grade Security",
+                    style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF475569), fontSize = 10.sp)
+                )
             }
         }
     }
@@ -626,6 +547,102 @@ fun SettingsScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+}
+
+@Composable
+fun SettingsGroupCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 11.sp,
+                color = Color(0xFF00A3FF),
+                letterSpacing = 1.2.sp
+            ),
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(20.dp)),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsRowItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    titleColor: Color = Color.White,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(Color(0xFF1B2338)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (titleColor != Color.White) titleColor else Color(0xFF00A3FF),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = titleColor,
+                    fontSize = 14.sp
+                )
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = Color(0xFF869AB8),
+                    fontSize = 11.sp
+                )
+            )
+        }
+
+        Text(
+            text = "→",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = Color(0xFF64748B),
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }

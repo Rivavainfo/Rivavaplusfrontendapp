@@ -312,82 +312,27 @@ fun RivavaPortfolioScreen(
 
                         Spacer(modifier = Modifier.height(22.dp))
 
-                        // Gold Gradient Button
+                        var showSecretDialog by remember { mutableStateOf(false) }
+
+                        // OPTION 1: Chat with Advisor Button
                         Button(
                             onClick = {
-                                val intent = Intent(context, PaymentActivity::class.java).apply {
-                                    putExtra("plan", "portfolio_premium")
-                                    putExtra("amountPaise", 39900)
-                                    putExtra("title", "Rivava Portfolio Premium")
-                                }
-                                portfolioPaymentLauncher.launch(intent)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(54.dp)
-                                .shadow(12.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFFFFB800)),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = Color(0xFF0A0F1D)
-                            ),
-                            contentPadding = PaddingValues(0.dp),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(Color(0xFFFFB800), Color(0xFFFF8C00))
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Bolt,
-                                        contentDescription = null,
-                                        tint = Color(0xFF0A0F1D),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Unlock Instant Access • ₹399",
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.ExtraBold,
-                                            fontSize = 15.sp,
-                                            color = Color(0xFF0A0F1D)
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Chat With Advisor Button
-                        OutlinedButton(
-                            onClick = {
-                                com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
+                                val advisorMsg = "Hello Rivava Team, I would like to speak with an advisor regarding Rivava Elite Portfolio access. Please guide me through the activation process."
+                                com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(
                                     context = context,
-                                    username = auth.currentUser?.displayName ?: "User",
-                                    email = auth.currentUser?.email ?: "",
-                                    phoneNumber = userPhone,
-                                    preference = "No",
-                                    premiumStatus = false
+                                    customMessage = advisorMsg
                                 )
                                 showWhatsAppDialog = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFF00C6FF).copy(alpha = 0.45f)),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color(0xFF00C6FF).copy(alpha = 0.06f)
-                            )
+                                .height(52.dp)
+                                .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF00C6FF)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF00C6FF),
+                                contentColor = Color(0xFF0A0F1D)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -395,50 +340,53 @@ fun RivavaPortfolioScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Chat,
-                                    contentDescription = "Chat",
-                                    tint = Color(0xFF00C6FF),
-                                    modifier = Modifier.size(17.dp)
+                                    contentDescription = null,
+                                    tint = Color(0xFF0A0F1D),
+                                    modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    "Chat With SEBI Advisor",
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF00C6FF)
+                                    text = "OPTION 1: Chat with Advisor",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 15.sp,
+                                        color = Color(0xFF0A0F1D)
                                     )
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        var showSecretDialog by remember { mutableStateOf(false) }
-
-                        Row(
+                        // OPTION 2: Unlock with Secret Key Button
+                        OutlinedButton(
+                            onClick = { showSecretDialog = true },
                             modifier = Modifier
-                                .clip(RoundedCornerShape(999.dp))
-                                .clickable { showSecretDialog = true }
-                                .padding(horizontal = 14.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFFFFB800)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color(0xFFFFB800).copy(alpha = 0.08f)
+                            )
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Key,
-                                contentDescription = null,
-                                tint = Color(0xFF64748B),
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Text(
-                                "Have an access pass? Enter Secret Key",
-                                color = Color(0xFF94A3B8),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = Color(0xFF64748B),
-                                modifier = Modifier.size(11.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Key,
+                                    contentDescription = "Key",
+                                    tint = Color(0xFFFFB800),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "OPTION 2: Unlock with Secret Key",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFFB800)
+                                    )
+                                )
+                            }
                         }
 
                         if (showSecretDialog) {
@@ -447,15 +395,6 @@ fun RivavaPortfolioScreen(
                                 onUnlockSuccess = {
                                     premiumViewModel.syncEntitlement()
                                     showSecretDialog = false
-                                },
-                                onPayClick = {
-                                    showSecretDialog = false
-                                    val intent = Intent(context, PaymentActivity::class.java).apply {
-                                        putExtra("plan", "portfolio_premium")
-                                        putExtra("amountPaise", 39900)
-                                        putExtra("title", "Rivava Portfolio Premium")
-                                    }
-                                    portfolioPaymentLauncher.launch(intent)
                                 }
                             )
                         }
