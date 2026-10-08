@@ -43,16 +43,16 @@ class HelpChatViewModelTest {
         Thread.sleep(1200)
 
         // Now there should be 3 messages: welcome, user message, bot reply
-        messages = viewModel.messages.value
-        assertEquals(3, messages.size)
+        val updatedMessages = viewModel.messages.value
+        assertEquals(3, updatedMessages.size)
 
         // Check user message
-        assertEquals("I need help with my account", messages[1].text)
-        assertEquals(true, messages[1].isUser)
+        assertEquals("I need help with my account", updatedMessages[1].text)
+        assertEquals(true, updatedMessages[1].isUser)
 
         // Check bot reply
-        assertTrue(messages[2].text.contains("8881176909"))
-        assertEquals(false, messages[2].isUser)
+        assertTrue(updatedMessages[2].text.contains("8881176909"))
+        assertEquals(false, updatedMessages[2].isUser)
     }
 
     @Test

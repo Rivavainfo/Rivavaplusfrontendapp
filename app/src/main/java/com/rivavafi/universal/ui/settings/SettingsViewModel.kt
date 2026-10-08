@@ -145,8 +145,8 @@ class SettingsViewModel @Inject constructor(
             runCatching {
                 CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest())
             }
-            // Keep locally cached profile/onboarding data so returning users
-            // don't lose their displayed name after sign out.
+            preferencesRepository.clearAllData()
+            transactionRepository.stopSync()
         }
     }
 

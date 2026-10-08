@@ -116,9 +116,7 @@ fun RivavaPortfolioScreen(
         return
     }
 
-    // In DEBUG mode (development environment), we give instant access to the Portfolio section!
-    // In RELEASE mode, non-unlocked users see the VIP paywall.
-    if (premiumState.status != EntitlementStatus.UNLOCKED && !com.rivavafi.universal.BuildConfig.DEBUG) {
+    if (premiumState.status != EntitlementStatus.UNLOCKED) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1136,12 +1134,9 @@ fun RivavaPortfolioScreen(
                         )
                     }
 
-                    val inrFormatter = java.text.NumberFormat.getCurrencyInstance(Locale("en", "IN"))
-
                     // BTC
                     val btcData = cryptoStates["bitcoin"]
-                    val btcPrice = btcData?.price?.takeIf { it > 0 }?.let { inrFormatter.format(it) } ?: "₹80,69,537.00"
-                    val btcChange = btcData?.change24h?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-2.64"
+                    val btcChange = btcData?.change24h ?: -2.64
                     PortfolioAssetRow(
                         badgeText = "₿",
                         badgeBgColor = Color(0xFFF7931A),
@@ -1149,10 +1144,7 @@ fun RivavaPortfolioScreen(
                         title = "BTC",
                         subtitle = "Bitcoin",
                         titleColor = Color(0xFFF7931A),
-                        price = btcPrice,
-                        pctChange = if (btcChange.startsWith("-")) "$btcChange%" else "+$btcChange%",
-                        isPositive = !btcChange.startsWith("-"),
-                        sparklinePositive = false,
+                        sparklinePositive = btcChange >= 0,
                         onClick = {
                             try {
                                 uriHandler.openUri("https://www.google.com/search?q=bitcoin+price+inr")
@@ -1162,8 +1154,7 @@ fun RivavaPortfolioScreen(
 
                     // ETH
                     val ethData = cryptoStates["ethereum"]
-                    val ethPrice = ethData?.price?.takeIf { it > 0 }?.let { inrFormatter.format(it) } ?: "₹2,48,046.00"
-                    val ethChange = ethData?.change24h?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-4.98"
+                    val ethChange = ethData?.change24h ?: -4.98
                     PortfolioAssetRow(
                         badgeText = "♦",
                         badgeBgColor = Color(0xFF38467A),
@@ -1171,10 +1162,7 @@ fun RivavaPortfolioScreen(
                         title = "ETH",
                         subtitle = "Ethereum",
                         titleColor = Color(0xFF818CF8),
-                        price = ethPrice,
-                        pctChange = if (ethChange.startsWith("-")) "$ethChange%" else "+$ethChange%",
-                        isPositive = !ethChange.startsWith("-"),
-                        sparklinePositive = false,
+                        sparklinePositive = ethChange >= 0,
                         onClick = {
                             try {
                                 uriHandler.openUri("https://www.google.com/search?q=ethereum+price+inr")
@@ -1184,8 +1172,7 @@ fun RivavaPortfolioScreen(
 
                     // SOL
                     val solData = cryptoStates["solana"]
-                    val solPrice = solData?.price?.takeIf { it > 0 }?.let { inrFormatter.format(it) } ?: "₹11,257.77"
-                    val solChange = solData?.change24h?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-2.73"
+                    val solChange = solData?.change24h ?: -2.73
                     PortfolioAssetRow(
                         badgeText = "≡",
                         badgeBgColor = Color(0xFF0F3B36),
@@ -1193,10 +1180,7 @@ fun RivavaPortfolioScreen(
                         title = "SOL",
                         subtitle = "Solana",
                         titleColor = Color(0xFF14F195),
-                        price = solPrice,
-                        pctChange = if (solChange.startsWith("-")) "$solChange%" else "+$solChange%",
-                        isPositive = !solChange.startsWith("-"),
-                        sparklinePositive = false,
+                        sparklinePositive = solChange >= 0,
                         onClick = {
                             try {
                                 uriHandler.openUri("https://www.google.com/search?q=solana+price+inr")
@@ -1320,10 +1304,10 @@ fun PortfolioAssetRow(
     badgeTextColor: Color,
     title: String,
     subtitle: String,
-    price: String,
-    pctChange: String,
+    price: String? = null,
+    pctChange: String? = null,
     absChange: String? = null,
-    isPositive: Boolean,
+    isPositive: Boolean = true,
     sparklinePositive: Boolean = isPositive,
     titleColor: Color = Color.White,
     onClick: () -> Unit = {},
@@ -1392,8 +1376,8 @@ fun PortfolioAssetRow(
             // Mini Sparkline
             Box(
                 modifier = Modifier
-                    .width(46.dp)
-                    .height(26.dp)
+                    .width(64.dp)
+                    .height(30.dp)
                     .padding(horizontal = 2.dp)
             ) {
                 MiniSparkline(
@@ -1402,53 +1386,58 @@ fun PortfolioAssetRow(
                 )
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            if (price != null || pctChange != null) {
+                Spacer(modifier = Modifier.width(10.dp))
 
-            // Price & Change Badge
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = price,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 14.sp
-                    ),
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                val badgeBg = if (isPositive) Color(0xFF00E471).copy(alpha = 0.15f) else Color(0xFFFF3366).copy(alpha = 0.15f)
-                val badgeBorder = if (isPositive) Color(0xFF00E471).copy(alpha = 0.35f) else Color(0xFFFF3366).copy(alpha = 0.35f)
-                val badgeColor = if (isPositive) Color(0xFF00E471) else Color(0xFFFF3366)
-
+                // Price & Change Badge
                 Column(
                     horizontalAlignment = Alignment.End,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(7.dp))
-                        .background(badgeBg)
-                        .border(0.8.dp, badgeBorder, RoundedCornerShape(7.dp))
-                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = "${if (isPositive) "▲" else "▼"} $pctChange",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 10.sp
-                        ),
-                        color = badgeColor
-                    )
-                    if (absChange != null) {
+                    if (price != null) {
                         Text(
-                            text = absChange,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 9.sp
+                            text = price,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 14.sp
                             ),
-                            color = badgeColor
+                            color = Color.White
                         )
+                        Spacer(modifier = Modifier.height(3.dp))
+                    }
+
+                    if (pctChange != null) {
+                        val badgeBg = if (isPositive) Color(0xFF00E471).copy(alpha = 0.15f) else Color(0xFFFF3366).copy(alpha = 0.15f)
+                        val badgeBorder = if (isPositive) Color(0xFF00E471).copy(alpha = 0.35f) else Color(0xFFFF3366).copy(alpha = 0.35f)
+                        val badgeColor = if (isPositive) Color(0xFF00E471) else Color(0xFFFF3366)
+
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(7.dp))
+                                .background(badgeBg)
+                                .border(0.8.dp, badgeBorder, RoundedCornerShape(7.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "${if (isPositive) "▲" else "▼"} $pctChange",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 10.sp
+                                ),
+                                color = badgeColor
+                            )
+                            if (absChange != null) {
+                                Text(
+                                    text = absChange,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 9.sp
+                                    ),
+                                    color = badgeColor
+                                )
+                            }
+                        }
                     }
                 }
             }
