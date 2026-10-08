@@ -250,12 +250,21 @@ fun HomeScreen(
                 HomeEliteHeroBanner(
                     seatsRemaining = displaySeats,
                     onJoinClick = {
-                        if (eliteSubscription.isElite) {
-                            context.startActivity(Intent(context, com.rivavafi.universal.ui.elite.EliteDashboardActivity::class.java))
+                        if (isPremiumUser || eliteSubscription.isElite) {
+                            val userDisplayName = userName ?: "User"
+                            val email = authUser?.email ?: ""
+                            val phone = userModel?.phone ?: ""
+                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
+                                context = context,
+                                username = userDisplayName,
+                                email = email,
+                                phoneNumber = phone,
+                                preference = "1-on-1 Session Request",
+                                premiumStatus = true
+                            )
                         } else {
-                            val intent = Intent(context, com.rivavafi.universal.ui.elite.EliteLandingActivity::class.java)
-                            val options = android.app.ActivityOptions.makeCustomAnimation(context, android.R.anim.fade_in, android.R.anim.fade_out)
-                            context.startActivity(intent, options.toBundle())
+                            Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
+                            onNavigateToRivavaPortfolio()
                         }
                     }
                 )
@@ -280,13 +289,8 @@ fun HomeScreen(
 
             // 5. Track Your Money Donut Chart and Category Breakdown Matching Reference Image
             item {
-                val totalSpentFormatted = if (summary.totalDebit > 0) {
-                    "₹" + String.format(Locale.getDefault(), "%,.0f", summary.totalDebit)
-                } else {
-                    "₹24,320"
-                }
                 HomeTrackMoneySection(
-                    totalSpent = totalSpentFormatted,
+                    transactions = transactions,
                     onClick = { onNavigateToAnalytics() }
                 )
             }

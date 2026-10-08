@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,12 +43,29 @@ fun AddTransactionBottomSheet(
     onAddCategory: (String, String) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var isCredit by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf(categories.firstOrNull() ?: "General") }
-    var selectedSubcategory by remember { mutableStateOf("") }
+
+    val defaultDebitCategories = remember { listOf("Food", "Shopping", "Transport", "Bills", "Entertainment", "Healthcare", "Other") }
+    val defaultCreditCategories = remember { listOf("Salary", "Business", "Refund", "Investment Income", "Other") }
+
+    val currentCategories = remember(isCredit, categories) {
+        val preset = if (isCredit) defaultCreditCategories else defaultDebitCategories
+        val merged = (preset + categories).distinct()
+        merged
+    }
+
+    var selectedCategory by remember { mutableStateOf(currentCategories.first()) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isCredit) {
+        val preset = if (isCredit) defaultCreditCategories else defaultDebitCategories
+        if (!preset.contains(selectedCategory)) {
+            selectedCategory = preset.first()
+        }
+    }
 
     var selectedDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -361,12 +379,62 @@ fun AddTransactionBottomSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Selectable Category Chips
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "SELECT CATEGORY",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = Color(0xFF64748B),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    currentCategories.forEach { category ->
+                        val isSelected = category == selectedCategory
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedCategory = category },
+                            label = {
+                                Text(
+                                    text = category,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color(0xFF101524),
+                                labelColor = Color(0xFF94A3B8),
+                                selectedContainerColor = if (isCredit) Color(0xFF00E471).copy(alpha = 0.2f) else Color(0xFFFF3366).copy(alpha = 0.2f),
+                                selectedLabelColor = Color.White
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                borderColor = Color(0xFF1E283D),
+                                selectedBorderColor = if (isCredit) Color(0xFF00E471) else Color(0xFFFF3366)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Title Input
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title / Merchant / Description", fontSize = 12.sp) },
-                placeholder = { Text("e.g. Swiggy, Netflix, Freelance payout", color = Color(0xFF475569), fontSize = 13.sp) },
+                label = { Text("Title / Merchant Name", fontSize = 12.sp) },
+                placeholder = { Text("e.g. Swiggy, Salary, Freelance", color = Color(0xFF475569), fontSize = 13.sp) },
                 leadingIcon = {
                     Box(
                         modifier = Modifier
@@ -399,7 +467,45 @@ fun AddTransactionBottomSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Category Selector
+            // Optional Note / Description Input
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Note / Description (Optional)", fontSize = 12.sp) },
+                placeholder = { Text("e.g. Dinner with friends, Monthly payout", color = Color(0xFF475569), fontSize = 13.sp) },
+                leadingIcon = {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFA855F7).copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            tint = Color(0xFFA855F7),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFF101524),
+                    unfocusedContainerColor = Color(0xFF101524),
+                    focusedBorderColor = Color(0xFFA855F7),
+                    unfocusedBorderColor = Color(0xFF1E283D),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedLabelColor = Color(0xFFA855F7),
+                    unfocusedLabelColor = Color(0xFF64748B)
+                )
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Category Dropdown Box for custom categories
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -408,7 +514,7 @@ fun AddTransactionBottomSheet(
                     value = selectedCategory,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Category", fontSize = 12.sp) },
+                    label = { Text("Category (Custom/Dropdown)", fontSize = 12.sp) },
                     leadingIcon = {
                         Box(
                             modifier = Modifier
@@ -446,7 +552,7 @@ fun AddTransactionBottomSheet(
                     onDismissRequest = { expanded = false },
                     modifier = Modifier.background(Color(0xFF101524))
                 ) {
-                    categories.forEach { category ->
+                    currentCategories.forEach { category ->
                         DropdownMenuItem(
                             text = { Text(category, color = Color.White, fontWeight = FontWeight.Medium) },
                             onClick = {
@@ -558,7 +664,7 @@ fun AddTransactionBottomSheet(
                             parsedAmount,
                             typeStr,
                             selectedCategory,
-                            if (selectedSubcategory.isNotEmpty() && isCredit) selectedSubcategory else null,
+                            if (note.isNotBlank()) note else null,
                             selectedDateMillis
                         )
                     }

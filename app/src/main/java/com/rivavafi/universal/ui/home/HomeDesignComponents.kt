@@ -1214,10 +1214,58 @@ private fun HomeActionCard(
  */
 @Composable
 fun HomeTrackMoneySection(
-    totalSpent: String = "₹24,320",
+    transactions: List<com.rivavafi.universal.data.local.TransactionEntity> = emptyList(),
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    // Current month calculations using local timezone
+    val monthCal = java.util.Calendar.getInstance()
+    val monthYear = monthCal.get(java.util.Calendar.YEAR)
+    val monthNum = monthCal.get(java.util.Calendar.MONTH)
+
+    val currentMonthDebits = remember(transactions) {
+        transactions.filter { txn ->
+            val isDebit = txn.type.equals("DEBIT", ignoreCase = true) ||
+                    txn.type.equals("EXPENSE", ignoreCase = true) ||
+                    txn.type.equals("BILL_PENDING", ignoreCase = true) ||
+                    txn.type.equals("PAYMENT", ignoreCase = true)
+            if (!isDebit) return@filter false
+
+            val c = java.util.Calendar.getInstance().apply { timeInMillis = txn.date }
+            c.get(java.util.Calendar.YEAR) == monthYear && c.get(java.util.Calendar.MONTH) == monthNum
+        }
+    }
+
+    val totalSpentDouble = currentMonthDebits.sumOf { it.amount }
+    val formattedTotalSpent = "₹" + String.format(java.util.Locale.getDefault(), "%,.0f", totalSpentDouble)
+
+    val categoryColorMap = mapOf(
+        "Food" to Color(0xFFFF2A85),
+        "Shopping" to Color(0xFF00E575),
+        "Transport" to Color(0xFF0091FF),
+        "Bills" to Color(0xFFA855F7),
+        "Entertainment" to Color(0xFFFF8A00),
+        "Healthcare" to Color(0xFF00C6FF),
+        "Other" to Color(0xFF94A3B8)
+    )
+
+    data class TrackCategoryItem(val name: String, val amount: Double, val percentage: Float, val color: Color)
+
+    val categoryBreakdown = remember(currentMonthDebits, totalSpentDouble) {
+        if (totalSpentDouble <= 0) emptyList()
+        else {
+            currentMonthDebits.groupBy { it.category.ifBlank { "Other" } }
+                .map { (cat, txns) ->
+                    val sum = txns.sumOf { it.amount }
+                    val pct = ((sum / totalSpentDouble) * 100).toFloat()
+                    val color = categoryColorMap[cat] ?: Color(0xFF00C6FF)
+                    TrackCategoryItem(cat, sum, pct, color)
+                }
+                .sortedByDescending { it.amount }
+                .take(5)
+        }
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
         // Section Header with Chevron >
         Row(
@@ -1255,123 +1303,124 @@ fun HomeTrackMoneySection(
             shape = RoundedCornerShape(22.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Donut Chart on Left with Center Text
+            if (categoryBreakdown.isEmpty()) {
                 Box(
-                    modifier = Modifier.size(136.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val strokeWidth = 16.dp.toPx()
-                        val diameter = size.minDimension - strokeWidth
-                        val topLeft = Offset(
-                            (size.width - diameter) / 2f,
-                            (size.height - diameter) / 2f
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.BarChart,
+                            contentDescription = null,
+                            tint = Color(0xFF00C6FF),
+                            modifier = Modifier.size(32.dp)
                         )
-                        val arcSize = androidx.compose.ui.geometry.Size(diameter, diameter)
-
-                        // Slices in clockwise order matching reference screenshot:
-                        // Green (top-left) -> Pink (top-right & right) -> Orange (bottom-right) -> Purple (bottom) -> Blue (bottom-left)
-                        val slices = listOf(
-                            Pair(Color(0xFF00E575), 21f), // Shopping (21%)
-                            Pair(Color(0xFFFF2A85), 34f), // Food & Dining (34%)
-                            Pair(Color(0xFFFF8A00), 12f), // Others (12%)
-                            Pair(Color(0xFFA855F7), 13f), // Bills & Utilities (13%)
-                            Pair(Color(0xFF0091FF), 15f)  // Transport (15%)
-                        )
-
-                        var currentAngle = -145f
-                        val gap = 4f
-                        slices.forEach { (color, pct) ->
-                            val sweep = (pct / 95f * 360f) - gap
-                            drawArc(
-                                color = color,
-                                startAngle = currentAngle + (gap / 2f),
-                                sweepAngle = sweep,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                            )
-                            currentAngle += (pct / 95f * 360f)
-                        }
-                    }
-
-                    // Center Labels inside donut
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = totalSpent,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 16.sp,
-                                color = Color.White
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Text(
-                            text = "Total Spent",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontWeight = FontWeight.Medium
-                            )
+                            text = "No Expenses Recorded This Month",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
                         )
                         Text(
-                            text = "This Month",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontWeight = FontWeight.Medium
-                            )
+                            text = "Add debits to automatically generate your expense chart.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = Color(0xFF64748B)
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Breakdown Legend on Right
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ExpenseCategoryRow(
-                        color = Color(0xFFFF2A85),
-                        name = "Food & Dining",
-                        amount = "₹8,400",
-                        percentage = "34%"
-                    )
-                    ExpenseCategoryRow(
-                        color = Color(0xFF00E575),
-                        name = "Shopping",
-                        amount = "₹5,200",
-                        percentage = "21%"
-                    )
-                    ExpenseCategoryRow(
-                        color = Color(0xFF0091FF),
-                        name = "Transport",
-                        amount = "₹3,600",
-                        percentage = "15%"
-                    )
-                    ExpenseCategoryRow(
-                        color = Color(0xFFA855F7),
-                        name = "Bills & Utilities",
-                        amount = "₹3,120",
-                        percentage = "13%"
-                    )
-                    ExpenseCategoryRow(
-                        color = Color(0xFFFF8A00),
-                        name = "Others",
-                        amount = "₹3,000",
-                        percentage = "12%"
-                    )
+                    // Donut Chart on Left with Center Text
+                    Box(
+                        modifier = Modifier.size(136.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val strokeWidth = 16.dp.toPx()
+                            val diameter = size.minDimension - strokeWidth
+                            val topLeft = Offset(
+                                (size.width - diameter) / 2f,
+                                (size.height - diameter) / 2f
+                            )
+                            val arcSize = androidx.compose.ui.geometry.Size(diameter, diameter)
+
+                            var currentAngle = -145f
+                            val gap = 4f
+                            val totalPct = categoryBreakdown.sumOf { it.percentage.toDouble() }.toFloat().coerceAtLeast(1f)
+
+                            categoryBreakdown.forEach { item ->
+                                val sweep = ((item.percentage / totalPct) * 360f) - gap
+                                if (sweep > 0) {
+                                    drawArc(
+                                        color = item.color,
+                                        startAngle = currentAngle + (gap / 2f),
+                                        sweepAngle = sweep,
+                                        useCenter = false,
+                                        topLeft = topLeft,
+                                        size = arcSize,
+                                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                    )
+                                    currentAngle += (item.percentage / totalPct * 360f)
+                                }
+                            }
+                        }
+
+                        // Center Labels inside donut
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = formattedTotalSpent,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 15.sp,
+                                    color = Color.White
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(1.dp))
+                            Text(
+                                text = "Total Spent",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                            Text(
+                                text = "This Month",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Breakdown Legend on Right
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categoryBreakdown.forEach { item ->
+                            ExpenseCategoryRow(
+                                color = item.color,
+                                name = item.name,
+                                amount = "₹" + String.format(java.util.Locale.getDefault(), "%,.0f", item.amount),
+                                percentage = String.format(java.util.Locale.getDefault(), "%.0f%%", item.percentage)
+                            )
+                        }
+                    }
                 }
             }
         }
