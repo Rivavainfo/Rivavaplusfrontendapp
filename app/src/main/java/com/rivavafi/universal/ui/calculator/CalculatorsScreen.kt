@@ -89,6 +89,7 @@ data class ToolCardItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculatorsScreen(
+    initialTool: String? = null,
     onBack: () -> Unit = {},
     viewModel: CalculatorViewModel = hiltViewModel()
 ) {
@@ -97,7 +98,19 @@ fun CalculatorsScreen(
     val filteredHistory by viewModel.filteredHistory.collectAsState()
     val historyFilter by viewModel.historyFilter.collectAsState()
 
-    var activeCalculator by remember { mutableStateOf<CalculatorType?>(null) }
+    var activeCalculator by remember {
+        mutableStateOf<CalculatorType?>(
+            initialTool?.let { toolName ->
+                try {
+                    val parsed = CalculatorType.valueOf(toolName)
+                    viewModel.setCalculatorType(parsed)
+                    parsed
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        )
+    }
     var showHistorySheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

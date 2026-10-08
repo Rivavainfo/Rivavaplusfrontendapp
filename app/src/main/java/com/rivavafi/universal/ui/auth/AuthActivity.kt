@@ -492,14 +492,11 @@ fun AuthScreenContent(
                                 )
                             )
                     ) {
-                        var selectedAuthTab by remember { mutableStateOf(0) } // 0: Google, 1: Email, 2: Phone
+                        var selectedAuthTab by remember { mutableStateOf(0) } // 0: Google, 1: Email
                         var isEmailSignUp by remember { mutableStateOf(false) }
                         var emailInput by remember { mutableStateOf("") }
                         var passwordInput by remember { mutableStateOf("") }
                         var nameInput by remember { mutableStateOf("") }
-                        var phoneInput by remember { mutableStateOf("") }
-                        var otpInput by remember { mutableStateOf("") }
-                        var isOtpSent by remember { mutableStateOf(false) }
 
                         Column(
                             modifier = Modifier
@@ -516,7 +513,7 @@ fun AuthScreenContent(
 
                             RivavaBrandDisplay(showQuote = false)
 
-                            // Auth Method Selector Tabs with Cyan Glow
+                            // Auth Method Selector Tabs: Continue with Google & Continue with Email
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -527,9 +524,8 @@ fun AuthScreenContent(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 val authTabs = listOf(
-                                    Triple("Fast", Icons.Default.Bolt, 0),
-                                    Triple("Email", Icons.Outlined.Email, 1),
-                                    Triple("Phone", Icons.Outlined.Phone, 2)
+                                    Triple("Google", Icons.Default.Bolt, 0),
+                                    Triple("Email", Icons.Outlined.Email, 1)
                                 )
                                 authTabs.forEach { (label, icon, index) ->
                                     val isSelected = selectedAuthTab == index
@@ -572,7 +568,7 @@ fun AuthScreenContent(
 
                             when (selectedAuthTab) {
                                 0 -> {
-                                    // 1. Fast Google Sign-in
+                                    // 1. Google Sign-in
                                     Text(
                                         text = "One-tap instant & secure sign-in",
                                         style = MaterialTheme.typography.bodySmall,
@@ -709,120 +705,20 @@ fun AuthScreenContent(
                                             fontSize = 15.sp
                                         )
                                     }
-                                }
 
-                                2 -> {
-                                    // 3. Phone Number OTP Login
-                                    Text(
-                                        text = if (!isOtpSent) "Enter your mobile number to get an OTP" else "Enter the OTP sent to your phone",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.White.copy(alpha = 0.6f)
-                                    )
-
-                                    OutlinedTextField(
-                                        value = phoneInput,
-                                        onValueChange = { phoneInput = it },
-                                        label = { Text("Mobile Number (e.g. 9876543210)", color = Color.White.copy(0.6f)) },
-                                        singleLine = true,
-                                        enabled = !isOtpSent,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                                        leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = RivavaCyan) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White,
-                                            focusedBorderColor = RivavaCyan,
-                                            unfocusedBorderColor = Color.White.copy(0.2f),
-                                            cursorColor = RivavaCyan,
-                                            focusedLabelColor = RivavaCyan
-                                        )
-                                    )
-
-                                    if (isOtpSent) {
-                                        OutlinedTextField(
-                                            value = otpInput,
-                                            onValueChange = { otpInput = it },
-                                            label = { Text("Enter 6-digit OTP", color = Color.White.copy(0.6f)) },
-                                            singleLine = true,
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(14.dp),
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedTextColor = Color.White,
-                                                unfocusedTextColor = Color.White,
-                                                focusedBorderColor = RivavaCyan,
-                                                unfocusedBorderColor = Color.White.copy(0.2f),
-                                                cursorColor = RivavaCyan,
-                                                focusedLabelColor = RivavaCyan
-                                            )
-                                        )
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                                    if (!isEmailSignUp) {
+                                        TextButton(
+                                            onClick = onNavigateToReset,
+                                            modifier = Modifier.padding(top = 2.dp)
                                         ) {
-                                            TextButton(onClick = {
-                                                isOtpSent = false
-                                                otpInput = ""
-                                            }) {
-                                                Text("Change Number", color = Color.White.copy(0.6f), style = MaterialTheme.typography.labelSmall)
-                                            }
-
-                                            TextButton(onClick = {
-                                                val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
-                                                val activity = context as? android.app.Activity
-                                                viewModel.resendOtp(activity, norm) {
-                                                    Toast.makeText(context, "OTP Resent successfully", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }) {
-                                                Text("Resend OTP", color = RivavaCyan, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
-                                            }
+                                            Text(
+                                                text = "Forgot Password?",
+                                                color = RivavaCyan,
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                            )
                                         }
                                     }
-
-                                    Button(
-                                        onClick = {
-                                            val norm = viewModel.normalizePhoneNumber(phoneInput) ?: phoneInput
-                                            val activity = context as? android.app.Activity
-                                            if (!isOtpSent) {
-                                                viewModel.startPhoneVerification(activity, norm) {
-                                                    isOtpSent = true
-                                                    Toast.makeText(context, "OTP sent to $phoneInput", Toast.LENGTH_SHORT).show()
-                                                }
-                                            } else {
-                                                viewModel.verifyOtp(otpInput.trim(), norm, null, onSuccess = {}, onError = {})
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(52.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = RivavaCyan),
-                                        shape = RoundedCornerShape(16.dp),
-                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
-                                        enabled = authState != AuthState.LOADING && phoneInput.isNotBlank() && (!isOtpSent || otpInput.isNotBlank())
-                                    ) {
-                                        Text(
-                                            text = if (!isOtpSent) "Send OTP" else "Verify & Sign In",
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp
-                                        )
-                                    }
                                 }
-                            }
-
-                            // Forgot Password Link
-                            TextButton(
-                                onClick = onNavigateToReset,
-                                modifier = Modifier.padding(top = 2.dp)
-                            ) {
-                                Text(
-                                    text = "Forgot Password?",
-                                    color = RivavaCyan,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                                )
                             }
                         }
                     }
