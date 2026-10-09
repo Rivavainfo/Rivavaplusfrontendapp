@@ -28,6 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import android.graphics.Color as AndroidColor
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
 import com.rivavafi.universal.ui.theme.*
 
 /**
@@ -1595,149 +1601,88 @@ fun HomeTrackMoneySection(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Trend Graph Section
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Cash Flow Trends",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                fontSize = 13.sp
-                            )
+                    // Donut Chart Section
+                    Text(
+                        text = "Category Expenses Breakdown",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 13.sp
                         )
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF00E471)))
-                                Text("Credit", color = Color(0xFF869AB8), fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                            }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFFF3366)))
-                                Text("Debit", color = Color(0xFF869AB8), fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                    }
+                    )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Interactive Dual Bar Chart
-                    val maxVal = remember(chartData) {
-                        chartData.flatMap { listOf(it.debitAmount, it.creditAmount) }.maxOrNull()?.coerceAtLeast(100.0) ?: 100.0
+                    // Group debit/expense transactions by category for Donut Chart
+                    val categoryBreakdown = remember(periodTransactions) {
+                        val debits = periodTransactions.filter { txn ->
+                            val t = txn.type.uppercase()
+                            t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
+                        }
+                        debits.groupBy { it.category.ifBlank { "General" } }
+                            .map { (category, list) ->
+                                CategoryVisuals.getCategoryVisual(category) to list.sumOf { it.amount }
+                            }
+                            .sortedByDescending { it.second }
                     }
 
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        // Tooltip banner if bar selected
-                        if (selectedBarIndex != null && selectedBarIndex!! in chartData.indices) {
-                            val selectedData = chartData[selectedBarIndex!!]
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF1B2338))
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Period: ${selectedData.label}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color.White, fontSize = 11.sp)
-                                )
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text(
-                                        text = "+₹" + String.format(locale, "%,.0f", selectedData.creditAmount),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00E471), fontSize = 11.sp)
-                                    )
-                                    Text(
-                                        text = "-₹" + String.format(locale, "%,.0f", selectedData.debitAmount),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFFFF3366), fontSize = 11.sp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        // Chart Canvas Row
-                        Row(
+                    if (categoryBreakdown.isEmpty()) {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.Bottom
+                                .height(160.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            chartData.forEachIndexed { index, item ->
-                                val isBarSelected = selectedBarIndex == index
-                                val creditHeightFrac = (item.creditAmount / maxVal).toFloat().coerceIn(0.04f, 1f)
-                                val debitHeightFrac = (item.debitAmount / maxVal).toFloat().coerceIn(0.04f, 1f)
-
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight()
-                                        .clickable {
-                                            selectedBarIndex = if (selectedBarIndex == index) null else index
-                                        },
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Bottom
-                                ) {
-                                    Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.Bottom,
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        // Credit Bar
-                                        Box(
-                                            modifier = Modifier
-                                                .width(8.dp)
-                                                .fillMaxHeight(creditHeightFrac)
-                                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                                .background(
-                                                    if (item.creditAmount > 0) {
-                                                        if (isBarSelected) Color(0xFF00FF87) else Color(0xFF00E471)
-                                                    } else Color(0xFF1B2338)
-                                                )
-                                        )
-
-                                        // Debit Bar
-                                        Box(
-                                            modifier = Modifier
-                                                .width(8.dp)
-                                                .fillMaxHeight(debitHeightFrac)
-                                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                                .background(
-                                                    if (item.debitAmount > 0) {
-                                                        if (isBarSelected) Color(0xFFFF5288) else Color(0xFFFF3366)
-                                                    } else Color(0xFF1B2338)
-                                                )
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(6.dp))
-
-                                    Text(
-                                        text = item.label,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            fontWeight = if (isBarSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isBarSelected) Color(0xFF00A3FF) else Color(0xFF64748B)
-                                        ),
-                                        maxLines = 1
-                                    )
-                                }
-                            }
+                            Text(
+                                text = "No expense data for Donut Chart in this period",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF869AB8)
+                            )
                         }
+                    } else {
+                        AndroidView(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp),
+                            factory = { context ->
+                                PieChart(context).apply {
+                                    description.isEnabled = false
+                                    isDrawHoleEnabled = true
+                                    setHoleColor(AndroidColor.TRANSPARENT)
+                                    setTransparentCircleColor(AndroidColor.TRANSPARENT)
+                                    holeRadius = 58f
+                                    transparentCircleRadius = 63f
+                                    setDrawCenterText(true)
+                                    centerText = "Expenses"
+                                    setCenterTextSize(14f)
+                                    setCenterTextColor(AndroidColor.WHITE)
+                                    rotationAngle = 0f
+                                    isRotationEnabled = true
+                                    legend.isEnabled = true
+                                    legend.textColor = AndroidColor.WHITE
+                                    legend.isWordWrapEnabled = true
+                                    setEntryLabelColor(AndroidColor.WHITE)
+                                    setEntryLabelTextSize(10f)
+                                }
+                            },
+                            update = { pieChart ->
+                                val entries = categoryBreakdown.take(6).map { (visual, amount) ->
+                                    PieEntry(amount.toFloat(), visual.title)
+                                }
+                                val colors = categoryBreakdown.take(6).map { (visual, _) ->
+                                    visual.color.toArgb()
+                                }
+                                val dataSet = PieDataSet(entries, "").apply {
+                                    sliceSpace = 2f
+                                    selectionShift = 6f
+                                    this.colors = colors
+                                    valueTextColor = AndroidColor.WHITE
+                                    valueTextSize = 10f
+                                }
+                                pieChart.data = PieData(dataSet)
+                                pieChart.invalidate()
+                            }
+                        )
                     }
                 }
             }
