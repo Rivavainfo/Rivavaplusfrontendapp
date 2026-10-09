@@ -24,10 +24,13 @@ object SecretKeyValidator {
     }
 
     /**
-     * Validates minimum structural length before sending to backend for verification.
+     * Validates minimum structural length or rivrubi pattern before sending to backend for verification.
      */
     fun isValidFormat(key: String): Boolean {
         val clean = key.trim()
+        if (clean.matches(Regex("(?i)^rivrubi@\\d{5}$"))) {
+            return true
+        }
         return clean.length >= 6
     }
 
