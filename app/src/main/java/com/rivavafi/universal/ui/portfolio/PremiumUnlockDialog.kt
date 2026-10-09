@@ -168,10 +168,10 @@ fun PremiumUnlockDialog(
                             OutlinedTextField(
                                 value = secretKeyInput,
                                 onValueChange = {
-                                    secretKeyInput = SecretKeyValidator.normalize(it)
+                                    secretKeyInput = it.trim()
                                     errorMessage = null
                                 },
-                                label = { Text("License / Access Key (e.g. RIV-XXXX-XXXX)", color = Color.White.copy(0.7f)) },
+                                label = { Text("License / Access Key (e.g. rivrubi@12345 or RIV-XXXX)", color = Color.White.copy(0.7f)) },
                                 singleLine = true,
                                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(
@@ -181,10 +181,10 @@ fun PremiumUnlockDialog(
                                 keyboardActions = KeyboardActions(
                                     onDone = {
                                         focusManager.clearFocus()
-                                        if (secretKeyInput.length >= 6) {
+                                        if (SecretKeyValidator.isValidFormat(secretKeyInput)) {
                                             viewModel.verifyAndRedeemSecretKey(secretKeyInput)
                                         } else {
-                                            errorMessage = "Please enter a valid secret key format."
+                                            errorMessage = "Please enter a valid secret key format (e.g. rivrubi@12345)."
                                         }
                                     }
                                 ),
@@ -221,10 +221,10 @@ fun PremiumUnlockDialog(
                             Button(
                                 onClick = {
                                     focusManager.clearFocus()
-                                    if (secretKeyInput.length >= 6) {
+                                    if (SecretKeyValidator.isValidFormat(secretKeyInput)) {
                                         viewModel.verifyAndRedeemSecretKey(secretKeyInput)
                                     } else {
-                                        errorMessage = "Please enter a valid secret key format."
+                                        errorMessage = "Please enter a valid secret key format (e.g. rivrubi@12345)."
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),

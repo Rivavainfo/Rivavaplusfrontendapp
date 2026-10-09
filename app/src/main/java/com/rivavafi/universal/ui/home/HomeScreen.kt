@@ -243,14 +243,30 @@ fun HomeScreen(
                 }
             }
 
-            // 2. My Portfolio Card (Unlocked for Premium, Locked for Non-Premium)
+            // 2. Rivava Elite Hero Banner
             item {
-                val isPortfolioUnlocked = isPremiumUser || isPremiumPref
-                HomeMyPortfolioCard(
-                    isUnlocked = isPortfolioUnlocked,
-                    transactions = transactions,
-                    onUnlockClick = { onNavigateToRivavaPortfolio() },
-                    onViewFullPortfolioClick = { onNavigateToRivavaPortfolio() }
+                val seatsRemaining = (eliteConfig.totalSeats - eliteConfig.occupiedSeats).coerceAtLeast(0)
+                val displaySeats = if (eliteConfig.occupiedSeats > 0 && seatsRemaining > 0) seatsRemaining else 93
+                HomeEliteHeroBanner(
+                    seatsRemaining = displaySeats,
+                    onJoinClick = {
+                        if (isPremiumUser || eliteSubscription.isElite) {
+                            val userDisplayName = userName ?: "User"
+                            val email = authUser?.email ?: ""
+                            val phone = userModel?.phone ?: ""
+                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
+                                context = context,
+                                username = userDisplayName,
+                                email = email,
+                                phoneNumber = phone,
+                                preference = "1-on-1 Session Request",
+                                premiumStatus = true
+                            )
+                        } else {
+                            Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
+                            onNavigateToRivavaPortfolio()
+                        }
+                    }
                 )
             }
 

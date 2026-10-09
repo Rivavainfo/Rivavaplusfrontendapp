@@ -314,7 +314,7 @@ fun RivavaPortfolioScreen(
 
                         var showSecretDialog by remember { mutableStateOf(false) }
 
-                        // OPTION 1: Chat with Advisor Button
+                        // Chat with Advisor Button
                         Button(
                             onClick = {
                                 val advisorMsg = "Hello Rivava Team, I would like to speak with an advisor regarding Rivava Elite Portfolio access. Please guide me through the activation process."
@@ -345,7 +345,7 @@ fun RivavaPortfolioScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "OPTION 1: Chat with Advisor",
+                                    text = "Chat with Advisor",
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 15.sp,
@@ -357,7 +357,7 @@ fun RivavaPortfolioScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // OPTION 2: Unlock with Secret Key Button
+                        // Unlock with Secret Key Button
                         OutlinedButton(
                             onClick = { showSecretDialog = true },
                             modifier = Modifier
@@ -380,7 +380,7 @@ fun RivavaPortfolioScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    "OPTION 2: Unlock with Secret Key",
+                                    "Unlock with Secret Key",
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFFFFB800)
