@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.rivavafi.universal.ui.theme.EmeraldGreen
 import com.rivavafi.universal.utils.SecretKeyValidator
 import kotlinx.coroutines.delay
@@ -57,6 +58,9 @@ fun PremiumUnlockDialog(
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val keyState by viewModel.keyVerificationState.collectAsState()
+    val authUser = FirebaseAuth.getInstance().currentUser
+    val userEmail = authUser?.email ?: ""
+    val displayName = userName.ifBlank { authUser?.displayName ?: "User" }
 
     LaunchedEffect(keyState) {
         when (val state = keyState) {
@@ -171,7 +175,7 @@ fun PremiumUnlockDialog(
                                     secretKeyInput = it.trim()
                                     errorMessage = null
                                 },
-                                label = { Text("License / Access Key (e.g. rivrubi@12345 or RIV-XXXX)", color = Color.White.copy(0.7f)) },
+                                label = { Text("License Key (e.g. RIV@Rubicon48291)", color = Color.White.copy(0.7f)) },
                                 singleLine = true,
                                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(
@@ -184,7 +188,7 @@ fun PremiumUnlockDialog(
                                         if (SecretKeyValidator.isValidFormat(secretKeyInput)) {
                                             viewModel.verifyAndRedeemSecretKey(secretKeyInput)
                                         } else {
-                                            errorMessage = "Please enter a valid secret key format (e.g. rivrubi@12345)."
+                                            errorMessage = "Please enter a valid activation key format (e.g. RIV@Rubicon48291)."
                                         }
                                     }
                                 ),
@@ -217,14 +221,13 @@ fun PremiumUnlockDialog(
                                 )
                             }
 
-
                             Button(
                                 onClick = {
                                     focusManager.clearFocus()
                                     if (SecretKeyValidator.isValidFormat(secretKeyInput)) {
                                         viewModel.verifyAndRedeemSecretKey(secretKeyInput)
                                     } else {
-                                        errorMessage = "Please enter a valid secret key format (e.g. rivrubi@12345)."
+                                        errorMessage = "Please enter a valid activation key format (e.g. RIV@Rubicon48291)."
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -239,7 +242,16 @@ fun PremiumUnlockDialog(
 
                             OutlinedButton(
                                 onClick = {
-                                    val requestMsg = "Hello Rivava Team, I would like to speak with an advisor regarding Rivava Elite Portfolio access. Please guide me through the activation process."
+                                    val requestMsg = """
+                                        Hello Rivava Team,
+
+                                        I would like to speak with an advisor regarding Rivava Premium Portfolio access.
+
+                                        Name: $displayName
+                                        Account Email: $userEmail
+
+                                        Please guide me through the activation process.
+                                    """.trimIndent()
                                     com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, requestMsg)
                                 },
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -254,7 +266,16 @@ fun PremiumUnlockDialog(
 
                             TextButton(
                                 onClick = {
-                                    val keyReqMsg = "Hello Rivava Team, I am requesting a secret activation key for my Rivava Elite Portfolio access."
+                                    val keyReqMsg = """
+                                        Hello Rivava Team,
+
+                                        I would like to request a Rivava Premium Portfolio activation key.
+
+                                        Name: $displayName
+                                        Account Email: $userEmail
+
+                                        Please verify my eligibility and issue an activation key.
+                                    """.trimIndent()
                                     com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, keyReqMsg)
                                 }
                             ) {
@@ -321,7 +342,7 @@ fun PremiumUnlockDialog(
                             }
 
                             Text(
-                                "Rivava+ Premium Unlocked!",
+                                "Rivava Premium Unlocked!",
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                 color = EmeraldGreen,
                                 textAlign = TextAlign.Center
