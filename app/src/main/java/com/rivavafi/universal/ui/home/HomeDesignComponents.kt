@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,10 +32,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import android.graphics.Color as AndroidColor
+import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.rivavafi.universal.ui.theme.*
 
 /**
@@ -1221,14 +1229,35 @@ enum class TrackPeriod(val label: String, val daysCount: Int) {
     LAST_30_DAYS("Last 30 Days", 30)
 }
 
-data class ChartBarData(
-    val label: String,
-    val debitAmount: Double,
-    val creditAmount: Double
+data class SpendingCategoryStat(
+    val visual: CategoryVisual,
+    val totalAmount: Double,
+    val percentage: Double,
+    val count: Int,
+    val transactions: List<com.rivavafi.universal.data.local.TransactionEntity>
 )
 
+data class TrendBarData(
+    val label: String,
+    val totalDebit: Double
+)
+
+private fun formatInr(amount: Double): String {
+    val formatter = java.text.NumberFormat.getNumberInstance(java.util.Locale("en", "IN"))
+    formatter.maximumFractionDigits = 0
+    formatter.minimumFractionDigits = 0
+    return "₹" + formatter.format(amount)
+}
+
+private fun isDebitTransaction(txn: com.rivavafi.universal.data.local.TransactionEntity): Boolean {
+    val t = txn.type.trim().uppercase()
+    return t == "DEBIT" || t == "EXPENSE" || t == "BILL" || t == "BILL_PENDING" || t == "PAYMENT" ||
+            (t != "CREDIT" && t != "INCOME" && t != "REWARD")
+}
+
 /**
- * Redesigned Track Your Money Section with Time-Period Selector, Detailed Statistics & Interactive Trends Chart
+ * Redesigned Track Your Money Section with Time-Period Selector, Detailed Spending Statistics,
+ * Interactive Category Breakdown & Spending Trend Chart.
  */
 @Composable
 fun HomeTrackMoneySection(
@@ -1238,7 +1267,7 @@ fun HomeTrackMoneySection(
     modifier: Modifier = Modifier
 ) {
     var selectedPeriod by remember { mutableStateOf(TrackPeriod.LAST_7_DAYS) }
-    var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
+    var selectedCategoryStat by remember { mutableStateOf<SpendingCategoryStat?>(null) }
 
     val locale = java.util.Locale.getDefault()
 
@@ -1263,116 +1292,95 @@ fun HomeTrackMoneySection(
         }
     }
 
-    // Filter transactions for selected period
-    val periodTransactions = remember(transactions, periodStartTime) {
-        transactions.filter { it.date >= periodStartTime }
+    // Filter DEBIT-ONLY transactions for selected period
+    val periodDebitTransactions = remember(transactions, periodStartTime) {
+        transactions.filter { it.date >= periodStartTime && isDebitTransaction(it) }
     }
 
-    // Statistics calculations
-    val totalSpent = remember(periodTransactions) {
-        periodTransactions.filter { txn ->
-            val t = txn.type.uppercase()
-            t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
-        }.sumOf { it.amount }
+    // Core Spending Metrics
+    val totalSpent = remember(periodDebitTransactions) {
+        periodDebitTransactions.sumOf { it.amount }
     }
 
-    val totalReceived = remember(periodTransactions) {
-        periodTransactions.filter { txn ->
-            val t = txn.type.uppercase()
-            t == "CREDIT" || t == "INCOME" || t == "REWARD"
-        }.sumOf { it.amount }
-    }
-
-    val netCashFlow = totalReceived - totalSpent
-    val transactionCount = periodTransactions.size
-
-    val topCategory = remember(periodTransactions) {
-        val debits = periodTransactions.filter { txn ->
-            val t = txn.type.uppercase()
-            t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
-        }
-        if (debits.isEmpty()) "N/A"
-        else debits.groupBy { it.category.ifBlank { "General" } }
-            .maxByOrNull { entry -> entry.value.sumOf { it.amount } }?.key ?: "N/A"
-    }
+    val debitTxnCount = periodDebitTransactions.size
 
     val avgDailySpending = totalSpent / periodDaysCount
 
-    // Grouping for Chart Data
-    val chartData = remember(selectedPeriod, periodTransactions) {
+    val largestExpense = remember(periodDebitTransactions) {
+        periodDebitTransactions.maxOfOrNull { it.amount } ?: 0.0
+    }
+
+    // Grouping Debit Transactions by Category
+    val categoryStats = remember(periodDebitTransactions, totalSpent) {
+        if (periodDebitTransactions.isEmpty()) emptyList()
+        else {
+            periodDebitTransactions.groupBy { txn ->
+                CategoryVisuals.resolveCategoryVisual(txn.category, txn.subcategory)
+            }.map { (visual, txns) ->
+                val amt = txns.sumOf { it.amount }
+                val pct = if (totalSpent > 0) (amt / totalSpent) * 100.0 else 0.0
+                SpendingCategoryStat(
+                    visual = visual,
+                    totalAmount = amt,
+                    percentage = pct,
+                    count = txns.size,
+                    transactions = txns.sortedByDescending { it.date }
+                )
+            }.sortedByDescending { it.totalAmount }
+        }
+    }
+
+    val topCategoryName = categoryStats.firstOrNull()?.visual?.title ?: "N/A"
+
+    // Trend Chart Buckets (Hourly for Today, Daily for 7 and 30 Days)
+    val trendData = remember(selectedPeriod, periodDebitTransactions) {
         when (selectedPeriod) {
             TrackPeriod.TODAY -> {
-                // 6 buckets of 4 hours: 00-04, 04-08, 08-12, 12-16, 16-20, 20-24
-                val buckets = listOf("00:00", "04:00", "08:00", "12:00", "16:00", "20:00")
-                val debitSums = DoubleArray(6)
-                val creditSums = DoubleArray(6)
-
-                periodTransactions.forEach { txn ->
+                val bucketLabels = listOf("00-04", "04-08", "08-12", "12-16", "16-20", "20-24")
+                val sums = DoubleArray(6)
+                periodDebitTransactions.forEach { txn ->
                     val cal = java.util.Calendar.getInstance().apply { timeInMillis = txn.date }
                     val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
                     val idx = (hour / 4).coerceIn(0, 5)
-                    val t = txn.type.uppercase()
-                    if (t == "CREDIT" || t == "INCOME" || t == "REWARD") {
-                        creditSums[idx] += txn.amount
-                    } else {
-                        debitSums[idx] += txn.amount
-                    }
+                    sums[idx] += txn.amount
                 }
-
-                buckets.mapIndexed { i, label -> ChartBarData(label, debitSums[i], creditSums[i]) }
+                bucketLabels.mapIndexed { i, label -> TrendBarData(label, sums[i]) }
             }
-
             TrackPeriod.LAST_7_DAYS -> {
-                // 7 days
                 val dayFormat = java.text.SimpleDateFormat("EEE", locale)
-                val cal = java.util.Calendar.getInstance()
-                val list = mutableListOf<ChartBarData>()
-
+                val list = mutableListOf<TrendBarData>()
                 for (i in 6 downTo 0) {
-                    val targetCal = java.util.Calendar.getInstance().apply {
+                    val cal = java.util.Calendar.getInstance().apply {
                         add(java.util.Calendar.DAY_OF_YEAR, -i)
                         set(java.util.Calendar.HOUR_OF_DAY, 0)
                         set(java.util.Calendar.MINUTE, 0)
                         set(java.util.Calendar.SECOND, 0)
                         set(java.util.Calendar.MILLISECOND, 0)
                     }
-                    val startTime = targetCal.timeInMillis
-                    targetCal.add(java.util.Calendar.DAY_OF_YEAR, 1)
-                    val endTime = targetCal.timeInMillis
+                    val startTime = cal.timeInMillis
+                    cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                    val endTime = cal.timeInMillis
 
-                    val dayTxns = periodTransactions.filter { it.date in startTime until endTime }
-                    val debits = dayTxns.filter {
-                        val t = it.type.uppercase()
-                        t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
-                    }.sumOf { it.amount }
-                    val credits = dayTxns.filter {
-                        val t = it.type.uppercase()
-                        t == "CREDIT" || t == "INCOME" || t == "REWARD"
-                    }.sumOf { it.amount }
-
+                    val dayDebits = periodDebitTransactions.filter { it.date in startTime until endTime }.sumOf { it.amount }
                     val label = dayFormat.format(java.util.Date(startTime))
-                    list.add(ChartBarData(label, debits, credits))
+                    list.add(TrendBarData(label, dayDebits))
                 }
                 list
             }
-
             TrackPeriod.LAST_30_DAYS -> {
-                // 6 grouped 5-day intervals or 10 3-day intervals. Let's do 6 intervals for clean x-axis
                 val dateFormat = java.text.SimpleDateFormat("dd MMM", locale)
-                val list = mutableListOf<ChartBarData>()
-
-                for (i in 5 downTo 0) {
+                val list = mutableListOf<TrendBarData>()
+                for (i in 29 downTo 0 step 3) {
                     val startCal = java.util.Calendar.getInstance().apply {
-                        add(java.util.Calendar.DAY_OF_YEAR, -(i * 5 + 4))
+                        add(java.util.Calendar.DAY_OF_YEAR, -i)
                         set(java.util.Calendar.HOUR_OF_DAY, 0)
                         set(java.util.Calendar.MINUTE, 0)
                         set(java.util.Calendar.SECOND, 0)
                         set(java.util.Calendar.MILLISECOND, 0)
                     }
                     val startTime = startCal.timeInMillis
-
                     val endCal = java.util.Calendar.getInstance().apply {
-                        add(java.util.Calendar.DAY_OF_YEAR, -(i * 5))
+                        add(java.util.Calendar.DAY_OF_YEAR, -(i - 2).coerceAtLeast(0))
                         set(java.util.Calendar.HOUR_OF_DAY, 23)
                         set(java.util.Calendar.MINUTE, 59)
                         set(java.util.Calendar.SECOND, 59)
@@ -1380,18 +1388,9 @@ fun HomeTrackMoneySection(
                     }
                     val endTime = endCal.timeInMillis
 
-                    val rangeTxns = periodTransactions.filter { it.date in startTime..endTime }
-                    val debits = rangeTxns.filter {
-                        val t = it.type.uppercase()
-                        t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
-                    }.sumOf { it.amount }
-                    val credits = rangeTxns.filter {
-                        val t = it.type.uppercase()
-                        t == "CREDIT" || t == "INCOME" || t == "REWARD"
-                    }.sumOf { it.amount }
-
+                    val rangeDebits = periodDebitTransactions.filter { it.date in startTime..endTime }.sumOf { it.amount }
                     val label = dateFormat.format(java.util.Date(startTime))
-                    list.add(ChartBarData(label, debits, credits))
+                    list.add(TrendBarData(label, rangeDebits))
                 }
                 list
             }
@@ -1399,7 +1398,7 @@ fun HomeTrackMoneySection(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // Section Header with Chevron >
+        // Section Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1407,14 +1406,35 @@ fun HomeTrackMoneySection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Track Your Money",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color.White
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Track Your Money",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
                 )
-            )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFFFF2A85).copy(alpha = 0.15f))
+                        .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "SPENDING",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFFF2A85)
+                        )
+                    )
+                }
+            }
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
@@ -1425,7 +1445,7 @@ fun HomeTrackMoneySection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Time-Period Selector Segmented Bar
+        // Time-Period Selector Tabs: TODAY | LAST 7 DAYS | LAST 30 DAYS
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1445,23 +1465,22 @@ fun HomeTrackMoneySection(
                             if (isSelected) {
                                 Modifier.background(
                                     Brush.horizontalGradient(
-                                        listOf(Color(0xFF00A3FF), Color(0xFF0066FF))
+                                        listOf(Color(0xFFFF2A85), Color(0xFFFF0055))
                                     )
                                 )
                             } else Modifier
                         )
                         .clickable {
                             selectedPeriod = period
-                            selectedBarIndex = null
                         }
                         .padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = period.label,
+                        text = period.label.uppercase(),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             color = if (isSelected) Color.White else Color(0xFF869AB8)
                         )
                     )
@@ -1471,7 +1490,7 @@ fun HomeTrackMoneySection(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Main Financial Overview Card
+        // Main Spending Analytics Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1482,37 +1501,37 @@ fun HomeTrackMoneySection(
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
 
-                if (periodTransactions.isEmpty()) {
-                    // Clean Empty State
+                if (periodDebitTransactions.isEmpty()) {
+                    // Friendly Empty State when no debit transactions exist in selected period
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 20.dp),
+                            .padding(vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(52.dp)
+                                .size(56.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF00A3FF).copy(alpha = 0.15f))
-                                .border(1.dp, Color(0xFF00A3FF).copy(alpha = 0.35f), CircleShape),
+                                .background(Color(0xFFFF2A85).copy(alpha = 0.15f))
+                                .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.35f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.BarChart,
+                                imageVector = Icons.Default.ReceiptLong,
                                 contentDescription = null,
-                                tint = Color(0xFF00A3FF),
-                                modifier = Modifier.size(26.dp)
+                                tint = Color(0xFFFF2A85),
+                                modifier = Modifier.size(28.dp)
                             )
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "No Transactions For ${selectedPeriod.label}",
+                            text = "No Spending Recorded For ${selectedPeriod.label}",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.ExtraBold,
                                 fontSize = 15.sp,
                                 color = Color.White
                             )
@@ -1521,7 +1540,7 @@ fun HomeTrackMoneySection(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "Record a debit or credit transaction to view real-time statistics & trends.",
+                            text = "Add a debit transaction to track category-wise spending & trends.",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = Color(0xFF869AB8),
                                 fontSize = 11.5.sp
@@ -1535,8 +1554,8 @@ fun HomeTrackMoneySection(
                         Button(
                             onClick = onAddTransactionClick,
                             shape = RoundedCornerShape(999.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A3FF)),
-                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF2A85)),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -1548,62 +1567,67 @@ fun HomeTrackMoneySection(
                         }
                     }
                 } else {
-                    // Key Financial Indicators Grid (3x2)
+                    // Prominent Spending Amount Banner
+                    Text(
+                        text = if (selectedPeriod == TrackPeriod.TODAY) "TODAY'S SPENDING" else "TOTAL SPENT (${selectedPeriod.label.uppercase()})",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF869AB8),
+                            letterSpacing = 1.1.sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = formatInr(totalSpent),
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 32.sp,
+                            letterSpacing = (-0.5).sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Spending Key Statistics 4-Grid
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         TrackStatCard(
-                            title = "Money Spent",
-                            value = "₹" + String.format(locale, "%,.0f", totalSpent),
+                            title = "Debits Count",
+                            value = "$debitTxnCount",
+                            subtitle = "transactions",
                             isNegative = true,
                             modifier = Modifier.weight(1f)
                         )
                         TrackStatCard(
-                            title = "Money Received",
-                            value = "₹" + String.format(locale, "%,.0f", totalReceived),
-                            isPositive = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TrackStatCard(
-                            title = "Net Cash Flow",
-                            value = (if (netCashFlow >= 0) "+" else "") + "₹" + String.format(locale, "%,.0f", netCashFlow),
-                            isPositive = netCashFlow >= 0,
-                            isNegative = netCashFlow < 0,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        TrackStatCard(
-                            title = "Transactions",
-                            value = "$transactionCount",
-                            subtitle = "logged",
-                            modifier = Modifier.weight(1f)
-                        )
-                        TrackStatCard(
                             title = "Top Category",
-                            value = topCategory,
+                            value = topCategoryName,
                             modifier = Modifier.weight(1f)
                         )
                         TrackStatCard(
-                            title = "Avg Daily Spend",
-                            value = "₹" + String.format(locale, "%,.0f", avgDailySpending),
+                            title = "Daily Avg",
+                            value = formatInr(avgDailySpending),
                             subtitle = "/ day",
+                            modifier = Modifier.weight(1f)
+                        )
+                        TrackStatCard(
+                            title = "Largest Expense",
+                            value = formatInr(largestExpense),
+                            isNegative = true,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Donut Chart Section
+                    // Category Expenses Breakdown + Doughnut Chart
                     Text(
-                        text = "Category Expenses Breakdown",
+                        text = "Category Share & Breakdown",
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -1613,80 +1637,278 @@ fun HomeTrackMoneySection(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Group debit/expense transactions by category for Donut Chart
-                    val categoryBreakdown = remember(periodTransactions) {
-                        val debits = periodTransactions.filter { txn ->
-                            val t = txn.type.uppercase()
-                            t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
-                        }
-                        debits.groupBy { it.category.ifBlank { "General" } }
-                            .map { (category, list) ->
-                                CategoryVisuals.getCategoryVisual(category) to list.sumOf { it.amount }
+                    // Doughnut Chart using MPAndroidChart PieChart
+                    AndroidView(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(210.dp),
+                        factory = { context ->
+                            PieChart(context).apply {
+                                description.isEnabled = false
+                                isDrawHoleEnabled = true
+                                setHoleColor(AndroidColor.TRANSPARENT)
+                                setTransparentCircleColor(AndroidColor.TRANSPARENT)
+                                holeRadius = 60f
+                                transparentCircleRadius = 65f
+                                setDrawCenterText(true)
+                                centerText = "Spent\n${formatInr(totalSpent)}"
+                                setCenterTextSize(13f)
+                                setCenterTextColor(AndroidColor.WHITE)
+                                rotationAngle = 0f
+                                isRotationEnabled = true
+                                legend.isEnabled = false
+                                setEntryLabelColor(AndroidColor.TRANSPARENT)
                             }
-                            .sortedByDescending { it.second }
+                        },
+                        update = { pieChart ->
+                            pieChart.centerText = "Spent\n${formatInr(totalSpent)}"
+                            val entries = categoryStats.take(6).map { stat ->
+                                PieEntry(stat.totalAmount.toFloat(), stat.visual.title)
+                            }
+                            val colors = categoryStats.take(6).map { stat ->
+                                stat.visual.color.toArgb()
+                            }
+                            val dataSet = PieDataSet(entries, "").apply {
+                                sliceSpace = 2f
+                                selectionShift = 6f
+                                this.colors = colors
+                                valueTextColor = AndroidColor.TRANSPARENT
+                            }
+                            pieChart.data = PieData(dataSet)
+                            pieChart.invalidate()
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Interactive Category Breakdown List
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categoryStats.forEach { stat ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFF0B0E18))
+                                    .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(12.dp))
+                                    .clickable { selectedCategoryStat = stat }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(stat.visual.color.copy(alpha = 0.16f))
+                                        .border(1.dp, stat.visual.color.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = stat.visual.icon,
+                                        contentDescription = stat.visual.title,
+                                        tint = stat.visual.color,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stat.visual.title,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 12.5.sp
+                                        )
+                                    )
+                                    Text(
+                                        text = "${stat.count} debits",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.5.sp,
+                                            color = Color(0xFF869AB8)
+                                        )
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = formatInr(stat.totalAmount),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = Color.White,
+                                            fontSize = 12.5.sp
+                                        )
+                                    )
+                                    Text(
+                                        text = String.format(locale, "%.1f%%", stat.percentage),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.5.sp,
+                                            color = stat.visual.color,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+                                }
+                            }
+                        }
                     }
 
-                    if (categoryBreakdown.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No expense data for Donut Chart in this period",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF869AB8)
-                            )
-                        }
-                    } else {
-                        AndroidView(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(240.dp),
-                            factory = { context ->
-                                PieChart(context).apply {
-                                    description.isEnabled = false
-                                    isDrawHoleEnabled = true
-                                    setHoleColor(AndroidColor.TRANSPARENT)
-                                    setTransparentCircleColor(AndroidColor.TRANSPARENT)
-                                    holeRadius = 58f
-                                    transparentCircleRadius = 63f
-                                    setDrawCenterText(true)
-                                    centerText = "Expenses"
-                                    setCenterTextSize(14f)
-                                    setCenterTextColor(AndroidColor.WHITE)
-                                    rotationAngle = 0f
-                                    isRotationEnabled = true
-                                    legend.isEnabled = true
-                                    legend.textColor = AndroidColor.WHITE
-                                    legend.isWordWrapEnabled = true
-                                    setEntryLabelColor(AndroidColor.WHITE)
-                                    setEntryLabelTextSize(10f)
-                                }
-                            },
-                            update = { pieChart ->
-                                val entries = categoryBreakdown.take(6).map { (visual, amount) ->
-                                    PieEntry(amount.toFloat(), visual.title)
-                                }
-                                val colors = categoryBreakdown.take(6).map { (visual, _) ->
-                                    visual.color.toArgb()
-                                }
-                                val dataSet = PieDataSet(entries, "").apply {
-                                    sliceSpace = 2f
-                                    selectionShift = 6f
-                                    this.colors = colors
-                                    valueTextColor = AndroidColor.WHITE
-                                    valueTextSize = 10f
-                                }
-                                pieChart.data = PieData(dataSet)
-                                pieChart.invalidate()
-                            }
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Spending Trend Chart
+                    Text(
+                        text = if (selectedPeriod == TrackPeriod.TODAY) "Today's Hourly Spending Trend" else "Spending Trend (${selectedPeriod.label})",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 13.sp
                         )
-                    }
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    AndroidView(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        factory = { context ->
+                            BarChart(context).apply {
+                                description.isEnabled = false
+                                legend.isEnabled = false
+                                setDrawGridBackground(false)
+                                axisRight.isEnabled = false
+                                axisLeft.textColor = AndroidColor.WHITE
+                                axisLeft.setDrawGridLines(true)
+                                axisLeft.gridColor = AndroidColor.parseColor("#1E293B")
+                                xAxis.position = XAxis.XAxisPosition.BOTTOM
+                                xAxis.textColor = AndroidColor.WHITE
+                                xAxis.setDrawGridLines(false)
+                                xAxis.granularity = 1f
+                                setTouchEnabled(true)
+                                isDragEnabled = true
+                                setScaleEnabled(false)
+                                setPinchZoom(false)
+                            }
+                        },
+                        update = { barChart ->
+                            val entries = trendData.mapIndexed { idx, bar ->
+                                BarEntry(idx.toFloat(), bar.totalDebit.toFloat())
+                            }
+                            val labels = trendData.map { it.label }
+                            barChart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+
+                            val dataSet = BarDataSet(entries, "Spending").apply {
+                                color = AndroidColor.parseColor("#FF2A85")
+                                valueTextColor = AndroidColor.TRANSPARENT
+                            }
+                            barChart.data = BarData(dataSet)
+                            barChart.invalidate()
+                        }
+                    )
                 }
             }
         }
+    }
+
+    // Category Transactions Dialog
+    selectedCategoryStat?.let { stat ->
+        AlertDialog(
+            onDismissRequest = { selectedCategoryStat = null },
+            containerColor = Color(0xFF101524),
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(stat.visual.color.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = stat.visual.icon,
+                            contentDescription = null,
+                            tint = stat.visual.color,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "${stat.visual.title} Spending",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        )
+                        Text(
+                            text = "${formatInr(stat.totalAmount)} (${String.format(locale, "%.1f", stat.percentage)}% of total)",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = stat.visual.color,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    stat.transactions.forEach { txn ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF0B0E18))
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = txn.merchantName.ifBlank { txn.description ?: "Expense" },
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontSize = 12.sp
+                                    ),
+                                    maxLines = 1
+                                )
+                                val dateFormat = java.text.SimpleDateFormat("dd MMM, hh:mm a", locale)
+                                Text(
+                                    text = dateFormat.format(java.util.Date(txn.date)),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.5.sp,
+                                        color = Color(0xFF869AB8)
+                                    )
+                                )
+                            }
+                            Text(
+                                text = "-${formatInr(txn.amount)}",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFFFF2A85),
+                                    fontSize = 12.5.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedCategoryStat = null }) {
+                    Text("Close", color = Color(0xFF00A3FF), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
 
