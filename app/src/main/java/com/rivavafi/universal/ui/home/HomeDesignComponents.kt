@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,31 +19,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import android.graphics.Color as AndroidColor
-import com.github.mikephil.charting.charts.BarChart
-import com.github.mikephil.charting.charts.PieChart
-import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.data.BarData
-import com.github.mikephil.charting.data.BarDataSet
-import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.data.PieData
-import com.github.mikephil.charting.data.PieDataSet
-import com.github.mikephil.charting.data.PieEntry
-import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.rivavafi.universal.data.local.TransactionEntity
 import com.rivavafi.universal.ui.theme.*
+import java.text.NumberFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * 3D Isometric Neon Glass Cubes Illustration with floating +14.8% Return Badge
@@ -417,7 +415,7 @@ fun GoldenCrownGraphic(modifier: Modifier = Modifier) {
                     radius = w * 0.4f
                 ),
                 topLeft = Offset(w * 0.1f, h * 0.72f),
-                size = androidx.compose.ui.geometry.Size(w * 0.8f, h * 0.18f)
+                size = Size(w * 0.8f, h * 0.18f)
             )
 
             // 2. Crown Base Arc
@@ -593,7 +591,7 @@ fun QuickActionItem(
                 color = Color.White.copy(alpha = 0.85f),
                 lineHeight = 13.sp
             ),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
             maxLines = 2
         )
     }
@@ -619,7 +617,7 @@ fun SpeedometerGaugeIcon(
             sweepAngle = 250f,
             useCenter = false,
             topLeft = Offset(center.x - r, center.y - r),
-            size = androidx.compose.ui.geometry.Size(r * 2, r * 2),
+            size = Size(r * 2, r * 2),
             style = Stroke(width = stroke, cap = StrokeCap.Round)
         )
         // Active progress arc
@@ -629,7 +627,7 @@ fun SpeedometerGaugeIcon(
             sweepAngle = 180f,
             useCenter = false,
             topLeft = Offset(center.x - r, center.y - r),
-            size = androidx.compose.ui.geometry.Size(r * 2, r * 2),
+            size = Size(r * 2, r * 2),
             style = Stroke(width = stroke, cap = StrokeCap.Round)
         )
         // Needle
@@ -660,232 +658,232 @@ fun HomeEliteHeroBanner(
 ) {
     Card(
         modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .border(
+                width = 1.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFFFFD700).copy(alpha = 0.45f),
+                        Color(0xFF8B6914).copy(alpha = 0.25f),
+                        Color(0xFFFFD700).copy(alpha = 0.45f)
+                    )
+                ),
+                shape = RoundedCornerShape(22.dp)
+            )
+            .clickable { onJoinClick() },
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0C0A06)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
-                .border(
-                    width = 1.dp,
-                    brush = Brush.horizontalGradient(
+                .height(218.dp)
+                .background(
+                    Brush.verticalGradient(
                         listOf(
-                            Color(0xFFFFD700).copy(alpha = 0.45f),
-                            Color(0xFF8B6914).copy(alpha = 0.25f),
-                            Color(0xFFFFD700).copy(alpha = 0.45f)
-                        )
-                    ),
-                    shape = RoundedCornerShape(22.dp)
-                )
-                .clickable { onJoinClick() },
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0C0A06)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(218.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color(0xFF16130B),
-                                Color(0xFF0F0C07),
-                                Color(0xFF080603)
-                            )
+                            Color(0xFF16130B),
+                            Color(0xFF0F0C07),
+                            Color(0xFF080603)
                         )
                     )
-            ) {
-                // Advisor photo with golden crown on the right
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.rivavafi.universal.R.drawable.elite_advisor_hero),
-                    contentDescription = "Elite Advisor",
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(235.dp)
-                        .align(Alignment.CenterEnd),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    alignment = Alignment.CenterEnd
                 )
+        ) {
+            // Advisor photo with golden crown on the right
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.rivavafi.universal.R.drawable.elite_advisor_hero),
+                contentDescription = "Elite Advisor",
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(235.dp)
+                    .align(Alignment.CenterEnd),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                alignment = Alignment.CenterEnd
+            )
 
-                // Smooth horizontal fade from solid dark on left to transparent on right
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF0C0A06),
-                                    Color(0xFF0C0A06).copy(alpha = 0.98f),
-                                    Color(0xFF0C0A06).copy(alpha = 0.82f),
-                                    Color(0xFF0C0A06).copy(alpha = 0.40f),
-                                    Color.Transparent
-                                ),
-                                startX = 0f,
-                                endX = 620f
+            // Smooth horizontal fade from solid dark on left to transparent on right
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF0C0A06),
+                                Color(0xFF0C0A06).copy(alpha = 0.98f),
+                                Color(0xFF0C0A06).copy(alpha = 0.82f),
+                                Color(0xFF0C0A06).copy(alpha = 0.40f),
+                                Color.Transparent
+                            ),
+                            startX = 0f,
+                            endX = 620f
+                        )
+                    )
+            )
+
+            // Foreground Content Layout
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top Row: RIVAVA ELITE on Left, 93/100 Seats badge on Right
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("👑", fontSize = 15.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "RIVAVA ",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color.White,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.3.sp
+                                )
+                            )
+                            Text(
+                                text = "ELITE",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color(0xFFFFD700),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 1.3.sp
+                                )
+                            )
+                        }
+                    }
+
+                    // Seats Badge: "93/100 Seats"
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color(0xFF261D07).copy(alpha = 0.95f))
+                            .border(
+                                1.dp,
+                                Color(0xFFFFD700).copy(alpha = 0.55f),
+                                RoundedCornerShape(999.dp)
+                            )
+                            .padding(horizontal = 9.dp, vertical = 3.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "${if (seatsRemaining > 0) seatsRemaining else 93}/100 Seats",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700),
+                                fontSize = 10.sp
                             )
                         )
-                )
+                    }
+                }
 
-                // Foreground Content Layout
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                // Headline + Subtitle
+                Column {
+                    Text(
+                        text = androidx.compose.ui.text.buildAnnotatedString {
+                            withStyle(
+                                androidx.compose.ui.text.SpanStyle(
+                                    color = Color.White,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 19.sp,
+                                    letterSpacing = (-0.3).sp
+                                )
+                            ) {
+                                append("1-on-1 Wealth Guidance\nwith ")
+                            }
+                            withStyle(
+                                androidx.compose.ui.text.SpanStyle(
+                                    color = Color(0xFFFFC83B),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 19.sp,
+                                    letterSpacing = (-0.3).sp
+                                )
+                            ) {
+                                append("Experts")
+                            }
+                        },
+                        lineHeight = 24.sp
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(
+                        text = "Exclusive research, in-house AI,\npersonal sessions & wealth creation tools.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.White.copy(alpha = 0.72f),
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                    )
+                }
+
+                // Bottom Row: "Join Rivava Elite →" Button + "Limited to 100 Members"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    // Top Row: RIVAVA ELITE on Left, 93/100 Seats badge on Right
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        onClick = onJoinClick,
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFFC83B)
                     ) {
                         Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text("👑", fontSize = 15.sp)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "RIVAVA ",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = Color.White,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 12.sp,
-                                        letterSpacing = 1.3.sp
-                                    )
-                                )
-                                Text(
-                                    text = "ELITE",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = Color(0xFFFFD700),
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 12.sp,
-                                        letterSpacing = 1.3.sp
-                                    )
-                                )
-                            }
-                        }
-
-                        // Seats Badge: "93/100 Seats"
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(Color(0xFF261D07).copy(alpha = 0.95f))
-                                .border(
-                                    1.dp,
-                                    Color(0xFFFFD700).copy(alpha = 0.55f),
-                                    RoundedCornerShape(999.dp)
-                                )
-                                .padding(horizontal = 9.dp, vertical = 3.dp),
-                            contentAlignment = Alignment.Center
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
                             Text(
-                                text = "${if (seatsRemaining > 0) seatsRemaining else 93}/100 Seats",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFFD700),
-                                    fontSize = 10.sp
-                                )
-                            )
-                        }
-                    }
-
-                    // Headline + Subtitle
-                    Column {
-                        Text(
-                            text = androidx.compose.ui.text.buildAnnotatedString {
-                                withStyle(
-                                    androidx.compose.ui.text.SpanStyle(
-                                        color = Color.White,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 19.sp,
-                                        letterSpacing = (-0.3).sp
-                                    )
-                                ) {
-                                    append("1-on-1 Wealth Guidance\nwith ")
-                                }
-                                withStyle(
-                                    androidx.compose.ui.text.SpanStyle(
-                                        color = Color(0xFFFFC83B),
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 19.sp,
-                                        letterSpacing = (-0.3).sp
-                                    )
-                                ) {
-                                    append("Experts")
-                                }
-                            },
-                            lineHeight = 24.sp
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Text(
-                            text = "Exclusive research, in-house AI,\npersonal sessions & wealth creation tools.",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.White.copy(alpha = 0.72f),
-                                fontSize = 11.sp,
-                                lineHeight = 15.sp,
-                                fontWeight = FontWeight.Normal
-                            )
-                        )
-                    }
-
-                    // Bottom Row: "Join Rivava Elite →" Button + "Limited to 100 Members"
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Surface(
-                            onClick = onJoinClick,
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFFFC83B)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                Text(
-                                    text = "Join Rivava Elite",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color(0xFF0F0B00),
-                                        fontSize = 12.sp
-                                    )
-                                )
-                                Text(
-                                    text = "→",
+                                text = "Join Rivava Elite",
+                                style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color(0xFF0F0B00),
-                                    fontSize = 13.sp
+                                    fontSize = 12.sp
                                 )
-                            }
+                            )
+                            Text(
+                                text = "→",
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF0F0B00),
+                                fontSize = 13.sp
+                            )
                         }
+                    }
 
-                        // Text under advisor pointing hand
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(end = 4.dp, bottom = 2.dp)
-                        ) {
-                            Text(
-                                text = "Limited to",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFFFFD700).copy(alpha = 0.85f),
-                                    fontSize = 8.5.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                    // Text under advisor pointing hand
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(end = 4.dp, bottom = 2.dp)
+                    ) {
+                        Text(
+                            text = "Limited to",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFFFFD700).copy(alpha = 0.85f),
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Medium
                             )
-                            Text(
-                                text = "100 Members",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFFFFD700),
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                        )
+                        Text(
+                            text = "100 Members",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFFFFD700),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
                             )
-                        }
+                        )
                     }
                 }
             }
         }
     }
+}
 
 /**
  * 2. 1 in 1 Sessions with Our Advisor Micro Card Matching Reference Image
@@ -1205,7 +1203,7 @@ private fun HomeActionCard(
                 ),
                 maxLines = 1,
                 softWrap = false,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -1217,7 +1215,7 @@ private fun HomeActionCard(
                 ),
                 maxLines = 1,
                 softWrap = false,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -1225,8 +1223,8 @@ private fun HomeActionCard(
 
 enum class TrackPeriod(val label: String, val daysCount: Int) {
     TODAY("Today", 1),
-    LAST_7_DAYS("Last 7 Days", 7),
-    LAST_30_DAYS("Last 30 Days", 30)
+    LAST_7_DAYS("7 Days", 7),
+    LAST_30_DAYS("30 Days", 30)
 }
 
 data class SpendingCategoryStat(
@@ -1234,60 +1232,65 @@ data class SpendingCategoryStat(
     val totalAmount: Double,
     val percentage: Double,
     val count: Int,
-    val transactions: List<com.rivavafi.universal.data.local.TransactionEntity>
+    val transactions: List<TransactionEntity>
 )
 
-data class TrendBarData(
-    val label: String,
-    val totalDebit: Double
+data class DoughnutSegment(
+    val title: String,
+    val amount: Double,
+    val percentage: Double,
+    val color: Color,
+    val visual: CategoryVisual,
+    val startAngle: Float,
+    val sweepAngle: Float
 )
 
 private fun formatInr(amount: Double): String {
-    val formatter = java.text.NumberFormat.getNumberInstance(java.util.Locale("en", "IN"))
+    val formatter = NumberFormat.getNumberInstance(Locale("en", "IN"))
     formatter.maximumFractionDigits = 0
     formatter.minimumFractionDigits = 0
     return "₹" + formatter.format(amount)
 }
 
-private fun isDebitTransaction(txn: com.rivavafi.universal.data.local.TransactionEntity): Boolean {
+private fun isDebitTransaction(txn: TransactionEntity): Boolean {
     val t = txn.type.trim().uppercase()
     return t == "DEBIT" || t == "EXPENSE" || t == "BILL" || t == "BILL_PENDING" || t == "PAYMENT" ||
-            (t != "CREDIT" && t != "INCOME" && t != "REWARD")
+            (t != "CREDIT" && t != "INCOME" && t != "REWARD" && t != "SELF_TRANSFER" && t != "TRANSFER" && t != "IGNORE")
 }
 
 /**
- * Redesigned Track Your Money Section with Time-Period Selector, Detailed Spending Statistics,
- * Interactive Category Breakdown & Spending Trend Chart.
+ * Compact Track Your Money Card with Multi-Category Doughnut Chart.
+ * Clean, minimalistic, dark Material 3 design.
  */
 @Composable
 fun HomeTrackMoneySection(
-    transactions: List<com.rivavafi.universal.data.local.TransactionEntity> = emptyList(),
+    transactions: List<TransactionEntity> = emptyList(),
     onClick: () -> Unit = {},
     onAddTransactionClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedPeriod by remember { mutableStateOf(TrackPeriod.LAST_7_DAYS) }
-    var selectedCategoryStat by remember { mutableStateOf<SpendingCategoryStat?>(null) }
+    var selectedCategoryIndex by remember { mutableStateOf<Int?>(null) }
 
-    val locale = java.util.Locale.getDefault()
+    val locale = Locale.getDefault()
 
     // Calculate start timestamp for selected period in local timezone
-    val (periodStartTime, periodDaysCount) = remember(selectedPeriod) {
-        val cal = java.util.Calendar.getInstance()
-        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
-        cal.set(java.util.Calendar.MINUTE, 0)
-        cal.set(java.util.Calendar.SECOND, 0)
-        cal.set(java.util.Calendar.MILLISECOND, 0)
+    val periodStartTime = remember(selectedPeriod) {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
 
         when (selectedPeriod) {
-            TrackPeriod.TODAY -> Pair(cal.timeInMillis, 1)
+            TrackPeriod.TODAY -> cal.timeInMillis
             TrackPeriod.LAST_7_DAYS -> {
-                cal.add(java.util.Calendar.DAY_OF_YEAR, -6)
-                Pair(cal.timeInMillis, 7)
+                cal.add(Calendar.DAY_OF_YEAR, -6)
+                cal.timeInMillis
             }
             TrackPeriod.LAST_30_DAYS -> {
-                cal.add(java.util.Calendar.DAY_OF_YEAR, -29)
-                Pair(cal.timeInMillis, 30)
+                cal.add(Calendar.DAY_OF_YEAR, -29)
+                cal.timeInMillis
             }
         }
     }
@@ -1303,12 +1306,6 @@ fun HomeTrackMoneySection(
     }
 
     val debitTxnCount = periodDebitTransactions.size
-
-    val avgDailySpending = totalSpent / periodDaysCount
-
-    val largestExpense = remember(periodDebitTransactions) {
-        periodDebitTransactions.maxOfOrNull { it.amount } ?: 0.0
-    }
 
     // Grouping Debit Transactions by Category
     val categoryStats = remember(periodDebitTransactions, totalSpent) {
@@ -1330,696 +1327,580 @@ fun HomeTrackMoneySection(
         }
     }
 
-    val topCategoryName = categoryStats.firstOrNull()?.visual?.title ?: "N/A"
-
-    // Trend Chart Buckets (Hourly for Today, Daily for 7 and 30 Days)
-    val trendData = remember(selectedPeriod, periodDebitTransactions) {
-        when (selectedPeriod) {
-            TrackPeriod.TODAY -> {
-                val bucketLabels = listOf("00-04", "04-08", "08-12", "12-16", "16-20", "20-24")
-                val sums = DoubleArray(6)
-                periodDebitTransactions.forEach { txn ->
-                    val cal = java.util.Calendar.getInstance().apply { timeInMillis = txn.date }
-                    val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
-                    val idx = (hour / 4).coerceIn(0, 5)
-                    sums[idx] += txn.amount
-                }
-                bucketLabels.mapIndexed { i, label -> TrendBarData(label, sums[i]) }
-            }
-            TrackPeriod.LAST_7_DAYS -> {
-                val dayFormat = java.text.SimpleDateFormat("EEE", locale)
-                val list = mutableListOf<TrendBarData>()
-                for (i in 6 downTo 0) {
-                    val cal = java.util.Calendar.getInstance().apply {
-                        add(java.util.Calendar.DAY_OF_YEAR, -i)
-                        set(java.util.Calendar.HOUR_OF_DAY, 0)
-                        set(java.util.Calendar.MINUTE, 0)
-                        set(java.util.Calendar.SECOND, 0)
-                        set(java.util.Calendar.MILLISECOND, 0)
-                    }
-                    val startTime = cal.timeInMillis
-                    cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
-                    val endTime = cal.timeInMillis
-
-                    val dayDebits = periodDebitTransactions.filter { it.date in startTime until endTime }.sumOf { it.amount }
-                    val label = dayFormat.format(java.util.Date(startTime))
-                    list.add(TrendBarData(label, dayDebits))
-                }
-                list
-            }
-            TrackPeriod.LAST_30_DAYS -> {
-                val dateFormat = java.text.SimpleDateFormat("dd MMM", locale)
-                val list = mutableListOf<TrendBarData>()
-                for (i in 29 downTo 0 step 3) {
-                    val startCal = java.util.Calendar.getInstance().apply {
-                        add(java.util.Calendar.DAY_OF_YEAR, -i)
-                        set(java.util.Calendar.HOUR_OF_DAY, 0)
-                        set(java.util.Calendar.MINUTE, 0)
-                        set(java.util.Calendar.SECOND, 0)
-                        set(java.util.Calendar.MILLISECOND, 0)
-                    }
-                    val startTime = startCal.timeInMillis
-                    val endCal = java.util.Calendar.getInstance().apply {
-                        add(java.util.Calendar.DAY_OF_YEAR, -(i - 2).coerceAtLeast(0))
-                        set(java.util.Calendar.HOUR_OF_DAY, 23)
-                        set(java.util.Calendar.MINUTE, 59)
-                        set(java.util.Calendar.SECOND, 59)
-                        set(java.util.Calendar.MILLISECOND, 999)
-                    }
-                    val endTime = endCal.timeInMillis
-
-                    val rangeDebits = periodDebitTransactions.filter { it.date in startTime..endTime }.sumOf { it.amount }
-                    val label = dateFormat.format(java.util.Date(startTime))
-                    list.add(TrendBarData(label, rangeDebits))
-                }
-                list
-            }
-        }
+    // Reset tapped category index when filter changes
+    LaunchedEffect(selectedPeriod) {
+        selectedCategoryIndex = null
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Section Header
-        Row(
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
+            // TOP ROW: "Track Your Money" heading & 3 Time-Period Filters
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Track Your Money",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 18.sp,
+                        fontSize = 15.sp,
                         color = Color.White
                     )
                 )
-                Box(
+
+                // Selectable filters: Today | 7 Days | 30 Days
+                Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFFF2A85).copy(alpha = 0.15f))
-                        .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.35f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF0B0E18))
+                        .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(10.dp))
+                        .padding(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        text = "SPENDING",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFFFF2A85)
-                        )
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Time-Period Selector Tabs: TODAY | LAST 7 DAYS | LAST 30 DAYS
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFF101524))
-                .border(1.dp, Color(0xFF1E283D), RoundedCornerShape(14.dp))
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            TrackPeriod.values().forEach { period ->
-                val isSelected = period == selectedPeriod
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(11.dp))
-                        .then(
-                            if (isSelected) {
-                                Modifier.background(
-                                    Brush.horizontalGradient(
-                                        listOf(Color(0xFFFF2A85), Color(0xFFFF0055))
-                                    )
-                                )
-                            } else Modifier
-                        )
-                        .clickable {
-                            selectedPeriod = period
-                        }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = period.label.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
-                            fontSize = 11.sp,
-                            color = if (isSelected) Color.White else Color(0xFF869AB8)
-                        )
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Main Spending Analytics Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
-                .border(1.dp, Color(0xFF1C2235), RoundedCornerShape(22.dp)),
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-
-                if (periodDebitTransactions.isEmpty()) {
-                    // Friendly Empty State when no debit transactions exist in selected period
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
+                    TrackPeriod.values().forEach { period ->
+                        val isSelected = period == selectedPeriod
                         Box(
                             modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF2A85).copy(alpha = 0.15f))
-                                .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.35f), CircleShape),
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) Color(0xFFFF2A85) else Color.Transparent
+                                )
+                                .clickable { selectedPeriod = period }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.ReceiptLong,
-                                contentDescription = null,
-                                tint = Color(0xFFFF2A85),
-                                modifier = Modifier.size(28.dp)
+                            Text(
+                                text = period.label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    color = if (isSelected) Color.White else Color(0xFF869AB8)
+                                )
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "No Spending Recorded For ${selectedPeriod.label}",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 15.sp,
-                                color = Color.White
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Add a debit transaction to track category-wise spending & trends.",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color(0xFF869AB8),
-                                fontSize = 11.5.sp
-                            ),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = onAddTransactionClick,
-                            shape = RoundedCornerShape(999.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF2A85)),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                Text("Add Transaction", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, color = Color.White))
-                            }
                         }
                     }
-                } else {
-                    // Prominent Spending Amount Banner
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if (periodDebitTransactions.isEmpty()) {
+                // EMPTY STATE
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFF2A85).copy(alpha = 0.15f))
+                            .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.35f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ReceiptLong,
+                            contentDescription = null,
+                            tint = Color(0xFFFF2A85),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
-                        text = if (selectedPeriod == TrackPeriod.TODAY) "TODAY'S SPENDING" else "TOTAL SPENT (${selectedPeriod.label.uppercase()})",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
+                        text = "No spending in ${selectedPeriod.label}",
+                        style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF869AB8),
-                            letterSpacing = 1.1.sp
+                            fontSize = 13.sp,
+                            color = Color.White
                         )
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
-                        text = formatInr(totalSpent),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
-                            fontSize = 32.sp,
-                            letterSpacing = (-0.5).sp
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Spending Key Statistics 4-Grid
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TrackStatCard(
-                            title = "Debits Count",
-                            value = "$debitTxnCount",
-                            subtitle = "transactions",
-                            isNegative = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TrackStatCard(
-                            title = "Top Category",
-                            value = topCategoryName,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TrackStatCard(
-                            title = "Daily Avg",
-                            value = formatInr(avgDailySpending),
-                            subtitle = "/ day",
-                            modifier = Modifier.weight(1f)
-                        )
-                        TrackStatCard(
-                            title = "Largest Expense",
-                            value = formatInr(largestExpense),
-                            isNegative = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Category Expenses Breakdown + Doughnut Chart
-                    Text(
-                        text = "Category Share & Breakdown",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 13.sp
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Doughnut Chart using MPAndroidChart PieChart
-                    AndroidView(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(210.dp),
-                        factory = { context ->
-                            PieChart(context).apply {
-                                description.isEnabled = false
-                                isDrawHoleEnabled = true
-                                setHoleColor(AndroidColor.TRANSPARENT)
-                                setTransparentCircleColor(AndroidColor.TRANSPARENT)
-                                holeRadius = 60f
-                                transparentCircleRadius = 65f
-                                setDrawCenterText(true)
-                                centerText = "Spent\n${formatInr(totalSpent)}"
-                                setCenterTextSize(13f)
-                                setCenterTextColor(AndroidColor.WHITE)
-                                rotationAngle = 0f
-                                isRotationEnabled = true
-                                legend.isEnabled = false
-                                setEntryLabelColor(AndroidColor.TRANSPARENT)
-                            }
-                        },
-                        update = { pieChart ->
-                            pieChart.centerText = "Spent\n${formatInr(totalSpent)}"
-                            val entries = categoryStats.take(6).map { stat ->
-                                PieEntry(stat.totalAmount.toFloat(), stat.visual.title)
-                            }
-                            val colors = categoryStats.take(6).map { stat ->
-                                stat.visual.color.toArgb()
-                            }
-                            val dataSet = PieDataSet(entries, "").apply {
-                                sliceSpace = 2f
-                                selectionShift = 6f
-                                this.colors = colors
-                                valueTextColor = AndroidColor.TRANSPARENT
-                            }
-                            pieChart.data = PieData(dataSet)
-                            pieChart.invalidate()
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Interactive Category Breakdown List
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        categoryStats.forEach { stat ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFF0B0E18))
-                                    .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(12.dp))
-                                    .clickable { selectedCategoryStat = stat }
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(30.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(stat.visual.color.copy(alpha = 0.16f))
-                                        .border(1.dp, stat.visual.color.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = stat.visual.icon,
-                                        contentDescription = stat.visual.title,
-                                        tint = stat.visual.color,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stat.visual.title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            fontSize = 12.5.sp
-                                        )
-                                    )
-                                    Text(
-                                        text = "${stat.count} debits",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            color = Color(0xFF869AB8)
-                                        )
-                                    )
-                                }
-
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = formatInr(stat.totalAmount),
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = Color.White,
-                                            fontSize = 12.5.sp
-                                        )
-                                    )
-                                    Text(
-                                        text = String.format(locale, "%.1f%%", stat.percentage),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            color = stat.visual.color,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Spending Trend Chart
-                    Text(
-                        text = if (selectedPeriod == TrackPeriod.TODAY) "Today's Hourly Spending Trend" else "Spending Trend (${selectedPeriod.label})",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 13.sp
+                        text = "Add debit transactions to track category breakdown.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color(0xFF869AB8),
+                            fontSize = 11.sp
                         )
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    AndroidView(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        factory = { context ->
-                            BarChart(context).apply {
-                                description.isEnabled = false
-                                legend.isEnabled = false
-                                setDrawGridBackground(false)
-                                axisRight.isEnabled = false
-                                axisLeft.textColor = AndroidColor.WHITE
-                                axisLeft.setDrawGridLines(true)
-                                axisLeft.gridColor = AndroidColor.parseColor("#1E293B")
-                                xAxis.position = XAxis.XAxisPosition.BOTTOM
-                                xAxis.textColor = AndroidColor.WHITE
-                                xAxis.setDrawGridLines(false)
-                                xAxis.granularity = 1f
-                                setTouchEnabled(true)
-                                isDragEnabled = true
-                                setScaleEnabled(false)
-                                setPinchZoom(false)
-                            }
-                        },
-                        update = { barChart ->
-                            val entries = trendData.mapIndexed { idx, bar ->
-                                BarEntry(idx.toFloat(), bar.totalDebit.toFloat())
-                            }
-                            val labels = trendData.map { it.label }
-                            barChart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
-
-                            val dataSet = BarDataSet(entries, "Spending").apply {
-                                color = AndroidColor.parseColor("#FF2A85")
-                                valueTextColor = AndroidColor.TRANSPARENT
-                            }
-                            barChart.data = BarData(dataSet)
-                            barChart.invalidate()
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    // Category Transactions Dialog
-    selectedCategoryStat?.let { stat ->
-        AlertDialog(
-            onDismissRequest = { selectedCategoryStat = null },
-            containerColor = Color(0xFF101524),
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(stat.visual.color.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
+                    Button(
+                        onClick = onAddTransactionClick,
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF2A85)),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                     ) {
-                        Icon(
-                            imageVector = stat.visual.icon,
-                            contentDescription = null,
-                            tint = stat.visual.color,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            Text("Add Transaction", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color.White))
+                        }
                     }
+                }
+            } else {
+                // SECOND ROW: Total Spent & Transaction Count
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
                     Column {
                         Text(
-                            text = "${stat.visual.title} Spending",
-                            style = MaterialTheme.typography.titleMedium.copy(
+                            text = "TOTAL SPENT",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color(0xFF869AB8),
+                                letterSpacing = 0.8.sp
                             )
                         )
                         Text(
-                            text = "${formatInr(stat.totalAmount)} (${String.format(locale, "%.1f", stat.percentage)}% of total)",
+                            text = formatInr(totalSpent),
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                fontSize = 22.sp
+                            )
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFFFF2A85).copy(alpha = 0.12f))
+                            .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "$debitTxnCount ${if (debitTxnCount == 1) "debit" else "debits"}",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = stat.visual.color,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF2A85)
                             )
                         )
                     }
                 }
-            },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp)
-                        .verticalScroll(androidx.compose.foundation.rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    stat.transactions.forEach { txn ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF0B0E18))
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = txn.merchantName.ifBlank { txn.description ?: "Expense" },
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        fontSize = 12.sp
-                                    ),
-                                    maxLines = 1
-                                )
-                                val dateFormat = java.text.SimpleDateFormat("dd MMM, hh:mm a", locale)
-                                Text(
-                                    text = dateFormat.format(java.util.Date(txn.date)),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 9.5.sp,
-                                        color = Color(0xFF869AB8)
-                                    )
-                                )
-                            }
-                            Text(
-                                text = "-${formatInr(txn.amount)}",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFFFF2A85),
-                                    fontSize = 12.5.sp
-                                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // MAIN CONTENT: Doughnut Chart & Category Breakdown Legend Side-by-Side / Responsive
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val isWide = maxWidth >= 360.dp
+
+                    // Calculate segments for the doughnut chart
+                    val totalSum = categoryStats.sumOf { it.totalAmount }
+                    val segments = remember(categoryStats, totalSum) {
+                        var currentAngle = -90f
+                        categoryStats.mapIndexed { idx, stat ->
+                            val pct = if (totalSum > 0) (stat.totalAmount / totalSum) * 100.0 else 0.0
+                            val sweep = if (totalSum > 0) ((stat.totalAmount / totalSum) * 360.0).toFloat() else 360f
+                            val seg = DoughnutSegment(
+                                title = stat.visual.title,
+                                amount = stat.totalAmount,
+                                percentage = pct,
+                                color = stat.visual.color,
+                                visual = stat.visual,
+                                startAngle = currentAngle,
+                                sweepAngle = sweep
                             )
+                            currentAngle += sweep
+                            seg
+                        }
+                    }
+
+                    val activeSelectedStat = selectedCategoryIndex?.let { idx ->
+                        if (idx in categoryStats.indices) categoryStats[idx] else null
+                    }
+
+                    if (isWide) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Doughnut Chart on Left
+                            Box(
+                                modifier = Modifier.size(130.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                MultiCategoryDoughnutCanvas(
+                                    segments = segments,
+                                    selectedIndex = selectedCategoryIndex,
+                                    onSegmentSelected = { idx ->
+                                        selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
+                                    },
+                                    modifier = Modifier.size(130.dp)
+                                )
+
+                                // Center Overlay Text
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    if (activeSelectedStat != null) {
+                                        Text(
+                                            text = activeSelectedStat.visual.title,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                color = activeSelectedStat.visual.color,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = formatInr(activeSelectedStat.totalAmount),
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color.White
+                                            ),
+                                            maxLines = 1
+                                        )
+                                        Text(
+                                            text = String.format(locale, "%.1f%%", activeSelectedStat.percentage),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 8.5.sp,
+                                                color = Color(0xFF869AB8)
+                                            )
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "Total Spent",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                color = Color(0xFF869AB8),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        )
+                                        Text(
+                                            text = formatInr(totalSpent),
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color.White
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Category Legend Breakdown on Right
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                categoryStats.forEachIndexed { idx, stat ->
+                                    val isSelected = selectedCategoryIndex == idx
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                if (isSelected) stat.visual.color.copy(alpha = 0.15f)
+                                                else Color.Transparent
+                                            )
+                                            .clickable {
+                                                selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
+                                            }
+                                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(7.dp)
+                                                .clip(CircleShape)
+                                                .background(stat.visual.color)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = stat.visual.title,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.5.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = Color.White
+                                            ),
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = formatInr(stat.totalAmount),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = String.format(locale, "%.0f%%", stat.percentage),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = stat.visual.color
+                                            ),
+                                            modifier = Modifier.width(26.dp),
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Stacked layout for very narrow screens
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier.size(130.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                MultiCategoryDoughnutCanvas(
+                                    segments = segments,
+                                    selectedIndex = selectedCategoryIndex,
+                                    onSegmentSelected = { idx ->
+                                        selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
+                                    },
+                                    modifier = Modifier.size(130.dp)
+                                )
+
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    if (activeSelectedStat != null) {
+                                        Text(
+                                            text = activeSelectedStat.visual.title,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                color = activeSelectedStat.visual.color,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                        Text(
+                                            text = formatInr(activeSelectedStat.totalAmount),
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color.White
+                                            )
+                                        )
+                                        Text(
+                                            text = String.format(locale, "%.1f%%", activeSelectedStat.percentage),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 8.5.sp,
+                                                color = Color(0xFF869AB8)
+                                            )
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "Total Spent",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.sp,
+                                                color = Color(0xFF869AB8)
+                                            )
+                                        )
+                                        Text(
+                                            text = formatInr(totalSpent),
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color.White
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                categoryStats.forEachIndexed { idx, stat ->
+                                    val isSelected = selectedCategoryIndex == idx
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                if (isSelected) stat.visual.color.copy(alpha = 0.15f)
+                                                else Color.Transparent
+                                            )
+                                            .clickable {
+                                                selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
+                                            }
+                                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(7.dp)
+                                                .clip(CircleShape)
+                                                .background(stat.visual.color)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = stat.visual.title,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.5.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = Color.White
+                                            ),
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Text(
+                                            text = formatInr(stat.totalAmount),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = String.format(locale, "%.0f%%", stat.percentage),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp,
+                                                color = stat.visual.color
+                                            )
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { selectedCategoryStat = null }) {
-                    Text("Close", color = Color(0xFF00A3FF), fontWeight = FontWeight.Bold)
-                }
             }
-        )
-    }
-}
 
-@Composable
-private fun TrackStatCard(
-    title: String,
-    value: String,
-    subtitle: String? = null,
-    isPositive: Boolean = false,
-    isNegative: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    val valColor = when {
-        isPositive -> Color(0xFF00E471)
-        isNegative -> Color(0xFFFF3366)
-        else -> Color.White
-    }
+            Spacer(modifier = Modifier.height(10.dp))
 
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF0B0E18))
-            .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(14.dp))
-            .padding(10.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 9.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF869AB8)
-            ),
-            maxLines = 1
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 12.5.sp,
-                color = valColor
-            ),
-            maxLines = 1
-        )
-
-        if (!subtitle.isNullOrBlank()) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 8.5.sp,
-                    color = Color(0xFF64748B)
-                ),
-                maxLines = 1
-            )
+            // BOTTOM ACTION: Small "View Analytics" link
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick() }
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "View Analytics",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00A3FF)
+                    )
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color(0xFF00A3FF),
+                    modifier = Modifier.size(15.dp)
+                )
+            }
         }
     }
 }
 
+/**
+ * Interactive Multi-Category Doughnut Canvas
+ */
 @Composable
-private fun ExpenseCategoryRow(
-    color: Color,
-    name: String,
-    amount: String,
-    percentage: String
+private fun MultiCategoryDoughnutCanvas(
+    segments: List<DoughnutSegment>,
+    selectedIndex: Int?,
+    onSegmentSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+    Canvas(
+        modifier = modifier.pointerInput(segments) {
+            detectTapGestures { offset ->
+                val centerX = size.width / 2f
+                val centerY = size.height / 2f
+                val dx = offset.x - centerX
+                val dy = offset.y - centerY
+                val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+                val outerRadius = size.width / 2f
+                val strokeWidth = outerRadius * 0.32f
+                val innerRadius = outerRadius - strokeWidth
+
+                if (distance in innerRadius..outerRadius) {
+                    var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                    if (angle < 0) angle += 360f
+
+                    // Find matching segment
+                    segments.forEachIndexed { idx, seg ->
+                        val normStart = (seg.startAngle % 360 + 360) % 360
+                        var normEnd = normStart + seg.sweepAngle
+                        var checkAngle = angle
+                        if (normEnd > 360 && checkAngle < normStart) checkAngle += 360f
+
+                        if (checkAngle >= normStart && checkAngle <= normEnd) {
+                            onSegmentSelected(idx)
+                            return@detectTapGestures
+                        }
+                    }
+                }
+            }
+        }
     ) {
-        // Color Rounded Square / Pill
-        Box(
-            modifier = Modifier
-                .size(width = 8.5.dp, height = 6.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(color)
-        )
-        Spacer(modifier = Modifier.width(7.dp))
-        // Category Name
-        Text(
-            text = name,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color.White.copy(alpha = 0.88f)
-            ),
-            modifier = Modifier.weight(1f),
-            maxLines = 1
-        )
-        // Amount
-        Text(
-            text = amount,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
+        val diameter = size.width
+        val strokeWidth = diameter * 0.16f
+        val arcSize = Size(diameter - strokeWidth, diameter - strokeWidth)
+        val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
+
+        if (segments.isEmpty()) {
+            drawArc(
+                color = Color(0xFF1E283D),
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokeWidth)
             )
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        // Percentage
-        Text(
-            text = percentage,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color.White.copy(alpha = 0.55f)
-            ),
-            modifier = Modifier.width(28.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End
-        )
+            return@Canvas
+        }
+
+        val gapDegree = if (segments.size > 1) 2.5f else 0f
+
+        segments.forEachIndexed { idx, seg ->
+            val isSelected = selectedIndex == idx
+            val currentStroke = if (isSelected) strokeWidth * 1.25f else strokeWidth
+            val adjustedSweep = (seg.sweepAngle - gapDegree).coerceAtLeast(1f)
+
+            drawArc(
+                color = seg.color,
+                startAngle = seg.startAngle + (gapDegree / 2f),
+                sweepAngle = adjustedSweep,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = currentStroke, cap = StrokeCap.Round)
+            )
+        }
     }
 }
 
@@ -2299,9 +2180,8 @@ private fun CalculatorGridItem(
                     lineHeight = 13.sp
                 ),
                 maxLines = 2,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
         }
     }
 }
-
