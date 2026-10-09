@@ -216,8 +216,6 @@ class UserEntitlementRepository @Inject constructor(
         return verifyPayment(orderId)
     }
 
-
-
     suspend fun clearEntitlement() {
         val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
         prefs.edit()
@@ -230,23 +228,11 @@ class UserEntitlementRepository @Inject constructor(
     }
 
     suspend fun verifyAndRedeemSecretKey(rawKey: String): Result<String> {
-        val cleanKey = rawKey.trim().uppercase()
-        if (cleanKey.isBlank() || cleanKey.length < 6) {
+        val cleanKey = rawKey.trim()
+        val formattedKey = cleanKey
+
+        if (cleanKey.isBlank() || !com.rivavafi.universal.utils.SecretKeyValidator.isValidFormat(cleanKey)) {
             return Result.failure(IllegalArgumentException("Please enter a valid secret key."))
-        }
-
-        // Developer bypass for local development & testing
-        if (com.rivavafi.universal.BuildConfig.DEBUG && (cleanKey == "DEV-PASS" || cleanKey == "DEV-2026" || cleanKey.startsWith("RIV-DEV") || cleanKey == "RIV-TEST-VIP" || cleanKey == "123456")) {
-            val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
-            prefs.edit()
-                .putBoolean("isPremium", true)
-                .putBoolean("portfolio_unlocked", true)
-                .putString("premium_source", "dev_secret_key")
-                .apply()
-
-            userPreferencesRepository.setPremiumUserForCurrent(true)
-            _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "dev_secret_key")
-            return Result.success("Development VIP Access Unlocked!")
         }
 
         val uid = auth.currentUser?.uid
@@ -265,7 +251,7 @@ class UserEntitlementRepository @Inject constructor(
             // 1. Primary: Call Node.js Express REST API Backend directly
             try {
                 val apiReq = com.rivavafi.universal.data.network.RedeemKeyRequest(
-                    secretKey = cleanKey,
+                    secretKey = formattedKey,
                     userId = uid,
                     userEmail = userEmail
                 )
@@ -289,7 +275,7 @@ class UserEntitlementRepository @Inject constructor(
 
                 // 2. Secure Firestore atomic transaction fallback if backend offline
                 val keyHash = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(cleanKey.toByteArray(Charsets.UTF_8))
+                    .digest(formattedKey.toByteArray(Charsets.UTF_8))
                     .joinToString("") { "%02x".format(it) }
 
                 val keyRef = firestore.collection("secret_keys").document(keyHash)
