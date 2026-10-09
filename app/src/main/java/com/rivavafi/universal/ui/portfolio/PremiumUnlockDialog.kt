@@ -249,7 +249,7 @@ fun PremiumUnlockDialog(
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = Color(0xFF00C6FF))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Chat with Advisor on WhatsApp", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00C6FF)))
+                                Text("Chat with Advisor", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00C6FF)))
                             }
 
                             TextButton(
