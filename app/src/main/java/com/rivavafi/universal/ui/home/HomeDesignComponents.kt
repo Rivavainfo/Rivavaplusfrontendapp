@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.rivavafi.universal.data.local.TransactionEntity
 import com.rivavafi.universal.ui.theme.*
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -1227,20 +1228,19 @@ enum class TrackPeriod(val label: String, val daysCount: Int) {
     LAST_30_DAYS("30 Days", 30)
 }
 
-data class SpendingCategoryStat(
-    val visual: CategoryVisual,
-    val totalAmount: Double,
-    val percentage: Double,
-    val count: Int,
-    val transactions: List<TransactionEntity>
-)
+enum class ChartViewMode(val label: String) {
+    BY_DAY("By Day"),
+    BY_CATEGORY("By Category")
+}
 
-data class DoughnutSegment(
+data class DoubleRingSegment(
+    val id: String,
     val title: String,
     val amount: Double,
     val percentage: Double,
+    val count: Int,
+    val isDebit: Boolean,
     val color: Color,
-    val visual: CategoryVisual,
     val startAngle: Float,
     val sweepAngle: Float
 )
@@ -1252,15 +1252,42 @@ private fun formatInr(amount: Double): String {
     return "₹" + formatter.format(amount)
 }
 
-private fun isDebitTransaction(txn: TransactionEntity): Boolean {
+private fun isDebitTxn(txn: TransactionEntity): Boolean {
     val t = txn.type.trim().uppercase()
     return t == "DEBIT" || t == "EXPENSE" || t == "BILL" || t == "BILL_PENDING" || t == "PAYMENT" ||
             (t != "CREDIT" && t != "INCOME" && t != "REWARD" && t != "SELF_TRANSFER" && t != "TRANSFER" && t != "IGNORE")
 }
 
+private fun isCreditTxn(txn: TransactionEntity): Boolean {
+    val t = txn.type.trim().uppercase()
+    return t == "CREDIT" || t == "INCOME" || t == "REWARD"
+}
+
+private val DayColors = listOf(
+    Color(0xFFFF3366),
+    Color(0xFFFF9900),
+    Color(0xFF00E5FF),
+    Color(0xFFA855F7),
+    Color(0xFF3B82F6),
+    Color(0xFFEC4899),
+    Color(0xFF10B981)
+)
+
+private val CreditDayColors = listOf(
+    Color(0xFF00E471),
+    Color(0xFF10B981),
+    Color(0xFF00E5FF),
+    Color(0xFF06B6D4),
+    Color(0xFF3B82F6),
+    Color(0xFF8B5CF6),
+    Color(0xFFD97706)
+)
+
 /**
- * Compact Track Your Money Card with Multi-Category Doughnut Chart.
- * Clean, minimalistic, dark Material 3 design.
+ * Compact Track Your Money Card with Multi-Segment Double-Ring Doughnut Chart.
+ * Outer Ring: Debit / Money Spent
+ * Inner Ring: Credit / Money Received
+ * Supports Today, Last 7 Days, Last 30 Days time filters and By Day / By Category view modes.
  */
 @Composable
 fun HomeTrackMoneySection(
@@ -1270,19 +1297,27 @@ fun HomeTrackMoneySection(
     modifier: Modifier = Modifier
 ) {
     var selectedPeriod by remember { mutableStateOf(TrackPeriod.LAST_7_DAYS) }
-    var selectedCategoryIndex by remember { mutableStateOf<Int?>(null) }
-    var isLegendExpanded by remember { mutableStateOf(false) }
+    var chartViewMode by remember { mutableStateOf(ChartViewMode.BY_DAY) }
+    var selectedSegmentId by remember { mutableStateOf<String?>(null) }
 
     val locale = Locale.getDefault()
 
-    // Calculate start timestamp for selected period in local timezone
-    val periodStartTime = remember(selectedPeriod) {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
+    // Calendar boundaries
+    val now = Calendar.getInstance()
+    val todayStartCal = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
 
+    val periodStartTime = remember(selectedPeriod) {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
         when (selectedPeriod) {
             TrackPeriod.TODAY -> cal.timeInMillis
             TrackPeriod.LAST_7_DAYS -> {
@@ -1296,66 +1331,259 @@ fun HomeTrackMoneySection(
         }
     }
 
-    // Filter DEBIT-ONLY transactions for selected period
-    val periodDebitTransactions = remember(transactions, periodStartTime) {
-        transactions.filter { it.date >= periodStartTime && isDebitTransaction(it) }
+    // Filter transactions for selected period
+    val periodTransactions = remember(transactions, periodStartTime) {
+        transactions.filter { it.date >= periodStartTime }
     }
 
-    // Core Spending Metrics
-    val totalSpent = remember(periodDebitTransactions) {
-        periodDebitTransactions.sumOf { it.amount }
+    val debitTransactions = remember(periodTransactions) {
+        periodTransactions.filter { isDebitTxn(it) }
     }
 
-    val debitTxnCount = periodDebitTransactions.size
+    val creditTransactions = remember(periodTransactions) {
+        periodTransactions.filter { isCreditTxn(it) }
+    }
 
-    // Grouping Debit Transactions by Category
-    val categoryStats = remember(periodDebitTransactions, totalSpent) {
-        if (periodDebitTransactions.isEmpty()) emptyList()
+    // Core Metrics
+    val totalSpent = remember(debitTransactions) { debitTransactions.sumOf { it.amount } }
+    val totalReceived = remember(creditTransactions) { creditTransactions.sumOf { it.amount } }
+    val netCashFlow = totalReceived - totalSpent
+    val totalTxnCount = periodTransactions.size
+
+    val topCategoryName = remember(debitTransactions) {
+        if (debitTransactions.isEmpty()) "None"
         else {
-            periodDebitTransactions.groupBy { txn ->
-                CategoryVisuals.resolveCategoryVisual(txn.category, txn.subcategory)
-            }.map { (visual, txns) ->
-                val amt = txns.sumOf { it.amount }
-                val pct = if (totalSpent > 0) (amt / totalSpent) * 100.0 else 0.0
-                SpendingCategoryStat(
-                    visual = visual,
-                    totalAmount = amt,
-                    percentage = pct,
-                    count = txns.size,
-                    transactions = txns.sortedByDescending { it.date }
-                )
-            }.sortedByDescending { it.totalAmount }
+            debitTransactions.groupBy { txn ->
+                CategoryVisuals.resolveCategoryVisual(txn.category, txn.subcategory).title
+            }.maxByOrNull { it.value.sumOf { t -> t.amount } }?.key ?: "None"
         }
     }
 
-    val topCategoryStat = categoryStats.firstOrNull()
-    val largestExpenseTxn = remember(periodDebitTransactions) {
-        periodDebitTransactions.maxByOrNull { it.amount }
-    }
     val avgDailySpend = remember(totalSpent, selectedPeriod) {
         val days = selectedPeriod.daysCount.coerceAtLeast(1)
         totalSpent / days
     }
 
-    // Compare with previous period of equal length
-    val comparisonPercentage = remember(transactions, periodStartTime, selectedPeriod, totalSpent) {
-        val prevStart = Calendar.getInstance().apply {
-            timeInMillis = periodStartTime
-            add(Calendar.DAY_OF_YEAR, -selectedPeriod.daysCount)
-        }.timeInMillis
+    // Generate Double Ring Segments
+    val outerDebitSegments = remember(periodTransactions, selectedPeriod, chartViewMode, totalSpent) {
+        if (totalSpent <= 0) emptyList<DoubleRingSegment>()
+        else {
+            val list = mutableListOf<DoubleRingSegment>()
+            var currentAngle = -90f
 
-        val prevDebitTxns = transactions.filter { it.date >= prevStart && it.date < periodStartTime && isDebitTransaction(it) }
-        val prevTotal = prevDebitTxns.sumOf { it.amount }
+            if (chartViewMode == ChartViewMode.BY_DAY) {
+                if (selectedPeriod == TrackPeriod.TODAY) {
+                    // Hourly breakdown for Today
+                    val hourlyGroups = debitTransactions.groupBy { txn ->
+                        val c = Calendar.getInstance().apply { timeInMillis = txn.date }
+                        c.get(Calendar.HOUR_OF_DAY) / 4 // 6 intervals of 4 hours
+                    }.filter { it.value.isNotEmpty() }
 
-        if (prevTotal > 0) {
-            ((totalSpent - prevTotal) / prevTotal) * 100.0
-        } else null
+                    val intervalLabels = mapOf(
+                        0 to "12am - 4am",
+                        1 to "4am - 8am",
+                        2 to "8am - 12pm",
+                        3 to "12pm - 4pm",
+                        4 to "4pm - 8pm",
+                        5 to "8pm - 12am"
+                    )
+
+                    hourlyGroups.entries.sortedBy { it.key }.forEachIndexed { idx, entry ->
+                        val amt = entry.value.sumOf { it.amount }
+                        val pct = (amt / totalSpent) * 100.0
+                        val sweep = ((amt / totalSpent) * 360.0).toFloat()
+                        val color = DayColors[idx % DayColors.size]
+                        val label = intervalLabels[entry.key] ?: "Interval ${entry.key}"
+                        list.add(
+                            DoubleRingSegment(
+                                id = "debit_hour_${entry.key}",
+                                title = label,
+                                amount = amt,
+                                percentage = pct,
+                                count = entry.value.size,
+                                isDebit = true,
+                                color = color,
+                                startAngle = currentAngle,
+                                sweepAngle = sweep
+                            )
+                        )
+                        currentAngle += sweep
+                    }
+                } else {
+                    // Daily breakdown
+                    val dateFormat = SimpleDateFormat("dd MMM", locale)
+                    val dailyGroups = debitTransactions.groupBy { txn ->
+                        val c = Calendar.getInstance().apply { timeInMillis = txn.date }
+                        c.set(Calendar.HOUR_OF_DAY, 0)
+                        c.set(Calendar.MINUTE, 0)
+                        c.set(Calendar.SECOND, 0)
+                        c.set(Calendar.MILLISECOND, 0)
+                        c.timeInMillis
+                    }.filter { it.value.isNotEmpty() }
+
+                    dailyGroups.entries.sortedByDescending { it.key }.forEachIndexed { idx, entry ->
+                        val amt = entry.value.sumOf { it.amount }
+                        val pct = (amt / totalSpent) * 100.0
+                        val sweep = ((amt / totalSpent) * 360.0).toFloat()
+                        val color = DayColors[idx % DayColors.size]
+                        val dateLabel = dateFormat.format(Date(entry.key))
+                        list.add(
+                            DoubleRingSegment(
+                                id = "debit_day_${entry.key}",
+                                title = dateLabel,
+                                amount = amt,
+                                percentage = pct,
+                                count = entry.value.size,
+                                isDebit = true,
+                                color = color,
+                                startAngle = currentAngle,
+                                sweepAngle = sweep
+                            )
+                        )
+                        currentAngle += sweep
+                    }
+                }
+            } else {
+                // By Category
+                val categoryGroups = debitTransactions.groupBy { txn ->
+                    CategoryVisuals.resolveCategoryVisual(txn.category, txn.subcategory)
+                }
+                categoryGroups.entries.sortedByDescending { it.value.sumOf { t -> t.amount } }.forEach { entry ->
+                    val amt = entry.value.sumOf { it.amount }
+                    val pct = (amt / totalSpent) * 100.0
+                    val sweep = ((amt / totalSpent) * 360.0).toFloat()
+                    list.add(
+                        DoubleRingSegment(
+                            id = "debit_cat_${entry.key.title}",
+                            title = entry.key.title,
+                            amount = amt,
+                            percentage = pct,
+                            count = entry.value.size,
+                            isDebit = true,
+                            color = entry.key.color,
+                            startAngle = currentAngle,
+                            sweepAngle = sweep
+                        )
+                    )
+                    currentAngle += sweep
+                }
+            }
+            list
+        }
     }
 
-    // Reset tapped category index when filter changes
-    LaunchedEffect(selectedPeriod) {
-        selectedCategoryIndex = null
-        isLegendExpanded = false
+    val innerCreditSegments = remember(periodTransactions, selectedPeriod, chartViewMode, totalReceived) {
+        if (totalReceived <= 0) emptyList<DoubleRingSegment>()
+        else {
+            val list = mutableListOf<DoubleRingSegment>()
+            var currentAngle = -90f
+
+            if (chartViewMode == ChartViewMode.BY_DAY) {
+                if (selectedPeriod == TrackPeriod.TODAY) {
+                    val hourlyGroups = creditTransactions.groupBy { txn ->
+                        val c = Calendar.getInstance().apply { timeInMillis = txn.date }
+                        c.get(Calendar.HOUR_OF_DAY) / 4
+                    }.filter { it.value.isNotEmpty() }
+
+                    val intervalLabels = mapOf(
+                        0 to "12am - 4am",
+                        1 to "4am - 8am",
+                        2 to "8am - 12pm",
+                        3 to "12pm - 4pm",
+                        4 to "4pm - 8pm",
+                        5 to "8pm - 12am"
+                    )
+
+                    hourlyGroups.entries.sortedBy { it.key }.forEachIndexed { idx, entry ->
+                        val amt = entry.value.sumOf { it.amount }
+                        val pct = (amt / totalReceived) * 100.0
+                        val sweep = ((amt / totalReceived) * 360.0).toFloat()
+                        val color = CreditDayColors[idx % CreditDayColors.size]
+                        val label = intervalLabels[entry.key] ?: "Interval ${entry.key}"
+                        list.add(
+                            DoubleRingSegment(
+                                id = "credit_hour_${entry.key}",
+                                title = label,
+                                amount = amt,
+                                percentage = pct,
+                                count = entry.value.size,
+                                isDebit = false,
+                                color = color,
+                                startAngle = currentAngle,
+                                sweepAngle = sweep
+                            )
+                        )
+                        currentAngle += sweep
+                    }
+                } else {
+                    val dateFormat = SimpleDateFormat("dd MMM", locale)
+                    val dailyGroups = creditTransactions.groupBy { txn ->
+                        val c = Calendar.getInstance().apply { timeInMillis = txn.date }
+                        c.set(Calendar.HOUR_OF_DAY, 0)
+                        c.set(Calendar.MINUTE, 0)
+                        c.set(Calendar.SECOND, 0)
+                        c.set(Calendar.MILLISECOND, 0)
+                        c.timeInMillis
+                    }.filter { it.value.isNotEmpty() }
+
+                    dailyGroups.entries.sortedByDescending { it.key }.forEachIndexed { idx, entry ->
+                        val amt = entry.value.sumOf { it.amount }
+                        val pct = (amt / totalReceived) * 100.0
+                        val sweep = ((amt / totalReceived) * 360.0).toFloat()
+                        val color = CreditDayColors[idx % CreditDayColors.size]
+                        val dateLabel = dateFormat.format(Date(entry.key))
+                        list.add(
+                            DoubleRingSegment(
+                                id = "credit_day_${entry.key}",
+                                title = dateLabel,
+                                amount = amt,
+                                percentage = pct,
+                                count = entry.value.size,
+                                isDebit = false,
+                                color = color,
+                                startAngle = currentAngle,
+                                sweepAngle = sweep
+                            )
+                        )
+                        currentAngle += sweep
+                    }
+                }
+            } else {
+                val categoryGroups = creditTransactions.groupBy { txn ->
+                    CategoryVisuals.resolveCategoryVisual(txn.category, txn.subcategory)
+                }
+                categoryGroups.entries.sortedByDescending { it.value.sumOf { t -> t.amount } }.forEach { entry ->
+                    val amt = entry.value.sumOf { it.amount }
+                    val pct = (amt / totalReceived) * 100.0
+                    val sweep = ((amt / totalReceived) * 360.0).toFloat()
+                    list.add(
+                        DoubleRingSegment(
+                            id = "credit_cat_${entry.key.title}",
+                            title = entry.key.title,
+                            amount = amt,
+                            percentage = pct,
+                            count = entry.value.size,
+                            isDebit = false,
+                            color = entry.key.color,
+                            startAngle = currentAngle,
+                            sweepAngle = sweep
+                        )
+                    )
+                    currentAngle += sweep
+                }
+            }
+            list
+        }
+    }
+
+    val selectedSegment = remember(selectedSegmentId, outerDebitSegments, innerCreditSegments) {
+        outerDebitSegments.find { it.id == selectedSegmentId }
+            ?: innerCreditSegments.find { it.id == selectedSegmentId }
+    }
+
+    // Reset tapped segment when filter or view mode changes
+    LaunchedEffect(selectedPeriod, chartViewMode) {
+        selectedSegmentId = null
     }
 
     Card(
@@ -1371,7 +1599,7 @@ fun HomeTrackMoneySection(
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            // TOP ROW: "Track Your Money" heading & 3 Time-Period Filters
+            // TOP ROW: Header Title & Time Filter Controls
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1386,7 +1614,6 @@ fun HomeTrackMoneySection(
                     )
                 )
 
-                // Selectable filters: Today | 7 Days | 30 Days
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
@@ -1400,18 +1627,16 @@ fun HomeTrackMoneySection(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (isSelected) Color(0xFFFF2A85) else Color.Transparent
-                                )
+                                .background(if (isSelected) Color(0xFF00A3FF) else Color.Transparent)
                                 .clickable { selectedPeriod = period }
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = period.label,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 10.sp,
+                                    fontSize = 9.5.sp,
                                     color = if (isSelected) Color.White else Color(0xFF869AB8)
                                 )
                             )
@@ -1422,7 +1647,97 @@ fun HomeTrackMoneySection(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            if (periodDebitTransactions.isEmpty()) {
+            // SECOND ROW: Mode Selector [ By Day ] [ By Category ]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0B0E18))
+                        .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(8.dp))
+                        .padding(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    ChartViewMode.values().forEach { mode ->
+                        val isSelected = mode == chartViewMode
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isSelected) Color(0xFF1E283D) else Color.Transparent)
+                                .clickable { chartViewMode = mode }
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = mode.label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF869AB8)
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Legend Pill
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFFF3366)))
+                        Text("Spent", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8)))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF00E471)))
+                        Text("Received", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8)))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // STATS BREAKDOWN ROW: Spent, Received, Net Cash Flow
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF0B0E18))
+                    .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(10.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Spent", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8)))
+                    Text(formatInr(totalSpent), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFFFF3366), fontSize = 11.5.sp))
+                }
+
+                Column {
+                    Text("Received", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8)))
+                    Text(formatInr(totalReceived), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00E471), fontSize = 11.5.sp))
+                }
+
+                Column {
+                    Text("Net Cash Flow", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8)))
+                    Text(
+                        (if (netCashFlow >= 0) "+" else "") + formatInr(netCashFlow),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (netCashFlow >= 0) Color(0xFF00E471) else Color(0xFFFF3366),
+                            fontSize = 11.5.sp
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (periodTransactions.isEmpty()) {
                 // EMPTY STATE
                 Column(
                     modifier = Modifier
@@ -1433,16 +1748,16 @@ fun HomeTrackMoneySection(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFFF2A85).copy(alpha = 0.15f))
-                            .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.35f), CircleShape),
+                            .background(Color(0xFF00A3FF).copy(alpha = 0.15f))
+                            .border(1.dp, Color(0xFF00A3FF).copy(alpha = 0.35f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.ReceiptLong,
                             contentDescription = null,
-                            tint = Color(0xFFFF2A85),
+                            tint = Color(0xFF00A3FF),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1450,10 +1765,10 @@ fun HomeTrackMoneySection(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "No spending recorded for this period.",
+                        text = "No transactions recorded for this period.",
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
+                            fontSize = 12.5.sp,
                             color = Color.White
                         )
                     )
@@ -1461,10 +1776,10 @@ fun HomeTrackMoneySection(
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
-                        text = "Add debit transactions to track category breakdown.",
+                        text = "Add transactions to view double-ring spending & credit charts.",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = Color(0xFF869AB8),
-                            fontSize = 11.sp
+                            fontSize = 10.5.sp
                         )
                     )
 
@@ -1473,7 +1788,7 @@ fun HomeTrackMoneySection(
                     Button(
                         onClick = onAddTransactionClick,
                         shape = RoundedCornerShape(999.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF2A85)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A3FF)),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                     ) {
                         Row(
@@ -1481,369 +1796,163 @@ fun HomeTrackMoneySection(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                            Text("Add Transaction", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color.White))
+                            Text("Add Transaction", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color.White))
                         }
                     }
                 }
             } else {
-                // SECOND ROW: Total Spent & Transaction Count
+                // CHART CONTENT AREA: Interactive Double-Ring Canvas + Dynamic Details
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "TOTAL SPENT",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF869AB8),
-                                letterSpacing = 0.8.sp
-                            )
-                        )
-                        Text(
-                            text = formatInr(totalSpent),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White,
-                                fontSize = 22.sp
-                            )
-                        )
-                    }
-
+                    // Double Ring Doughnut Canvas
                     Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFFFF2A85).copy(alpha = 0.12f))
-                            .border(1.dp, Color(0xFFFF2A85).copy(alpha = 0.3f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                        modifier = Modifier.size(135.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "$debitTxnCount ${if (debitTxnCount == 1) "debit" else "debits"}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFF2A85)
-                            )
+                        DoubleRingDoughnutCanvas(
+                            outerDebitSegments = outerDebitSegments,
+                            innerCreditSegments = innerCreditSegments,
+                            selectedSegmentId = selectedSegmentId,
+                            onSegmentSelected = { id ->
+                                selectedSegmentId = if (selectedSegmentId == id) null else id
+                            },
+                            modifier = Modifier.size(135.dp)
                         )
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // MAIN CONTENT: Doughnut Chart & Category Breakdown Legend Side-by-Side / Responsive
-                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val isWide = maxWidth >= 360.dp
-
-                    // Calculate segments for the doughnut chart
-                    val totalSum = categoryStats.sumOf { it.totalAmount }
-                    val segments = remember(categoryStats, totalSum) {
-                        var currentAngle = -90f
-                        categoryStats.mapIndexed { idx, stat ->
-                            val pct = if (totalSum > 0) (stat.totalAmount / totalSum) * 100.0 else 0.0
-                            val sweep = if (totalSum > 0) ((stat.totalAmount / totalSum) * 360.0).toFloat() else 360f
-                            val seg = DoughnutSegment(
-                                title = stat.visual.title,
-                                amount = stat.totalAmount,
-                                percentage = pct,
-                                color = stat.visual.color,
-                                visual = stat.visual,
-                                startAngle = currentAngle,
-                                sweepAngle = sweep
-                            )
-                            currentAngle += sweep
-                            seg
-                        }
-                    }
-
-                    val activeSelectedStat = selectedCategoryIndex?.let { idx ->
-                        if (idx in categoryStats.indices) categoryStats[idx] else null
-                    }
-
-                    val displayedStats = if (isLegendExpanded || categoryStats.size <= 4) categoryStats else categoryStats.take(4)
-
-                    if (isWide) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Doughnut Chart on Left
-                            Box(
-                                modifier = Modifier.size(130.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                MultiCategoryDoughnutCanvas(
-                                    segments = segments,
-                                    selectedIndex = selectedCategoryIndex,
-                                    onSegmentSelected = { idx ->
-                                        selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
-                                    },
-                                    modifier = Modifier.size(130.dp)
-                                )
-
-                                // Center Overlay Text
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    if (activeSelectedStat != null) {
-                                        Text(
-                                            text = activeSelectedStat.visual.title,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 9.sp,
-                                                color = activeSelectedStat.visual.color,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = formatInr(activeSelectedStat.totalAmount),
-                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                fontSize = 11.5.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = Color.White
-                                            ),
-                                            maxLines = 1
-                                        )
-                                        Text(
-                                            text = "${String.format(locale, "%.1f%%", activeSelectedStat.percentage)} (${activeSelectedStat.count} txns)",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 8.sp,
-                                                color = Color(0xFF869AB8)
-                                            )
-                                        )
-                                    } else {
-                                        Text(
-                                            text = "Total Spent",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 9.sp,
-                                                color = Color(0xFF869AB8),
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        )
-                                        Text(
-                                            text = formatInr(totalSpent),
-                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = Color.White
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Category Legend Breakdown on Right
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                displayedStats.forEach { stat ->
-                                    val idx = categoryStats.indexOf(stat)
-                                    val isSelected = selectedCategoryIndex == idx
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                if (isSelected) stat.visual.color.copy(alpha = 0.15f)
-                                                else Color.Transparent
-                                            )
-                                            .clickable {
-                                                selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
-                                            }
-                                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(7.dp)
-                                                .clip(CircleShape)
-                                                .background(stat.visual.color)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = stat.visual.title,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.5.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                color = Color.White
-                                            ),
-                                            modifier = Modifier.weight(1f),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = formatInr(stat.totalAmount),
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White
-                                            )
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = String.format(locale, "%.0f%%", stat.percentage),
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = stat.visual.color
-                                            ),
-                                            modifier = Modifier.width(26.dp),
-                                            textAlign = TextAlign.End
-                                        )
-                                    }
-                                }
-
-                                if (categoryStats.size > 4) {
-                                    Text(
-                                        text = if (isLegendExpanded) "Show Less ↑" else "+${categoryStats.size - 4} more categories...",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF00A3FF)
-                                        ),
-                                        modifier = Modifier
-                                            .clickable { isLegendExpanded = !isLegendExpanded }
-                                            .padding(top = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        // Stacked layout for very narrow screens
+                        // Center Overlay
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(12.dp)
                         ) {
-                            Box(
-                                modifier = Modifier.size(130.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                MultiCategoryDoughnutCanvas(
-                                    segments = segments,
-                                    selectedIndex = selectedCategoryIndex,
-                                    onSegmentSelected = { idx ->
-                                        selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
-                                    },
-                                    modifier = Modifier.size(130.dp)
+                            if (selectedSegment != null) {
+                                Text(
+                                    text = selectedSegment.title,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 8.5.sp,
+                                        color = selectedSegment.color,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                                Text(
+                                    text = formatInr(selectedSegment.amount),
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White
+                                    ),
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "${String.format(locale, "%.1f%%", selectedSegment.percentage)} (${if (selectedSegment.isDebit) "Debit" else "Credit"})",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 7.5.sp,
+                                        color = Color(0xFF869AB8)
+                                    )
+                                )
+                            } else {
+                                Text(
+                                    text = "Net Cash Flow",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 8.5.sp,
+                                        color = Color(0xFF869AB8),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                )
+                                Text(
+                                    text = (if (netCashFlow >= 0) "+" else "") + formatInr(netCashFlow),
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (netCashFlow >= 0) Color(0xFF00E471) else Color(0xFFFF3366)
+                                    ),
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
 
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    if (activeSelectedStat != null) {
-                                        Text(
-                                            text = activeSelectedStat.visual.title,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 9.sp,
-                                                color = activeSelectedStat.visual.color,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        )
-                                        Text(
-                                            text = formatInr(activeSelectedStat.totalAmount),
-                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                fontSize = 11.5.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = Color.White
-                                            )
-                                        )
-                                        Text(
-                                            text = "${String.format(locale, "%.1f%%", activeSelectedStat.percentage)} (${activeSelectedStat.count} txns)",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 8.sp,
-                                                color = Color(0xFF869AB8)
-                                            )
-                                        )
-                                    } else {
-                                        Text(
-                                            text = "Total Spent",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 9.sp,
-                                                color = Color(0xFF869AB8)
-                                            )
-                                        )
-                                        Text(
-                                            text = formatInr(totalSpent),
-                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = Color.White
-                                            )
-                                        )
+                    // Side Breakdown List & Tapped Details
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (selectedSegment != null) {
+                            // Detailed info box for tapped segment
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(selectedSegment.color.copy(alpha = 0.12f))
+                                    .border(1.dp, selectedSegment.color.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                                    .padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text(
+                                        text = selectedSegment.title,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                                    )
+                                    Text(
+                                        text = if (selectedSegment.isDebit) "DEBIT" else "CREDIT",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold, color = selectedSegment.color)
+                                    )
+                                }
+                                Text(
+                                    text = formatInr(selectedSegment.amount),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                )
+                                Text(
+                                    text = "${String.format(locale, "%.1f%%", selectedSegment.percentage)} of total ${if (selectedSegment.isDebit) "debit" else "credit"}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8))
+                                )
+                                Text(
+                                    text = "${selectedSegment.count} ${if (selectedSegment.count == 1) "transaction" else "transactions"}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF869AB8))
+                                )
+                            }
+                        } else {
+                            // Default summary list
+                            val topOuter = outerDebitSegments.take(2)
+                            val topInner = innerCreditSegments.take(2)
+
+                            if (topOuter.isNotEmpty()) {
+                                Text("Top Spent", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFFFF3366), fontWeight = FontWeight.Bold))
+                                topOuter.forEach { seg ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clickable { selectedSegmentId = seg.id },
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(seg.color))
+                                            Text(seg.title, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                        Text(formatInr(seg.amount), style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White, fontWeight = FontWeight.Bold))
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                displayedStats.forEach { stat ->
-                                    val idx = categoryStats.indexOf(stat)
-                                    val isSelected = selectedCategoryIndex == idx
+                            if (topInner.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("Top Received", style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, color = Color(0xFF00E471), fontWeight = FontWeight.Bold))
+                                topInner.forEach { seg ->
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                if (isSelected) stat.visual.color.copy(alpha = 0.15f)
-                                                else Color.Transparent
-                                            )
-                                            .clickable {
-                                                selectedCategoryIndex = if (selectedCategoryIndex == idx) null else idx
-                                            }
-                                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                                        modifier = Modifier.fillMaxWidth().clickable { selectedSegmentId = seg.id },
+                                        horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(7.dp)
-                                                .clip(CircleShape)
-                                                .background(stat.visual.color)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = stat.visual.title,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.5.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                color = Color.White
-                                            ),
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Text(
-                                            text = formatInr(stat.totalAmount),
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White
-                                            )
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = String.format(locale, "%.0f%%", stat.percentage),
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.sp,
-                                                color = stat.visual.color
-                                            )
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(seg.color))
+                                            Text(seg.title, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                        Text(formatInr(seg.amount), style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White, fontWeight = FontWeight.Bold))
                                     }
-                                }
-
-                                if (categoryStats.size > 4) {
-                                    Text(
-                                        text = if (isLegendExpanded) "Show Less ↑" else "+${categoryStats.size - 4} more categories...",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF00A3FF)
-                                        ),
-                                        modifier = Modifier
-                                            .clickable { isLegendExpanded = !isLegendExpanded }
-                                            .padding(top = 2.dp)
-                                    )
                                 }
                             }
                         }
@@ -1852,58 +1961,35 @@ fun HomeTrackMoneySection(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // BOTTOM STATISTICS BAR: Total txns, Top category, Largest expense, Avg daily spend, Comparison %
-                Column(
+                // BOTTOM SUMMARY ROW: Total txns, Top Expense, Avg Daily
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF0B0E18))
-                        .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(10.dp))
-                        .padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(8.dp))
+                        .padding(6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Top Category: ${topCategoryStat?.visual?.title ?: "N/A"}",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White.copy(alpha = 0.85f))
-                        )
-                        Text(
-                            text = "Largest: ${largestExpenseTxn?.let { formatInr(it.amount) } ?: "N/A"}",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White.copy(alpha = 0.85f))
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Avg Daily: ${formatInr(avgDailySpend)}/day",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8))
-                        )
-                        if (comparisonPercentage != null) {
-                            val compStr = String.format(locale, "%+.1f%% vs prev period", comparisonPercentage)
-                            val compColor = if (comparisonPercentage <= 0) Color(0xFF00E471) else Color(0xFFFF2A85)
-                            Text(
-                                text = compStr,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = compColor, fontWeight = FontWeight.Bold)
-                            )
-                        } else {
-                            Text(
-                                text = "$debitTxnCount total debits",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8))
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Txns: $totalTxnCount",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, color = Color(0xFF869AB8))
+                    )
+                    Text(
+                        text = "Top Expense: $topCategoryName",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, color = Color.White.copy(alpha = 0.9f))
+                    )
+                    Text(
+                        text = "Daily Avg: ${formatInr(avgDailySpend)}",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, color = Color(0xFF869AB8))
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // BOTTOM ACTION: Small "View Analytics" link
+            // BOTTOM ACTION: "View Analytics →"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1915,7 +2001,7 @@ fun HomeTrackMoneySection(
                 Text(
                     text = "View Analytics",
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF00A3FF)
                     )
@@ -1925,7 +2011,7 @@ fun HomeTrackMoneySection(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
                     tint = Color(0xFF00A3FF),
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }
@@ -1933,40 +2019,64 @@ fun HomeTrackMoneySection(
 }
 
 /**
- * Interactive Multi-Category Doughnut Canvas
+ * Interactive Double-Ring Doughnut Canvas:
+ * Outer Ring = Debit / Money Spent
+ * Inner Ring = Credit / Money Received
  */
 @Composable
-private fun MultiCategoryDoughnutCanvas(
-    segments: List<DoughnutSegment>,
-    selectedIndex: Int?,
-    onSegmentSelected: (Int) -> Unit,
+private fun DoubleRingDoughnutCanvas(
+    outerDebitSegments: List<DoubleRingSegment>,
+    innerCreditSegments: List<DoubleRingSegment>,
+    selectedSegmentId: String?,
+    onSegmentSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val allSegments = remember(outerDebitSegments, innerCreditSegments) {
+        outerDebitSegments + innerCreditSegments
+    }
+
     Canvas(
-        modifier = modifier.pointerInput(segments) {
+        modifier = modifier.pointerInput(allSegments) {
             detectTapGestures { offset ->
                 val centerX = size.width / 2f
                 val centerY = size.height / 2f
                 val dx = offset.x - centerX
                 val dy = offset.y - centerY
                 val distance = kotlin.math.sqrt(dx * dx + dy * dy)
-                val outerRadius = size.width / 2f
-                val strokeWidth = outerRadius * 0.32f
-                val innerRadius = outerRadius - strokeWidth
+                val outerMaxR = size.width / 2f
+                val outerStroke = outerMaxR * 0.22f
+                val outerMinR = outerMaxR - outerStroke
 
-                if (distance in innerRadius..outerRadius) {
-                    var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
-                    if (angle < 0) angle += 360f
+                val innerMaxR = outerMinR - 3.dp.toPx()
+                val innerStroke = outerMaxR * 0.18f
+                val innerMinR = innerMaxR - innerStroke
 
-                    // Find matching segment
-                    segments.forEachIndexed { idx, seg ->
+                var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                if (angle < 0) angle += 360f
+
+                if (distance in outerMinR..outerMaxR) {
+                    // Tap on Outer Ring (Debit)
+                    outerDebitSegments.forEach { seg ->
                         val normStart = (seg.startAngle % 360 + 360) % 360
                         var normEnd = normStart + seg.sweepAngle
                         var checkAngle = angle
                         if (normEnd > 360 && checkAngle < normStart) checkAngle += 360f
 
                         if (checkAngle >= normStart && checkAngle <= normEnd) {
-                            onSegmentSelected(idx)
+                            onSegmentSelected(seg.id)
+                            return@detectTapGestures
+                        }
+                    }
+                } else if (distance in innerMinR..innerMaxR) {
+                    // Tap on Inner Ring (Credit)
+                    innerCreditSegments.forEach { seg ->
+                        val normStart = (seg.startAngle % 360 + 360) % 360
+                        var normEnd = normStart + seg.sweepAngle
+                        var checkAngle = angle
+                        if (normEnd > 360 && checkAngle < normStart) checkAngle += 360f
+
+                        if (checkAngle >= normStart && checkAngle <= normEnd) {
+                            onSegmentSelected(seg.id)
                             return@detectTapGestures
                         }
                     }
@@ -1975,38 +2085,72 @@ private fun MultiCategoryDoughnutCanvas(
         }
     ) {
         val diameter = size.width
-        val strokeWidth = diameter * 0.16f
-        val arcSize = Size(diameter - strokeWidth, diameter - strokeWidth)
-        val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
+        val outerStroke = diameter * 0.11f
+        val innerStroke = diameter * 0.09f
 
-        if (segments.isEmpty()) {
-            drawArc(
-                color = Color(0xFF1E283D),
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth)
-            )
-            return@Canvas
-        }
+        val outerArcSize = Size(diameter - outerStroke, diameter - outerStroke)
+        val outerTopLeft = Offset(outerStroke / 2f, outerStroke / 2f)
 
-        val gapDegree = if (segments.size > 1) 2.5f else 0f
+        val gap = 4.dp.toPx()
+        val innerDiameter = diameter - (outerStroke * 2) - gap
+        val innerArcSize = Size(innerDiameter - innerStroke, innerDiameter - innerStroke)
+        val innerTopLeft = Offset((diameter - innerArcSize.width) / 2f, (diameter - innerArcSize.height) / 2f)
 
-        segments.forEachIndexed { idx, seg ->
-            val isSelected = selectedIndex == idx
-            val currentStroke = if (isSelected) strokeWidth * 1.25f else strokeWidth
-            val adjustedSweep = (seg.sweepAngle - gapDegree).coerceAtLeast(1f)
+        // Draw Outer Ring Background Track
+        drawArc(
+            color = Color(0xFF1B2338),
+            startAngle = 0f,
+            sweepAngle = 360f,
+            useCenter = false,
+            topLeft = outerTopLeft,
+            size = outerArcSize,
+            style = Stroke(width = outerStroke)
+        )
+
+        // Draw Inner Ring Background Track
+        drawArc(
+            color = Color(0xFF141B2D),
+            startAngle = 0f,
+            sweepAngle = 360f,
+            useCenter = false,
+            topLeft = innerTopLeft,
+            size = innerArcSize,
+            style = Stroke(width = innerStroke)
+        )
+
+        // Outer Segments (Debit)
+        val outerGapDeg = if (outerDebitSegments.size > 1) 2.5f else 0f
+        outerDebitSegments.forEach { seg ->
+            val isSelected = selectedSegmentId == seg.id
+            val stroke = if (isSelected) outerStroke * 1.3f else outerStroke
+            val adjustedSweep = (seg.sweepAngle - outerGapDeg).coerceAtLeast(1f)
 
             drawArc(
                 color = seg.color,
-                startAngle = seg.startAngle + (gapDegree / 2f),
+                startAngle = seg.startAngle + (outerGapDeg / 2f),
                 sweepAngle = adjustedSweep,
                 useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = currentStroke, cap = StrokeCap.Round)
+                topLeft = outerTopLeft,
+                size = outerArcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+            )
+        }
+
+        // Inner Segments (Credit)
+        val innerGapDeg = if (innerCreditSegments.size > 1) 2.5f else 0f
+        innerCreditSegments.forEach { seg ->
+            val isSelected = selectedSegmentId == seg.id
+            val stroke = if (isSelected) innerStroke * 1.3f else innerStroke
+            val adjustedSweep = (seg.sweepAngle - innerGapDeg).coerceAtLeast(1f)
+
+            drawArc(
+                color = seg.color,
+                startAngle = seg.startAngle + (innerGapDeg / 2f),
+                sweepAngle = adjustedSweep,
+                useCenter = false,
+                topLeft = innerTopLeft,
+                size = innerArcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
             )
         }
     }

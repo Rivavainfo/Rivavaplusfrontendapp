@@ -175,7 +175,7 @@ fun PremiumUnlockDialog(
                                     secretKeyInput = it.trim()
                                     errorMessage = null
                                 },
-                                label = { Text("Account Secret Key (e.g. ro10987Riva)", color = Color.White.copy(0.7f)) },
+                                label = { Text("Enter Secret Key", color = Color.White.copy(0.7f)) },
                                 singleLine = true,
                                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(

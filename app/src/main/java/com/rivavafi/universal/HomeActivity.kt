@@ -112,7 +112,7 @@ val BaseBottomNavigationItems = listOf(
     Screen.Home,
     Screen.Transactions,
     Screen.RivavaPortfolio,
-    Screen.Analytics,
+    Screen.Calculators,
     Screen.Profile
 )
 
@@ -288,7 +288,8 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 bottomNavigationItems.forEach { screen ->
-                                    val isSelected = currentRoute == screen.route
+                                    val isSelected = currentRoute == screen.route ||
+                                            (screen.route == Screen.Calculators.route && currentRoute?.startsWith(Screen.Calculators.route) == true)
                                     val isLocked = screen.route == Screen.RivavaPortfolio.route && !isPortfolioUnlocked
 
                                     CustomBottomNavItem(
