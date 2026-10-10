@@ -40,21 +40,45 @@ object CategoryVisuals {
         "Others" to CategoryVisual("Others", Color(0xFF607D8B), Icons.Outlined.MoreHoriz)
     )
 
-    fun getCategoryVisual(category: String): CategoryVisual {
-        return when (category.uppercase()) {
-            "DEBIT" -> EXPENSE
-            "CREDIT" -> INCOME
-            "BILL", "BILL_PENDING" -> BILL
-            "INVESTMENT" -> INVESTMENT
-            "SUBSCRIPTION" -> SUBSCRIPTION
-            "REWARD", "VOUCHER" -> REWARD
-            "SELF_TRANSFER" -> SELF_TRANSFER
-            "IGNORE" -> IGNORE
-            else -> DEFAULT
+    val FOOD = CategoryVisual("Food", Color(0xFFFB923C), Icons.Outlined.Restaurant)
+    val SHOPPING = CategoryVisual("Shopping", Color(0xFFEC4899), Icons.Outlined.ShoppingBag)
+    val TRANSPORT = CategoryVisual("Transport", RivavaCyan, Icons.Outlined.DirectionsCar)
+    val BILLS = CategoryVisual("Bills", Color(0xFFA855F7), Icons.Outlined.ReceiptLong)
+    val ENTERTAINMENT = CategoryVisual("Entertainment", Color(0xFFF43F5E), Icons.Outlined.Movie)
+    val HEALTHCARE = CategoryVisual("Healthcare", Color(0xFFEF4444), Icons.Outlined.MedicalServices)
+    val INVESTMENTS = CategoryVisual("Investments", Color(0xFF10B981), Icons.Outlined.Savings)
+
+    fun resolveCategoryVisual(category: String?, subcategory: String? = null): CategoryVisual {
+        val catUpper = (category ?: "").trim().uppercase()
+        val subUpper = (subcategory ?: "").trim().uppercase()
+        val combined = "$catUpper $subUpper"
+
+        if (subUpper.isNotBlank() && subcategories.containsKey(subcategory)) {
+            return subcategories[subcategory]!!
+        }
+
+        return when {
+            combined.contains("FOOD") || combined.contains("DINING") || combined.contains("RESTAURANT") || combined.contains("GROCER") -> FOOD
+            combined.contains("SHOP") || combined.contains("CLOTH") || combined.contains("STORE") -> SHOPPING
+            combined.contains("TRANSPORT") || combined.contains("TRAVEL") || combined.contains("FUEL") || combined.contains("CAB") || combined.contains("UBER") || combined.contains("OLA") -> TRANSPORT
+            combined.contains("BILL") || combined.contains("UTILITY") || combined.contains("RECHARGE") || combined.contains("ELECTRIC") || combined.contains("WATER") -> BILLS
+            combined.contains("ENTERTAIN") || combined.contains("MOVIE") || combined.contains("GAME") || combined.contains("CINEMA") -> ENTERTAINMENT
+            combined.contains("HEALTH") || combined.contains("MEDIC") || combined.contains("HOSPITAL") || combined.contains("DOCTOR") || combined.contains("PHARM") -> HEALTHCARE
+            combined.contains("INVEST") || combined.contains("MUTUAL") || combined.contains("STOCK") || combined.contains("SIP") || combined.contains("SAVING") -> INVESTMENTS
+            combined.contains("SUBSCRIPT") || combined.contains("NETFLIX") || combined.contains("SPOTIFY") -> SUBSCRIPTION
+            combined.contains("REWARD") || combined.contains("CASHBACK") -> REWARD
+            combined.contains("TRANSFER") -> SELF_TRANSFER
+            catUpper == "DEBIT" -> EXPENSE
+            catUpper == "CREDIT" -> INCOME
+            else -> DEFAULT.copy(title = if (category.isNullOrBlank()) "Other" else category)
         }
     }
 
+    fun getCategoryVisual(category: String): CategoryVisual {
+        return resolveCategoryVisual(category)
+    }
+
     fun getSubcategoryVisual(subcategory: String): CategoryVisual {
-        return subcategories[subcategory] ?: DEFAULT.copy(title = subcategory)
+        return subcategories[subcategory] ?: resolveCategoryVisual(subcategory)
     }
 }

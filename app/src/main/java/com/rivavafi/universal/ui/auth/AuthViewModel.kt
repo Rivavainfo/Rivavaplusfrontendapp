@@ -185,6 +185,14 @@ class AuthViewModel @Inject constructor(
                     userPreferencesRepository.setOnboardingCompleted(true)
                 }
 
+                if (isNew) {
+                    try {
+                        userEntitlementRepository.requestNewKey()
+                    } catch (e: Exception) {
+                        Log.w("AuthViewModel", "Automatic key request creation failed: ${e.message}")
+                    }
+                }
+
                 userEntitlementRepository.syncEntitlement()
                 _authState.value = AuthState.SUCCESS
 
@@ -378,6 +386,11 @@ class AuthViewModel @Inject constructor(
                 userRepository.cacheUserLocally(context, appUser)
 
                 _isNewUser.value = true
+                try {
+                    userEntitlementRepository.requestNewKey()
+                } catch (e: Exception) {
+                    Log.w("AuthViewModel", "Automatic key request creation failed: ${e.message}")
+                }
                 userEntitlementRepository.syncEntitlement()
                 _authState.value = AuthState.SUCCESS
 

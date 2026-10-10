@@ -131,6 +131,24 @@ class PremiumViewModel @Inject constructor(
     fun unlockWithSecretKey(key: String = "") {
         verifyAndRedeemSecretKey(key)
     }
+
+    private val _keyRequestState = MutableStateFlow<String?>(null)
+    val keyRequestState: StateFlow<String?> = _keyRequestState.asStateFlow()
+
+    fun requestNewKey(onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+        viewModelScope.launch {
+            val result = repository.requestNewKey()
+            if (result.isSuccess) {
+                val msg = result.getOrNull() ?: "Key request submitted."
+                _keyRequestState.value = msg
+                onResult(true, msg)
+            } else {
+                val err = result.exceptionOrNull()?.message ?: "Failed to request key."
+                _keyRequestState.value = err
+                onResult(false, err)
+            }
+        }
+    }
 }
 
 sealed class KeyVerificationState {

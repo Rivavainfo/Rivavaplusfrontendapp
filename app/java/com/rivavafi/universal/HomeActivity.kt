@@ -94,15 +94,15 @@ sealed class Screen(
     object SmsConsent : Screen("sms_consent", "SmsConsent", Icons.Outlined.Home, Icons.Filled.Home)
     object Scanning : Screen("scanning", "Scanning", Icons.Outlined.Home, Icons.Filled.Home)
     object Home : Screen("home", "Home", Icons.Outlined.Home, Icons.Filled.Home)
-    object Transactions : Screen("transactions", "Reports", Icons.Outlined.ReceiptLong, Icons.Filled.ReceiptLong)
+    object Transactions : Screen("transactions", "Transactions", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong)
     object Analytics : Screen("analytics", "Analytics", Icons.Outlined.Analytics, Icons.Filled.Analytics)
     object AiReview : Screen("ai_review", "AI Review", Icons.Outlined.AutoAwesome, Icons.Filled.AutoAwesome)
     object Settings : Screen("settings", "Settings", Icons.Outlined.Settings, Icons.Filled.Settings)
     object Profile : Screen("profile", "Profile", Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
-    object RivavaPortfolio : Screen("portfolio_screen", "Portfolio", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp)
+    object RivavaPortfolio : Screen("portfolio_screen", "Portfolio", Icons.AutoMirrored.Outlined.TrendingUp, Icons.AutoMirrored.Filled.TrendingUp)
     object HelpCenter : Screen("help_center", "Help Center", Icons.Outlined.Info, Icons.Filled.Info)
     object StockDetail : Screen("stock_detail", "Stock Detail", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet)
-    object TransactionDetail : Screen("transaction_detail", "Transaction Detail", Icons.Outlined.ReceiptLong, Icons.Filled.ReceiptLong)
+    object TransactionDetail : Screen("transaction_detail", "Transaction Detail", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong)
     object Calculators : Screen("calculators", "Tools", Icons.Outlined.Calculate, Icons.Filled.Calculate)
     object VerifyEmail : Screen("verify_email", "Verify Email", Icons.Outlined.Home, Icons.Filled.Home)
     object ResetPassword : Screen("reset_password", "Reset Password", Icons.Outlined.Home, Icons.Filled.Home)
@@ -110,9 +110,8 @@ sealed class Screen(
 
 val BaseBottomNavigationItems = listOf(
     Screen.Home,
-    Screen.RivavaPortfolio,
-    Screen.Calculators,
     Screen.Transactions,
+    Screen.RivavaPortfolio,
     Screen.Analytics,
     Screen.Profile
 )
@@ -158,11 +157,19 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
     val localCtx = androidx.compose.ui.platform.LocalContext.current
     val activity = localCtx as? android.app.Activity ?: (localCtx as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
 
-    LaunchedEffect(isSecureRoute) {
-        if (!com.rivavafi.universal.BuildConfig.DEBUG && isSecureRoute) {
-            activity?.window?.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+    DisposableEffect(isSecureRoute) {
+        if (isSecureRoute) {
+            activity?.window?.setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+            )
         } else {
             activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            if (isSecureRoute) {
+                activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
     }
 
@@ -290,7 +297,16 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                                         isSelected = isSelected,
                                         isLocked = isLocked,
                                         onClick = {
-                                            if (!isSelected) {
+                                            if (screen.route == Screen.Home.route) {
+                                                if (currentRoute != Screen.Home.route) {
+                                                    navController.navigate(Screen.Home.route) {
+                                                        popUpTo(navController.graph.findStartDestination().id) {
+                                                            inclusive = false
+                                                        }
+                                                        launchSingleTop = true
+                                                    }
+                                                }
+                                            } else if (!isSelected) {
                                                 navController.navigate(screen.route) {
                                                     popUpTo(navController.graph.findStartDestination().id) {
                                                         saveState = true
@@ -394,8 +410,9 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                     onNavigateToTransactionDetail = { transactionId ->
                         navController.navigate("${Screen.TransactionDetail.route}/$transactionId")
                     },
-                    onNavigateToCalculators = {
-                        navController.navigate(Screen.Calculators.route)
+                    onNavigateToCalculators = { tool ->
+                        val route = if (tool.isNullOrBlank()) Screen.Calculators.route else "${Screen.Calculators.route}?tool=$tool"
+                        navController.navigate(route)
                     },
                     onNavigateToTransactions = {
                         navController.navigate(Screen.Transactions.route)
@@ -443,8 +460,17 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
             composable(Screen.Analytics.route) {
                 AnalyticsScreen()
             }
-            composable(Screen.Calculators.route) {
+            composable(
+                route = "${Screen.Calculators.route}?tool={tool}",
+                arguments = listOf(navArgument("tool") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val toolParam = backStackEntry.arguments?.getString("tool")
                 com.rivavafi.universal.ui.calculator.CalculatorsScreen(
+                    initialTool = toolParam,
                     onBack = { navController.popBackStack() }
                 )
             }
@@ -457,10 +483,14 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                 })
             }
             composable(Screen.RivavaPortfolio.route) {
-                RivavaPortfolioScreen(onBack = { navController.popBackStack() }, onNavigateToDetail = { ticker, focus ->
-                    val focusParam = focus ?: "none"
-                    navController.navigate("${Screen.StockDetail.route}/$ticker?focus=$focusParam")
-                })
+                RivavaPortfolioScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToDetail = { ticker, focus ->
+                        val focusParam = focus ?: "none"
+                        navController.navigate("${Screen.StockDetail.route}/$ticker?focus=$focusParam")
+                    },
+                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                )
             }
             composable(
                 route = "${Screen.StockDetail.route}/{ticker}?focus={focus}",

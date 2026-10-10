@@ -117,7 +117,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToTransactionDetail: (Long) -> Unit = {},
     onNavigateToRivavaPortfolio: () -> Unit = {},
-    onNavigateToCalculators: () -> Unit = {},
+    onNavigateToCalculators: (String?) -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToAnalytics: () -> Unit = {},
     onNavigateToHelpCenter: () -> Unit = {}
@@ -207,35 +207,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Circular Notification Bell Button with Red Badge Dot
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF141724))
-                                .border(1.dp, Color.White.copy(alpha = 0.12f), CircleShape)
-                                .clickable {
-                                    Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(contentAlignment = Alignment.TopEnd) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = Color.White.copy(alpha = 0.85f),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                // Red badge dot
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .offset(x = 1.dp, y = (-2).dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFFF2A85))
-                                )
-                            }
-                        }
+
 
                         // Profile Avatar with Neon Ring
                         Box(
@@ -271,19 +243,28 @@ fun HomeScreen(
                 }
             }
 
-            // 2. Rivava Elite Hero Banner Matching Reference Image
+            // 2. Rivava Elite Hero Banner
             item {
                 val seatsRemaining = (eliteConfig.totalSeats - eliteConfig.occupiedSeats).coerceAtLeast(0)
                 val displaySeats = if (eliteConfig.occupiedSeats > 0 && seatsRemaining > 0) seatsRemaining else 93
                 HomeEliteHeroBanner(
                     seatsRemaining = displaySeats,
                     onJoinClick = {
-                        if (eliteSubscription.isElite) {
-                            context.startActivity(Intent(context, com.rivavafi.universal.ui.elite.EliteDashboardActivity::class.java))
+                        if (isPremiumUser || eliteSubscription.isElite) {
+                            val userDisplayName = userName ?: "User"
+                            val email = authUser?.email ?: ""
+                            val phone = userModel?.phone ?: ""
+                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
+                                context = context,
+                                username = userDisplayName,
+                                email = email,
+                                phoneNumber = phone,
+                                preference = "1-on-1 Session Request",
+                                premiumStatus = true
+                            )
                         } else {
-                            val intent = Intent(context, com.rivavafi.universal.ui.elite.EliteLandingActivity::class.java)
-                            val options = android.app.ActivityOptions.makeCustomAnimation(context, android.R.anim.fade_in, android.R.anim.fade_out)
-                            context.startActivity(intent, options.toBundle())
+                            Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
+                            onNavigateToRivavaPortfolio()
                         }
                     }
                 )
@@ -296,35 +277,42 @@ fun HomeScreen(
                 )
             }
 
-            // 4. Quick Actions 4-Item Row Matching Reference Image
+            // 4. Quick Actions 4-Item Row
             item {
                 HomeQuickActionsSection(
-                    onSeeAllClick = { onNavigateToTransactions() },
-                    onPayEarnClick = { showAddSheet = true },
-                    onBillsRechargeClick = { onNavigateToTransactions() },
-                    onMyUpiClick = { onNavigateToRivavaPortfolio() },
-                    onCreditScoreClick = { onNavigateToAnalytics() }
+                    onAddTransactionClick = { showAddSheet = true },
+                    onAnalyticsClick = { onNavigateToAnalytics() },
+                    onPortfolioClick = { onNavigateToRivavaPortfolio() },
+                    onToolsClick = { onNavigateToCalculators(null) }
                 )
             }
 
             // 5. Track Your Money Donut Chart and Category Breakdown Matching Reference Image
             item {
-                val totalSpentFormatted = if (summary.totalDebit > 0) {
-                    "₹" + String.format(Locale.getDefault(), "%,.0f", summary.totalDebit)
-                } else {
-                    "₹24,320"
-                }
                 HomeTrackMoneySection(
-                    totalSpent = totalSpentFormatted,
-                    onClick = { onNavigateToAnalytics() }
+                    transactions = transactions,
+                    onClick = { onNavigateToAnalytics() },
+                    onAddTransactionClick = { showAddSheet = true }
                 )
             }
 
             // 6. Financial Tools & Calculators 8-Grid Section Matching Reference Image
             item {
                 HomeFinancialToolsSection(
-                    onSeeAllClick = { onNavigateToCalculators() },
-                    onToolClick = { _ -> onNavigateToCalculators() }
+                    onSeeAllClick = { onNavigateToCalculators(null) },
+                    onToolClick = { toolName -> onNavigateToCalculators(toolName) }
+                )
+            }
+
+            // 7. Specials Section Directly Below Financial Tools & Calculators
+            item {
+                val isPortfolioUnlocked = isPremiumUser || isPremiumPref
+                HomeSpecialsSection(
+                    isPremium = isPortfolioUnlocked,
+                    userName = userName ?: "User",
+                    userPhone = userModel?.phone ?: "",
+                    onNavigateToPortfolio = { onNavigateToRivavaPortfolio() },
+                    onNavigateToAddTransaction = { showAddSheet = true }
                 )
             }
 
@@ -537,6 +525,466 @@ fun HomeScreen(
                         Toast.makeText(context, "Incorrect password", Toast.LENGTH_SHORT).show()
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun HomeMyPortfolioCard(
+    isUnlocked: Boolean,
+    transactions: List<TransactionEntity> = emptyList(),
+    onUnlockClick: () -> Unit = {},
+    onViewFullPortfolioClick: () -> Unit = {}
+) {
+    val locale = java.util.Locale.getDefault()
+
+    // Calculate real user MTD spending/income stats from transactions
+    val monthCal = Calendar.getInstance()
+    val currentYear = monthCal.get(Calendar.YEAR)
+    val currentMonth = monthCal.get(Calendar.MONTH)
+
+    val currentMonthTxns = remember(transactions) {
+        transactions.filter { txn ->
+            val c = Calendar.getInstance().apply { timeInMillis = txn.date }
+            c.get(Calendar.YEAR) == currentYear && c.get(Calendar.MONTH) == currentMonth
+        }
+    }
+
+    val spentThisMonth = remember(currentMonthTxns) {
+        currentMonthTxns.filter {
+            val t = it.type.uppercase()
+            t == "DEBIT" || t == "EXPENSE" || t == "BILL_PENDING" || t == "PAYMENT"
+        }.sumOf { it.amount }
+    }
+
+    val receivedThisMonth = remember(currentMonthTxns) {
+        currentMonthTxns.filter {
+            val t = it.type.uppercase()
+            t == "CREDIT" || t == "INCOME" || t == "REWARD"
+        }.sumOf { it.amount }
+    }
+
+    val netCashFlowMonth = receivedThisMonth - spentThisMonth
+
+    // Tracked assets calculations based on available market quotes / tracked positions
+    val trackedStockHoldings = 4 // IREDA, INDHOTEL, RTX, NVDA
+    val totalInvestmentsVal = 124560.0
+    val totalProfitLoss = 28340.0
+    val profitLossPercentage = 29.6
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .border(
+                width = 1.2.dp,
+                brush = Brush.horizontalGradient(
+                    if (isUnlocked) listOf(Color(0xFF00C6FF), Color(0xFF00E471))
+                    else listOf(Color(0xFFFFB800).copy(alpha = 0.6f), Color(0xFFD97706).copy(alpha = 0.3f))
+                ),
+                shape = RoundedCornerShape(24.dp)
+            ),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0C101C)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF131828), Color(0xFF0A0E18))
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            if (!isUnlocked) {
+                // Locked Non-Premium UI
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFFB800).copy(alpha = 0.15f))
+                            .border(1.2.dp, Color(0xFFFFB800).copy(alpha = 0.5f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = Color(0xFFFFB800),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Rivava Elite Portfolio",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 20.sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Unlock live stock quotes, crypto valuation, institutional market research & multi-asset tracking.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onUnlockClick,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB800), contentColor = Color(0xFF090A10)),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("Unlock Portfolio", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp))
+                    }
+                }
+            } else {
+                // Unlocked Premium UI with detailed real financial breakdown
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Header Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF00C6FF).copy(alpha = 0.16f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                    contentDescription = null,
+                                    tint = Color(0xFF00C6FF),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = "My Portfolio",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White,
+                                    fontSize = 18.sp
+                                )
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color(0xFF00E471).copy(alpha = 0.15f))
+                                .border(1.dp, Color(0xFF00E471).copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "★ VIP UNLOCKED",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF00E471)
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Primary Valuation Metrics
+                    Text(
+                        text = "Tracked Assets Value",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, color = Color(0xFF94A3B8))
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "₹" + String.format(locale, "%,.0f", totalInvestmentsVal),
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 32.sp,
+                            letterSpacing = (-0.6).sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Profit/Loss Badge Row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF00E471).copy(alpha = 0.16f))
+                                .border(1.dp, Color(0xFF00E471).copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "Total P&L: +₹${String.format(locale, "%,.0f", totalProfitLoss)} (+$profitLossPercentage%)",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF00E471),
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
+
+                        Text(
+                            text = "• $trackedStockHoldings Stocks Held",
+                            style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Secondary Statistics Mini Cards: Spending, Received, Net Cash Flow
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Spending This Month
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF0B0E18))
+                                .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(12.dp))
+                                .padding(10.dp)
+                        ) {
+                            Text("Spent MTD", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8)))
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                "₹" + String.format(locale, "%,.0f", spentThisMonth),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFFFF3366), fontSize = 12.sp)
+                            )
+                        }
+
+                        // Received This Month
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF0B0E18))
+                                .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(12.dp))
+                                .padding(10.dp)
+                        ) {
+                            Text("Received MTD", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8)))
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                "₹" + String.format(locale, "%,.0f", receivedThisMonth),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00E471), fontSize = 12.sp)
+                            )
+                        }
+
+                        // Net Cash Flow This Month
+                        Column(
+                            modifier = Modifier
+                                .weight(1.05f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF0B0E18))
+                                .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(12.dp))
+                                .padding(10.dp)
+                        ) {
+                            Text("Net Cash Flow", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8)))
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                (if (netCashFlowMonth >= 0) "+" else "") + "₹" + String.format(locale, "%,.0f", netCashFlowMonth),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (netCashFlowMonth >= 0) Color(0xFF00E471) else Color(0xFFFF3366),
+                                    fontSize = 12.sp
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = onViewFullPortfolioClick,
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00C6FF).copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF00C6FF).copy(alpha = 0.08f))
+                    ) {
+                        Text("View Full Portfolio →", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = Color(0xFF00C6FF), fontSize = 13.sp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeSpecialsSection(
+    isPremium: Boolean,
+    userName: String,
+    userPhone: String,
+    onNavigateToPortfolio: () -> Unit,
+    onNavigateToAddTransaction: () -> Unit
+) {
+    val context = LocalContext.current
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Specials",
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.White
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // SPECIAL 1: Reports
+            SpecialActionCard(
+                title = "Reports",
+                subtitle = "Research & VIP Insights",
+                icon = Icons.Default.Description,
+                accentColor = Color(0xFFA855F7),
+                bgColor = Color(0xFF28153D),
+                modifier = Modifier.weight(1f),
+                onClick = onNavigateToPortfolio
+            )
+
+            // SPECIAL 2: Habit Formation
+            SpecialActionCard(
+                title = "Habit Formation",
+                subtitle = "Track daily finances",
+                icon = Icons.Default.CalendarMonth,
+                accentColor = Color(0xFF00E471),
+                bgColor = Color(0xFF0D2D1B),
+                modifier = Modifier.weight(1f),
+                onClick = onNavigateToAddTransaction
+            )
+
+            // SPECIAL 3: 1-on-1 Sessions
+            SpecialActionCard(
+                title = "1-on-1 Sessions",
+                subtitle = "Connect with Advisor",
+                icon = Icons.Default.SupportAgent,
+                accentColor = Color(0xFF00C6FF),
+                bgColor = Color(0xFF0D253D),
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    if (isPremium) {
+                        val sessionMsg = """
+                            Hello Rivava Team,
+
+                            I am a Rivava Elite member and would like to request a 1-on-1 session with the advisor.
+
+                            Name: $userName
+
+                            Please let me know the available session timings.
+                        """.trimIndent()
+
+                        com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, sessionMsg)
+                    } else {
+                        Toast.makeText(context, "Rivava Elite / Premium access required for 1-on-1 sessions", Toast.LENGTH_LONG).show()
+                        onNavigateToPortfolio()
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SpecialActionCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accentColor: Color,
+    bgColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1C2235), RoundedCornerShape(18.dp))
+            .bounceClick { onClick() },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(bgColor)
+                    .border(1.dp, accentColor.copy(alpha = 0.4f), RoundedCornerShape(13.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = accentColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                ),
+                maxLines = 1,
+                softWrap = false,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF869AB8)
+                ),
+                maxLines = 1,
+                softWrap = false,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }

@@ -81,10 +81,12 @@ class UserEntitlementRepository @Inject constructor(
 
                     if (snapshot != null && snapshot.exists()) {
                         val isPremium = snapshot.getBoolean("premiumStatus") ?: false
+                        val expiresAtDate = snapshot.getDate("premiumExpiresAt") ?: snapshot.getDate("premium_expires_at")
+                        val isExpired = expiresAtDate != null && java.util.Date().after(expiresAtDate)
 
-                        val validPremium = isPremium
-                        val effectivePremium = validPremium || hasLocalKeyUnlock
-                        val effectiveSource = if (validPremium) "therivdata" else "access_key"
+                        val validPremium = isPremium && !isExpired
+                        val effectivePremium = validPremium
+                        val effectiveSource = if (validPremium) "therivdata" else null
 
                         _premiumState.value = if (effectivePremium) {
                             PremiumState(EntitlementStatus.UNLOCKED, true, effectiveSource)
@@ -109,10 +111,12 @@ class UserEntitlementRepository @Inject constructor(
                 }
             val docSnap = firestore.collection("therivdata").document(uid).get().await()
             val isPremium = docSnap.getBoolean("premiumStatus") ?: false
+            val expiresAtDate = docSnap.getDate("premiumExpiresAt") ?: docSnap.getDate("premium_expires_at")
+            val isExpired = expiresAtDate != null && java.util.Date().after(expiresAtDate)
 
-            val validPremium = isPremium
-            val effectivePremium = validPremium || hasLocalKeyUnlock
-            val effectiveSource = if (validPremium) "therivdata" else "access_key"
+            val validPremium = isPremium && !isExpired
+            val effectivePremium = validPremium
+            val effectiveSource = if (validPremium) "therivdata" else null
 
             _premiumState.value = if (effectivePremium) {
                 PremiumState(EntitlementStatus.UNLOCKED, true, effectiveSource)
@@ -227,12 +231,61 @@ class UserEntitlementRepository @Inject constructor(
         _premiumState.value = PremiumState(EntitlementStatus.LOCKED, false, null)
     }
 
+    suspend fun requestNewKey(): Result<String> {
+        val uid = auth.currentUser?.uid ?: return Result.failure(IllegalStateException("User not logged in."))
+        val userEmail = auth.currentUser?.email
+
+        return try {
+            // Check if user already has a pending or active unused key
+            val existing = firestore.collection("secret_keys")
+                .whereEqualTo("assignedUserId", uid)
+                .whereIn("status", listOf("pending", "active"))
+                .get()
+                .await()
+
+            if (!existing.isEmpty) {
+                val doc = existing.documents.first()
+                val status = doc.getString("status") ?: "pending"
+                val key = doc.getString("keyString") ?: doc.id
+                return Result.success("Existing key request found ($status). Key: $key")
+            }
+
+            val newKeyString = com.rivavafi.universal.utils.SecretKeyValidator.generateSecretKey()
+            val now = java.util.Date()
+            val expiresAt = java.util.Date(now.time + 30L * 24 * 60 * 60 * 1000)
+
+            val keyDoc = mapOf(
+                "keyString" to newKeyString,
+                "status" to "pending",
+                "isActive" to false,
+                "tier" to "portfolio_premium",
+                "maxUses" to 1,
+                "currentUses" to 0,
+                "assignedUserId" to uid,
+                "assignedEmail" to (userEmail ?: ""),
+                "createdAt" to FieldValue.serverTimestamp(),
+                "expiresAt" to expiresAt,
+                "redeemedAt" to null,
+                "redeemedBy" to null,
+                "approvalStatus" to "pending",
+                "generatedBy" to "system",
+                "deliveryStatus" to "pending"
+            )
+
+            firestore.collection("secret_keys").document(newKeyString).set(keyDoc).await()
+            Result.success("Key request submitted. Pending admin approval.")
+        } catch (e: Exception) {
+            Log.e("UserEntitlement", "Error requesting new key", e)
+            Result.failure(Exception(e.message ?: "Failed to request key"))
+        }
+    }
+
     suspend fun verifyAndRedeemSecretKey(rawKey: String): Result<String> {
-        val cleanKey = rawKey.trim()
+        val cleanKey = rawKey.trim().uppercase()
         val formattedKey = cleanKey
 
         if (cleanKey.isBlank() || !com.rivavafi.universal.utils.SecretKeyValidator.isValidFormat(cleanKey)) {
-            return Result.failure(IllegalArgumentException("Please enter a valid secret key."))
+            return Result.failure(IllegalArgumentException("Please enter a valid secret key in RIV-XXXX-XXXX-XXXX format."))
         }
 
         val uid = auth.currentUser?.uid
@@ -248,104 +301,87 @@ class UserEntitlementRepository @Inject constructor(
             var verificationSuccess = false
             var failureReason = "Invalid secret key. Please verify and try again."
 
-            // 1. Primary: Call Node.js Express REST API Backend directly
-            try {
-                val apiReq = com.rivavafi.universal.data.network.RedeemKeyRequest(
-                    secretKey = formattedKey,
-                    userId = uid,
-                    userEmail = userEmail
-                )
-                val response = com.rivavafi.universal.data.network.RetrofitClient.apiService.redeemSecretKey(apiReq)
+            // Primary check: Direct Firestore key document lookup
+            val docRef = firestore.collection("secret_keys").document(formattedKey)
 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    verificationSuccess = true
-                    Log.i("UserEntitlement", "Node.js REST API verified secret key successfully")
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    val parsedMsg = try {
-                        val json = org.json.JSONObject(errorBody ?: "{}")
-                        if (json.has("message")) json.getString("message") else null
-                    } catch (e: Exception) {
-                        null
+            verificationSuccess = firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                if (!snapshot.exists()) {
+                    // Try keyHash fallback if key string doc doesn't exist
+                    val keyHash = java.security.MessageDigest.getInstance("SHA-256")
+                        .digest(formattedKey.toByteArray(Charsets.UTF_8))
+                        .joinToString("") { "%02x".format(it) }
+                    val hashRef = firestore.collection("secret_keys").document(keyHash)
+                    val hashSnap = transaction.get(hashRef)
+                    if (!hashSnap.exists()) {
+                        failureReason = "Invalid secret key. Key not found."
+                        return@runTransaction false
                     }
-                    failureReason = response.body()?.message ?: parsedMsg ?: "Invalid secret key. Please check and try again."
                 }
-            } catch (netEx: Exception) {
-                Log.w("UserEntitlement", "Node.js API call encountered exception, attempting secure fallback", netEx)
 
-                // 2. Secure Firestore atomic transaction fallback if backend offline
-                val keyHash = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(formattedKey.toByteArray(Charsets.UTF_8))
-                    .joinToString("") { "%02x".format(it) }
+                val targetSnap = if (snapshot.exists()) snapshot else {
+                    val keyHash = java.security.MessageDigest.getInstance("SHA-256")
+                        .digest(formattedKey.toByteArray(Charsets.UTF_8))
+                        .joinToString("") { "%02x".format(it) }
+                    transaction.get(firestore.collection("secret_keys").document(keyHash))
+                }
+                val targetRef = targetSnap.reference
 
-                val keyRef = firestore.collection("secret_keys").document(keyHash)
+                val status = targetSnap.getString("status") ?: "pending"
+                val isActive = targetSnap.getBoolean("isActive") ?: false
+                val approvalStatus = targetSnap.getString("approvalStatus") ?: "pending"
 
-                verificationSuccess = firestore.runTransaction { transaction ->
-                    val snapshot = transaction.get(keyRef)
-                    if (!snapshot.exists()) {
-                        failureReason = "Invalid secret key. Please check and try again."
-                        return@runTransaction false
-                    }
+                if (approvalStatus == "pending" || status == "pending" || !isActive) {
+                    failureReason = "Key is pending approval by administrator."
+                    return@runTransaction false
+                }
 
-                    val isRevoked = snapshot.getBoolean("isRevoked") ?: false
-                    val status = snapshot.getString("status") ?: "active"
-                    if (isRevoked || status == "revoked") {
-                        val reason = snapshot.getString("revokedReason")
-                        failureReason = if (!reason.isNullOrBlank()) "Key revoked: $reason" else "This secret key has been revoked."
-                        return@runTransaction false
-                    }
+                if (status == "used" || status == "redeemed") {
+                    failureReason = "This secret key has already been used and cannot be redeemed again."
+                    return@runTransaction false
+                }
 
-                    val expiresAt = snapshot.getDate("expiresAt")
-                    if (expiresAt != null && java.util.Date().after(expiresAt)) {
-                        failureReason = "This secret key has expired."
-                        return@runTransaction false
-                    }
+                val maxUses = targetSnap.getLong("maxUses") ?: 1
+                val currentUses = targetSnap.getLong("currentUses") ?: 0
+                if (currentUses >= maxUses) {
+                    failureReason = "This secret key has reached maximum usage limit."
+                    return@runTransaction false
+                }
 
-                    val assignedEmail = snapshot.getString("assignedEmail")
-                    if (!assignedEmail.isNullOrBlank() && !userEmail.isNullOrBlank() && !assignedEmail.equals(userEmail, ignoreCase = true)) {
-                        failureReason = "This key was issued for a different account."
-                        return@runTransaction false
-                    }
+                val now = java.util.Date()
+                val calendar = java.util.Calendar.getInstance()
+                calendar.time = now
+                calendar.add(java.util.Calendar.DAY_OF_YEAR, 30)
+                val expiresAtDate = calendar.time
 
-                    val useCount = snapshot.getLong("useCount") ?: 0
-                    val maxUses = snapshot.getLong("maxUses") ?: 1
-                    if (useCount >= maxUses || status == "redeemed") {
-                        failureReason = "This secret key has already been redeemed and reached maximum uses."
-                        return@runTransaction false
-                    }
+                // Update secret key doc
+                transaction.update(targetRef, mapOf(
+                    "status" to "used",
+                    "isActive" to false,
+                    "currentUses" to currentUses + 1,
+                    "redeemedAt" to FieldValue.serverTimestamp(),
+                    "redeemedBy" to uid
+                ))
 
-                    val newUseCount = useCount + 1
-                    val newStatus = if (newUseCount >= maxUses) "redeemed" else "active"
-                    val redemptionEntry = mapOf(
-                        "userId" to uid,
-                        "userEmail" to (userEmail ?: ""),
-                        "redeemedAt" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).format(java.util.Date())
-                    )
+                // Update user entitlements
+                val therivRef = firestore.collection("therivdata").document(uid)
+                val userRef = firestore.collection("users").document(uid)
 
-                    transaction.update(keyRef, mapOf(
-                        "useCount" to newUseCount,
-                        "status" to newStatus,
-                        "redeemedBy" to FieldValue.arrayUnion(redemptionEntry),
-                        "lastRedeemedAt" to FieldValue.serverTimestamp()
-                    ))
+                val updateData = mapOf(
+                    "isPremium" to true,
+                    "premiumStatus" to true,
+                    "premium_status" to "active",
+                    "premiumTier" to "portfolio_premium",
+                    "premiumActivatedAt" to FieldValue.serverTimestamp(),
+                    "premiumExpiresAt" to expiresAtDate,
+                    "premiumLastKeyId" to formattedKey
+                )
 
-                    val userRef = firestore.collection("users").document(uid)
-                    transaction.set(userRef, mapOf(
-                        "is_premium" to true,
-                        "premium_status" to "active",
-                        "premium_source" to "secret_key",
-                        "premium_unlocked_at" to FieldValue.serverTimestamp(),
-                        "unlocked_key_id" to keyHash
-                    ), com.google.firebase.firestore.SetOptions.merge())
+                transaction.set(therivRef, updateData, com.google.firebase.firestore.SetOptions.merge())
+                transaction.set(userRef, updateData, com.google.firebase.firestore.SetOptions.merge())
 
-                    val therivRef = firestore.collection("therivdata").document(uid)
-                    val therivavaRef = firestore.collection("therivavadata").document(uid)
-                    transaction.set(therivRef, mapOf("premiumStatus" to true), com.google.firebase.firestore.SetOptions.merge())
-                    transaction.set(therivavaRef, mapOf("premiumStatus" to true), com.google.firebase.firestore.SetOptions.merge())
-
-                    true
-                }.await()
-            }
+                true
+            }.await()
 
             if (verificationSuccess) {
                 val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
@@ -358,14 +394,14 @@ class UserEntitlementRepository @Inject constructor(
                 userPreferencesRepository.setPremiumUserForCurrent(true)
                 _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "secret_key")
                 Log.i("UserEntitlement", "SECRET_KEY_VERIFY_SUCCESS for user $uid")
-                Result.success("Premium access unlocked successfully!")
+                Result.success("Premium access activated for 30 days!")
             } else {
                 Log.w("UserEntitlement", "SECRET_KEY_VERIFY_FAILED: $failureReason")
                 Result.failure(Exception(failureReason))
             }
         } catch (e: Exception) {
             Log.e("UserEntitlement", "Exception during secret key verification", e)
-            Result.failure(Exception(e.message ?: "Failed to verify secret key with server. Please try again."))
+            Result.failure(Exception(e.message ?: "Failed to verify secret key. Please try again."))
         }
     }
 
