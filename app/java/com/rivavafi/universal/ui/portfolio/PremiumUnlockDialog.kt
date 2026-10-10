@@ -175,20 +175,20 @@ fun PremiumUnlockDialog(
                                     secretKeyInput = it.trim()
                                     errorMessage = null
                                 },
-                                label = { Text("License Key (e.g. RIV@Rubicon48291)", color = Color.White.copy(0.7f)) },
+                                label = { Text("Account Secret Key (e.g. ro10987Riva)", color = Color.White.copy(0.7f)) },
                                 singleLine = true,
                                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(
-                                    capitalization = KeyboardCapitalization.Characters,
+                                    capitalization = KeyboardCapitalization.None,
                                     imeAction = ImeAction.Done
                                 ),
                                 keyboardActions = KeyboardActions(
                                     onDone = {
                                         focusManager.clearFocus()
-                                        if (SecretKeyValidator.isValidFormat(secretKeyInput)) {
+                                        if (secretKeyInput.isNotBlank()) {
                                             viewModel.verifyAndRedeemSecretKey(secretKeyInput)
                                         } else {
-                                            errorMessage = "Please enter a valid activation key format (e.g. RIV@Rubicon48291)."
+                                            errorMessage = "Please enter your account secret key."
                                         }
                                     }
                                 ),
@@ -224,10 +224,10 @@ fun PremiumUnlockDialog(
                             Button(
                                 onClick = {
                                     focusManager.clearFocus()
-                                    if (SecretKeyValidator.isValidFormat(secretKeyInput)) {
+                                    if (secretKeyInput.isNotBlank()) {
                                         viewModel.verifyAndRedeemSecretKey(secretKeyInput)
                                     } else {
-                                        errorMessage = "Please enter a valid activation key format (e.g. RIV@Rubicon48291)."
+                                        errorMessage = "Please enter your account secret key."
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -269,12 +269,12 @@ fun PremiumUnlockDialog(
                                     val keyReqMsg = """
                                         Hello Rivava Team,
 
-                                        I would like to request a Rivava Premium Portfolio activation key.
+                                        I would like to request my Rivava Premium Portfolio activation key.
 
                                         Name: $displayName
                                         Account Email: $userEmail
 
-                                        Please verify my eligibility and issue an activation key.
+                                        Please guide me through key activation.
                                     """.trimIndent()
                                     com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, keyReqMsg)
                                 }
@@ -308,7 +308,7 @@ fun PremiumUnlockDialog(
                         ) {
                             CircularProgressIndicator(color = EmeraldGreen)
                             Text(
-                                "Verifying key with secure server...",
+                                "Verifying account key...",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White,
                                 textAlign = TextAlign.Center
@@ -349,7 +349,7 @@ fun PremiumUnlockDialog(
                             )
 
                             Text(
-                                "Your license key has been verified and activated on your account.",
+                                "Your secret key has been verified and activated for your account.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF94A3B8),
                                 textAlign = TextAlign.Center

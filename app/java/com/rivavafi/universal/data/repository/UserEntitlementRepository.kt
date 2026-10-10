@@ -7,10 +7,12 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
 import com.rivavafi.universal.data.preferences.UserPreferencesRepository
+import com.rivavafi.universal.utils.SecretKeyValidator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -48,10 +50,10 @@ class UserEntitlementRepository @Inject constructor(
         val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
         val localPremium = prefs.getBoolean("isPremium", false)
         val localPremiumSource = prefs.getString("premium_source", null)
-        val hasLocalKeyUnlock = localPremium && localPremiumSource == "access_key"
+        val hasLocalKeyUnlock = localPremium && (localPremiumSource == "access_key" || localPremiumSource == "secret_key" || localPremiumSource == "local_account_key")
 
         if (localPremium) {
-            _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "cache")
+            _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, localPremiumSource ?: "cache")
         } else {
             _premiumState.value = PremiumState(EntitlementStatus.LOADING, false, null)
         }
@@ -59,7 +61,7 @@ class UserEntitlementRepository @Inject constructor(
         val uid = auth.currentUser?.uid
         if (uid == null) {
             if (hasLocalKeyUnlock) {
-                _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "access_key")
+                _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, localPremiumSource ?: "local_account_key")
                 userPreferencesRepository.setPremiumUserForCurrent(true)
             } else {
                 _premiumState.value = PremiumState(EntitlementStatus.LOCKED, false, null)
@@ -85,8 +87,8 @@ class UserEntitlementRepository @Inject constructor(
                         val isExpired = expiresAtDate != null && java.util.Date().after(expiresAtDate)
 
                         val validPremium = isPremium && !isExpired
-                        val effectivePremium = validPremium
-                        val effectiveSource = if (validPremium) "therivdata" else null
+                        val effectivePremium = validPremium || hasLocalKeyUnlock
+                        val effectiveSource = if (hasLocalKeyUnlock) (localPremiumSource ?: "local_account_key") else if (validPremium) "therivdata" else null
 
                         _premiumState.value = if (effectivePremium) {
                             PremiumState(EntitlementStatus.UNLOCKED, true, effectiveSource)
@@ -109,14 +111,15 @@ class UserEntitlementRepository @Inject constructor(
                         }
                     }
                 }
+
             val docSnap = firestore.collection("therivdata").document(uid).get().await()
             val isPremium = docSnap.getBoolean("premiumStatus") ?: false
             val expiresAtDate = docSnap.getDate("premiumExpiresAt") ?: docSnap.getDate("premium_expires_at")
             val isExpired = expiresAtDate != null && java.util.Date().after(expiresAtDate)
 
             val validPremium = isPremium && !isExpired
-            val effectivePremium = validPremium
-            val effectiveSource = if (validPremium) "therivdata" else null
+            val effectivePremium = validPremium || hasLocalKeyUnlock
+            val effectiveSource = if (hasLocalKeyUnlock) (localPremiumSource ?: "local_account_key") else if (validPremium) "therivdata" else null
 
             _premiumState.value = if (effectivePremium) {
                 PremiumState(EntitlementStatus.UNLOCKED, true, effectiveSource)
@@ -137,7 +140,11 @@ class UserEntitlementRepository @Inject constructor(
 
         } catch (e: Exception) {
             Log.e("UserEntitlement", "Error syncing entitlement", e)
-            _premiumState.value = PremiumState(EntitlementStatus.ERROR, localPremium, "cache")
+            _premiumState.value = PremiumState(
+                if (hasLocalKeyUnlock) EntitlementStatus.UNLOCKED else EntitlementStatus.ERROR,
+                hasLocalKeyUnlock || localPremium,
+                localPremiumSource ?: "cache"
+            )
         }
     }
 
@@ -236,7 +243,6 @@ class UserEntitlementRepository @Inject constructor(
         val userEmail = auth.currentUser?.email
 
         return try {
-            // Check if user already has a pending or active unused key
             val existing = firestore.collection("secret_keys")
                 .whereEqualTo("assignedUserId", uid)
                 .whereIn("status", listOf("pending", "active"))
@@ -250,7 +256,7 @@ class UserEntitlementRepository @Inject constructor(
                 return Result.success("Existing key request found ($status). Key: $key")
             }
 
-            val newKeyString = com.rivavafi.universal.utils.SecretKeyValidator.generateSecretKey()
+            val newKeyString = SecretKeyValidator.generateSecretKey()
             val now = java.util.Date()
             val expiresAt = java.util.Date(now.time + 30L * 24 * 60 * 60 * 1000)
 
@@ -280,12 +286,17 @@ class UserEntitlementRepository @Inject constructor(
         }
     }
 
+    /**
+     * Verifies and redeems secret key.
+     * When IS_TEMPORARY_LOCAL_UNLOCK_MODE is true:
+     * Disables Firebase secret_keys queries, calculates account-based key formula
+     * and performs deterministic local UI unlock without calling Cloud Functions.
+     */
     suspend fun verifyAndRedeemSecretKey(rawKey: String): Result<String> {
-        val cleanKey = rawKey.trim().uppercase()
-        val formattedKey = cleanKey
+        val enteredKey = rawKey.trim()
 
-        if (cleanKey.isBlank() || !com.rivavafi.universal.utils.SecretKeyValidator.isValidFormat(cleanKey)) {
-            return Result.failure(IllegalArgumentException("Please enter a valid secret key in RIV-XXXX-XXXX-XXXX format."))
+        if (enteredKey.isBlank()) {
+            return Result.failure(IllegalArgumentException("Please enter a valid secret key."))
         }
 
         val uid = auth.currentUser?.uid
@@ -293,7 +304,83 @@ class UserEntitlementRepository @Inject constructor(
             return Result.failure(IllegalStateException("Please log in to your account before activating a key."))
         }
 
-        val userEmail = auth.currentUser?.email
+        val currentUserEmail = auth.currentUser?.email
+
+        if (SecretKeyValidator.IS_TEMPORARY_LOCAL_UNLOCK_MODE) {
+            Log.i("UserEntitlement", "TEMPORARY_LOCAL_SECRET_KEY_VERIFY for user $uid")
+
+            // Fetch stored mobile number from therivdata or UserPreferences
+            var userPhone: String? = null
+            try {
+                val doc = firestore.collection("therivdata").document(uid).get().await()
+                if (doc.exists()) {
+                    userPhone = doc.getString("phone") ?: doc.getString("phoneno") ?: doc.getString("phoneNumber")
+                }
+            } catch (e: Exception) {
+                Log.w("UserEntitlement", "Could not fetch user profile from Firestore for phone number", e)
+            }
+
+            if (userPhone.isNullOrBlank()) {
+                userPhone = userPreferencesRepository.userPhoneFlow.firstOrNull()
+            }
+
+            if (userPhone.isNullOrBlank()) {
+                return Result.failure(IllegalStateException("No valid saved mobile number found. Please add or verify your mobile number in your profile."))
+            }
+
+            if (currentUserEmail.isNullOrBlank()) {
+                return Result.failure(IllegalStateException("No valid account email found. Please ensure you are logged in."))
+            }
+
+            val expectedKey = SecretKeyValidator.calculateAccountSecretKey(currentUserEmail, userPhone)
+            if (expectedKey == null) {
+                return Result.failure(IllegalStateException("Please add or verify your mobile number in your profile."))
+            }
+
+            if (enteredKey.equals(expectedKey, ignoreCase = true)) {
+                val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putBoolean("isPremium", true)
+                    .putBoolean("portfolio_unlocked", true)
+                    .putString("premium_source", "local_account_key")
+                    .apply()
+
+                userPreferencesRepository.setPremiumUserForCurrent(true)
+                _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "local_account_key")
+
+                // Best-effort 30-day local expiry update in therivdata without failing local unlock
+                try {
+                    val calendar = java.util.Calendar.getInstance()
+                    calendar.add(java.util.Calendar.DAY_OF_YEAR, 30)
+                    val expiresAtDate = calendar.time
+
+                    val updateData = mapOf(
+                        "isPremium" to true,
+                        "premiumStatus" to true,
+                        "premium_status" to "active",
+                        "premiumActivatedAt" to FieldValue.serverTimestamp(),
+                        "premiumExpiresAt" to expiresAtDate,
+                        "premiumLastKeyId" to expectedKey
+                    )
+                    firestore.collection("therivdata").document(uid)
+                        .set(updateData, com.google.firebase.firestore.SetOptions.merge())
+                } catch (e: Exception) {
+                    Log.w("UserEntitlement", "Could not sync temporary unlock state to Firestore", e)
+                }
+
+                Log.i("UserEntitlement", "TEMPORARY_LOCAL_UNLOCK_SUCCESS for user $uid")
+                return Result.success("Portfolio unlocked successfully for your account!")
+            } else {
+                Log.w("UserEntitlement", "TEMPORARY_LOCAL_UNLOCK_FAILED: Key mismatch for user $uid")
+                return Result.failure(IllegalArgumentException("Invalid Secret Key."))
+            }
+        }
+
+        // --- LEGACY BACKEND FIREBASE VERIFICATION CODE (PRESERVED FOR FUTURE RESTORATION) ---
+        val formattedKey = enteredKey.uppercase()
+        if (!SecretKeyValidator.isValidFormat(formattedKey)) {
+            return Result.failure(IllegalArgumentException("Please enter a valid secret key in RIV-XXXX-XXXX-XXXX format."))
+        }
 
         return try {
             Log.i("UserEntitlement", "SECRET_KEY_VERIFY_STARTED for user $uid")
@@ -301,13 +388,11 @@ class UserEntitlementRepository @Inject constructor(
             var verificationSuccess = false
             var failureReason = "Invalid secret key. Please verify and try again."
 
-            // Primary check: Direct Firestore key document lookup
             val docRef = firestore.collection("secret_keys").document(formattedKey)
 
             verificationSuccess = firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(docRef)
                 if (!snapshot.exists()) {
-                    // Try keyHash fallback if key string doc doesn't exist
                     val keyHash = java.security.MessageDigest.getInstance("SHA-256")
                         .digest(formattedKey.toByteArray(Charsets.UTF_8))
                         .joinToString("") { "%02x".format(it) }
@@ -354,7 +439,6 @@ class UserEntitlementRepository @Inject constructor(
                 calendar.add(java.util.Calendar.DAY_OF_YEAR, 30)
                 val expiresAtDate = calendar.time
 
-                // Update secret key doc
                 transaction.update(targetRef, mapOf(
                     "status" to "used",
                     "isActive" to false,
@@ -363,7 +447,6 @@ class UserEntitlementRepository @Inject constructor(
                     "redeemedBy" to uid
                 ))
 
-                // Update user entitlements
                 val therivRef = firestore.collection("therivdata").document(uid)
                 val userRef = firestore.collection("users").document(uid)
 
