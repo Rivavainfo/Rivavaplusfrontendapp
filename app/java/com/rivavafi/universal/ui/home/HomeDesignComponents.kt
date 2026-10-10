@@ -1271,6 +1271,7 @@ fun HomeTrackMoneySection(
 ) {
     var selectedPeriod by remember { mutableStateOf(TrackPeriod.LAST_7_DAYS) }
     var selectedCategoryIndex by remember { mutableStateOf<Int?>(null) }
+    var isLegendExpanded by remember { mutableStateOf(false) }
 
     val locale = Locale.getDefault()
 
@@ -1327,9 +1328,34 @@ fun HomeTrackMoneySection(
         }
     }
 
+    val topCategoryStat = categoryStats.firstOrNull()
+    val largestExpenseTxn = remember(periodDebitTransactions) {
+        periodDebitTransactions.maxByOrNull { it.amount }
+    }
+    val avgDailySpend = remember(totalSpent, selectedPeriod) {
+        val days = selectedPeriod.daysCount.coerceAtLeast(1)
+        totalSpent / days
+    }
+
+    // Compare with previous period of equal length
+    val comparisonPercentage = remember(transactions, periodStartTime, selectedPeriod, totalSpent) {
+        val prevStart = Calendar.getInstance().apply {
+            timeInMillis = periodStartTime
+            add(Calendar.DAY_OF_YEAR, -selectedPeriod.daysCount)
+        }.timeInMillis
+
+        val prevDebitTxns = transactions.filter { it.date >= prevStart && it.date < periodStartTime && isDebitTransaction(it) }
+        val prevTotal = prevDebitTxns.sumOf { it.amount }
+
+        if (prevTotal > 0) {
+            ((totalSpent - prevTotal) / prevTotal) * 100.0
+        } else null
+    }
+
     // Reset tapped category index when filter changes
     LaunchedEffect(selectedPeriod) {
         selectedCategoryIndex = null
+        isLegendExpanded = false
     }
 
     Card(
@@ -1424,7 +1450,7 @@ fun HomeTrackMoneySection(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "No spending in ${selectedPeriod.label}",
+                        text = "No spending recorded for this period.",
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
@@ -1535,6 +1561,8 @@ fun HomeTrackMoneySection(
                         if (idx in categoryStats.indices) categoryStats[idx] else null
                     }
 
+                    val displayedStats = if (isLegendExpanded || categoryStats.size <= 4) categoryStats else categoryStats.take(4)
+
                     if (isWide) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1578,9 +1606,9 @@ fun HomeTrackMoneySection(
                                             maxLines = 1
                                         )
                                         Text(
-                                            text = String.format(locale, "%.1f%%", activeSelectedStat.percentage),
+                                            text = "${String.format(locale, "%.1f%%", activeSelectedStat.percentage)} (${activeSelectedStat.count} txns)",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 8.5.sp,
+                                                fontSize = 8.sp,
                                                 color = Color(0xFF869AB8)
                                             )
                                         )
@@ -1610,7 +1638,8 @@ fun HomeTrackMoneySection(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
-                                categoryStats.forEachIndexed { idx, stat ->
+                                displayedStats.forEach { stat ->
+                                    val idx = categoryStats.indexOf(stat)
                                     val isSelected = selectedCategoryIndex == idx
                                     Row(
                                         modifier = Modifier
@@ -1665,6 +1694,20 @@ fun HomeTrackMoneySection(
                                         )
                                     }
                                 }
+
+                                if (categoryStats.size > 4) {
+                                    Text(
+                                        text = if (isLegendExpanded) "Show Less ↑" else "+${categoryStats.size - 4} more categories...",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF00A3FF)
+                                        ),
+                                        modifier = Modifier
+                                            .clickable { isLegendExpanded = !isLegendExpanded }
+                                            .padding(top = 2.dp)
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -1705,9 +1748,9 @@ fun HomeTrackMoneySection(
                                             )
                                         )
                                         Text(
-                                            text = String.format(locale, "%.1f%%", activeSelectedStat.percentage),
+                                            text = "${String.format(locale, "%.1f%%", activeSelectedStat.percentage)} (${activeSelectedStat.count} txns)",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 8.5.sp,
+                                                fontSize = 8.sp,
                                                 color = Color(0xFF869AB8)
                                             )
                                         )
@@ -1737,7 +1780,8 @@ fun HomeTrackMoneySection(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                categoryStats.forEachIndexed { idx, stat ->
+                                displayedStats.forEach { stat ->
+                                    val idx = categoryStats.indexOf(stat)
                                     val isSelected = selectedCategoryIndex == idx
                                     Row(
                                         modifier = Modifier
@@ -1787,7 +1831,71 @@ fun HomeTrackMoneySection(
                                         )
                                     }
                                 }
+
+                                if (categoryStats.size > 4) {
+                                    Text(
+                                        text = if (isLegendExpanded) "Show Less ↑" else "+${categoryStats.size - 4} more categories...",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF00A3FF)
+                                        ),
+                                        modifier = Modifier
+                                            .clickable { isLegendExpanded = !isLegendExpanded }
+                                            .padding(top = 2.dp)
+                                    )
+                                }
                             }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // BOTTOM STATISTICS BAR: Total txns, Top category, Largest expense, Avg daily spend, Comparison %
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF0B0E18))
+                        .border(1.dp, Color(0xFF1B2338), RoundedCornerShape(10.dp))
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Top Category: ${topCategoryStat?.visual?.title ?: "N/A"}",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White.copy(alpha = 0.85f))
+                        )
+                        Text(
+                            text = "Largest: ${largestExpenseTxn?.let { formatInr(it.amount) } ?: "N/A"}",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color.White.copy(alpha = 0.85f))
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Avg Daily: ${formatInr(avgDailySpend)}/day",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8))
+                        )
+                        if (comparisonPercentage != null) {
+                            val compStr = String.format(locale, "%+.1f%% vs prev period", comparisonPercentage)
+                            val compColor = if (comparisonPercentage <= 0) Color(0xFF00E471) else Color(0xFFFF2A85)
+                            Text(
+                                text = compStr,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = compColor, fontWeight = FontWeight.Bold)
+                            )
+                        } else {
+                            Text(
+                                text = "$debitTxnCount total debits",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, color = Color(0xFF869AB8))
+                            )
                         }
                     }
                 }

@@ -1,88 +1,90 @@
 package com.rivavafi.universal.utils
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Calendar
 
 class SecretKeyValidatorTest {
 
     @Test
-    fun testAllSixComponentPermutationsValid() {
-        val validPermutationKeys = listOf(
-            // 1. RIV + Rubicon + Digits
-            "RIV@Rubicon48291",
-            "RIV#Rubicon73920",
-            "RIVRubicon@48291",
-            // 2. RIV + Digits + Rubicon
-            "RIV$52830Rubicon",
-            "RIV62840@Rubicon",
-            // 3. Rubicon + RIV + Digits
-            "Rubicon@RIV62840",
-            "RubiconRIV#38192",
-            // 4. Rubicon + Digits + RIV
-            "Rubicon$52830RIV",
-            "Rubicon87329#RIV",
-            // 5. Digits + RIV + Rubicon
-            "38192#RIVRubicon",
-            "92841@RIVRubicon",
-            // 6. Digits + Rubicon + RIV
-            "92841@RubiconRIV",
-            "02849!RubiconRIV"
-        )
+    fun testAccountSecretKeyFormulaExamples() {
+        val calOct = Calendar.getInstance().apply {
+            set(Calendar.YEAR, 2024)
+            set(Calendar.MONTH, Calendar.OCTOBER)
+            set(Calendar.DAY_OF_MONTH, 15)
+        }
 
-        for (key in validPermutationKeys) {
-            assertTrue("Key should be valid: $key", SecretKeyValidator.isValidFormat(key))
+        // Example 1: rohit@gmail.com, 9876543210, October (10) -> ro10987Riva
+        val key1 = SecretKeyValidator.calculateAccountSecretKey(
+            email = "rohit@gmail.com",
+            phone = "9876543210",
+            date = calOct.time
+        )
+        assertEquals("ro10987Riva", key1)
+
+        // Example 2: aditya@gmail.com, 9123456780, October (10) -> ad10912Riva
+        val key2 = SecretKeyValidator.calculateAccountSecretKey(
+            email = "aditya@gmail.com",
+            phone = "+91 91234 56780",
+            date = calOct.time
+        )
+        assertEquals("ad10912Riva", key2)
+    }
+
+    @Test
+    fun testAllMonthsFormatting() {
+        val email = "testuser@gmail.com"
+        val phone = "+919876543210"
+
+        val expectedMonths = listOf("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
+
+        for (monthIndex in 0..11) {
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.YEAR, 2024)
+                set(Calendar.MONTH, monthIndex)
+                set(Calendar.DAY_OF_MONTH, 10)
+            }
+            val key = SecretKeyValidator.calculateAccountSecretKey(email, phone, cal.time)
+            val expected = "te${expectedMonths[monthIndex]}987Riva"
+            assertEquals("Month ${monthIndex + 1} key mismatch", expected, key)
         }
     }
 
     @Test
-    fun testAllTenSupportedSymbols() {
-        val symbols = listOf("@", "#", "$", "%", "&", "*", "!", "-", "_", "+")
-        for (symbol in symbols) {
-            val key = "RIV${symbol}Rubicon48291"
-            assertTrue("Key with symbol $symbol should be valid", SecretKeyValidator.isValidFormat(key))
-        }
+    fun testPhoneNormalizationAndCountryCode() {
+        val calOct = Calendar.getInstance().apply {
+            set(Calendar.MONTH, Calendar.OCTOBER)
+        }.time
+
+        val phoneWithPlus91 = SecretKeyValidator.calculateAccountSecretKey("john@domain.com", "+919876543210", calOct)
+        val phoneWithSpaces = SecretKeyValidator.calculateAccountSecretKey("john@domain.com", "+91 98765 43210", calOct)
+        val phoneDirect = SecretKeyValidator.calculateAccountSecretKey("john@domain.com", "9876543210", calOct)
+
+        assertEquals("jo10987Riva", phoneWithPlus91)
+        assertEquals("jo10987Riva", phoneWithSpaces)
+        assertEquals("jo10987Riva", phoneDirect)
     }
 
     @Test
-    fun testLeadingZeroFiveDigitNumbers() {
-        val leadingZeroKeys = listOf(
-            "RIV@Rubicon00123",
-            "00042#RubiconRIV",
-            "Rubicon$08291RIV"
-        )
+    fun testMissingOrShortAccountDetails() {
+        val cal = Calendar.getInstance().time
 
-        for (key in leadingZeroKeys) {
-            assertTrue("Key with leading zero digit should be valid: $key", SecretKeyValidator.isValidFormat(key))
-        }
+        assertNull("Missing email should return null", SecretKeyValidator.calculateAccountSecretKey(null, "9876543210", cal))
+        assertNull("Empty email should return null", SecretKeyValidator.calculateAccountSecretKey("", "9876543210", cal))
+        assertNull("Short email prefix should return null", SecretKeyValidator.calculateAccountSecretKey("a@b.com", "9876543210", cal))
+
+        assertNull("Missing phone should return null", SecretKeyValidator.calculateAccountSecretKey("rohit@gmail.com", null, cal))
+        assertNull("Empty phone should return null", SecretKeyValidator.calculateAccountSecretKey("rohit@gmail.com", "", cal))
+        assertNull("Short phone should return null", SecretKeyValidator.calculateAccountSecretKey("rohit@gmail.com", "12", cal))
     }
 
     @Test
-    fun testOldHardcodedBypassPatternRejected() {
-        val oldBypassKeys = listOf(
-            "rivrubi@12345",
-            "RIVRUBI@99999",
-            "rivrubi@00000"
-        )
-
-        for (key in oldBypassKeys) {
-            assertFalse("Old rivrubi bypass pattern should be rejected: $key", SecretKeyValidator.KEY_FORMAT_REGEX.matches(key))
-        }
-    }
-
-    @Test
-    fun testInvalidFormatKeysRejected() {
-        val invalidKeys = listOf(
-            "",
-            "   ",
-            "RIVRubicon12345", // Missing special symbol
-            "RIV@Rubicon1234",  // Only 4 digits
-            "RIV@Rubicon123456", // 6 digits
-            "INVALID@KEY99999"
-        )
-
-        for (key in invalidKeys) {
-            assertFalse("Invalid key should be rejected: $key", SecretKeyValidator.KEY_FORMAT_REGEX.matches(key))
-        }
+    fun testTemporaryModeIsValidFormat() {
+        assertTrue("Account-based key ending with Riva should be valid format in temporary mode", SecretKeyValidator.isValidFormat("ro10987Riva"))
+        assertTrue("Case-insensitive Riva check", SecretKeyValidator.isValidFormat("ad10912riva"))
+        assertFalse("Key without Riva or minimum length should be invalid", SecretKeyValidator.isValidFormat("ro1098"))
     }
 }
