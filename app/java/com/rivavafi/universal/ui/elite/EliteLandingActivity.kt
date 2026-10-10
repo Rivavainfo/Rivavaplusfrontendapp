@@ -276,57 +276,21 @@ fun EliteLandingScreen(
                 ) {
                     Button(
                         onClick = {
-                            isProcessingPayment = true
-                            val intent = Intent(context, com.rivavafi.universal.ui.portfolio.PaymentActivity::class.java).apply {
-                                putExtra("plan", "elite_399")
-                                putExtra("amountPaise", 39900)
-                                putExtra("title", "Rivava Elite Membership")
-                            }
-                            paymentLauncher.launch(intent)
+                            val advisorMsg = "Hello Rivava Team, I would like to speak with an advisor regarding Rivava Elite Portfolio access. Please guide me through the activation process."
+                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, advisorMsg)
                         },
-                        enabled = !isProcessingPayment && !isFull,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFD4AF37),
-                            disabledContainerColor = Color.DarkGray
+                            containerColor = Color(0xFF00C6FF),
+                            contentColor = Color(0xFF0A0F1D)
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        if (isProcessingPayment) {
-                            CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(10.dp))
-                            Text("Opening Payment Gateway...", color = Color.Black, fontWeight = FontWeight.Bold)
-                        } else if (isFull) {
-                            Text("Membership Full", color = Color.LightGray, fontWeight = FontWeight.Bold)
-                        } else {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Pay ₹399 & Unlock Elite", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                                Spacer(Modifier.width(6.dp))
-                                Text("(+ Free Session)", color = Color(0xFF1E293B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Chat with Advisor on WhatsApp", color = Color(0xFF0A0F1D), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
                         }
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
-                                context = context,
-                                username = finalUserName,
-                                email = finalUserEmail,
-                                phoneNumber = phoneNumber,
-                                preference = "Rivava Elite (399 Offer)",
-                                premiumStatus = userPremiumStatus
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, Color(0xFFD4AF37).copy(alpha = 0.5f))
-                    ) {
-                        Text("Chat With Advisor on WhatsApp", color = Color(0xFFD4AF37), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }

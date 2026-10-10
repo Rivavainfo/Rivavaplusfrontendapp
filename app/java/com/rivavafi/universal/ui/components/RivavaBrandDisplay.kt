@@ -60,72 +60,13 @@ fun RivavaGlowingLogo(
             },
         contentAlignment = Alignment.Center
     ) {
-        Surface(
+        Image(
+            painter = painterResource(id = R.drawable.rivava_logo),
+            contentDescription = "Rivava Logo",
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(size * 0.28f))
-                .border(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        listOf(
-                            RivavaCyan.copy(alpha = 0.7f),
-                            RivavaPink.copy(alpha = 0.5f),
-                            RivavaLime.copy(alpha = 0.6f)
-                        )
-                    ),
-                    shape = RoundedCornerShape(size * 0.28f)
-                ),
-            color = Color(0xFF0C0D14),
-            shadowElevation = 8.dp
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(size * 0.16f),
-                contentAlignment = Alignment.Center
-            ) {
-                // Rivava Tri-Color Identity Geometry
-                // Left column: Top Pink square, Bottom Lime square
-                // Right column: Cyan vertical rectangle
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.spacedBy(size * 0.05f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        verticalArrangement = Arrangement.spacedBy(size * 0.05f)
-                    ) {
-                        // Top Pink square
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(size * 0.06f))
-                                .background(RivavaPink)
-                        )
-                        // Bottom Lime square
-                        Box(
-                            modifier = Modifier
-                                .weight(0.7f)
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(size * 0.06f))
-                                .background(RivavaLime)
-                        )
-                    }
-                    // Right Cyan rectangle
-                    Box(
-                        modifier = Modifier
-                            .weight(1.3f)
-                            .fillMaxHeight(0.9f)
-                            .clip(RoundedCornerShape(size * 0.07f))
-                            .background(RivavaCyan)
-                    )
-                }
-            }
-        }
+                .clip(CircleShape)
+        )
     }
 }
 
@@ -196,4 +137,3 @@ fun RivavaBrandDisplay(
         }
     }
 }
-
