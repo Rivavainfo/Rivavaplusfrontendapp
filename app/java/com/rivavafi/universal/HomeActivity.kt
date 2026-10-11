@@ -151,12 +151,27 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val isSecureRoute = currentRoute?.startsWith(Screen.RivavaPortfolio.route) == true ||
+            currentRoute?.startsWith(Screen.StockDetail.route) == true ||
+            currentRoute?.startsWith("pdf_viewer") == true
+
     val localCtx = androidx.compose.ui.platform.LocalContext.current
     val activity = localCtx as? android.app.Activity ?: (localCtx as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
 
-    DisposableEffect(Unit) {
-        activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
-        onDispose { }
+    DisposableEffect(isSecureRoute) {
+        if (isSecureRoute) {
+            activity?.window?.setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } else {
+            activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            if (isSecureRoute) {
+                activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
     }
 
 
