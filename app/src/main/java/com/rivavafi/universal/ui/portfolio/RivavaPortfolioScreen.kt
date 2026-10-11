@@ -1171,28 +1171,6 @@ fun MyPortfolioTransactionCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Primary Information: Total Tracked Assets (Stock Holdings Value)
-            Text(
-                text = "Total Tracked Assets",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, color = Color(0xFF94A3B8))
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = formatInrVal(trackedStockValue),
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 30.sp,
-                    letterSpacing = (-0.6).sp,
-                    color = Color.White
-                )
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Divider(color = Color(0xFF1B2338), thickness = 1.dp)
-
-            Spacer(modifier = Modifier.height(14.dp))
-
             // Money Spent vs Money Received
             Row(
                 modifier = Modifier.fillMaxWidth(),

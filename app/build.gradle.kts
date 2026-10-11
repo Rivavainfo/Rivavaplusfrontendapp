@@ -51,8 +51,8 @@ android {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
         targetSdk = 35
-        versionCode = 31
-        versionName = "31"
+        versionCode = 32
+        versionName = "32"
 
         // API Key injection with safe fallbacks
         buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${System.getenv("ALPHA_VANTAGE_API_KEY") ?: localProperties.getProperty("alphavantage.apikey") ?: ""}\"")
