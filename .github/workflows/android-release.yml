@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-release:
-    name: Build & Upload APK Artifacts
+    name: Build & Upload APK & AAB Artifacts
     runs-on: ubuntu-latest
 
     steps:
@@ -30,36 +30,41 @@ jobs:
       - name: Grant Execute Permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build APKs (Signed Release or Debug Fallback)
+      - name: Build APKs and AABs (Signed Release or Debug Fallback)
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          mkdir -p build/outputs/artifacts
+          mkdir -p build/outputs/artifacts/apk
+          mkdir -p build/outputs/artifacts/aab
 
           if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
-            echo "Release signing secrets detected. Decoding keystore and building signed Release APKs..."
+            echo "Release signing secrets detected. Decoding keystore and building signed Release APKs and AABs..."
             echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > app/release-key.jks
-            ./gradlew :app:assemblePlayRelease :app:assembleFullSmsRelease
+            ./gradlew :app:assemblePlayRelease :app:assembleFullSmsRelease :app:bundlePlayRelease :app:bundleFullSmsRelease
 
             PLAY_APK=$(find app/build/outputs/apk/play/release -name "*.apk" | head -n 1)
             FULLSMS_APK=$(find app/build/outputs/apk/fullSms/release -name "*.apk" | head -n 1)
+            PLAY_AAB=$(find app/build/outputs/bundle/playRelease -name "*.aab" | head -n 1)
+            FULLSMS_AAB=$(find app/build/outputs/bundle/fullSmsRelease -name "*.aab" | head -n 1)
 
-            if [ -n "$PLAY_APK" ] && [ -n "$FULLSMS_APK" ]; then
-              cp "$PLAY_APK" build/outputs/artifacts/Rivava-Play.apk
-              cp "$FULLSMS_APK" build/outputs/artifacts/Rivava-FullSMS.apk
+            if [ -n "$PLAY_APK" ] && [ -n "$FULLSMS_APK" ] && [ -n "$PLAY_AAB" ] && [ -n "$FULLSMS_AAB" ]; then
+              cp "$PLAY_APK" build/outputs/artifacts/apk/Rivava-Play.apk
+              cp "$FULLSMS_APK" build/outputs/artifacts/apk/Rivava-FullSMS.apk
+              cp "$PLAY_AAB" build/outputs/artifacts/aab/Rivava-Play.aab
+              cp "$FULLSMS_AAB" build/outputs/artifacts/aab/Rivava-FullSMS.aab
             else
-              echo "Error: Release APK files were not found after build!"
+              echo "Error: Release build files (APK or AAB) were not found after build!"
               exit 1
             fi
           else
             echo "=========================================================================================="
             echo "NOTICE: Release signing secrets are missing or incomplete."
-            echo "Building Debug APKs instead for initial testing and distribution."
+            echo "Building Debug APKs and Debug AABs instead for initial testing and distribution."
             echo ""
-            echo "To enable signed release APKs in GitHub Actions:"
+            echo "To enable signed release APKs and AABs in GitHub Actions:"
             echo "  1. Base64-encode your keystore: base64 -w 0 app/release-key.jks"
             echo "  2. Go to Repository Settings -> Secrets and variables -> Actions"
             echo "  3. Add the following repository secrets:"
@@ -69,30 +74,36 @@ jobs:
             echo "     - RELEASE_KEY_PASSWORD"
             echo "=========================================================================================="
 
-            ./gradlew :app:assemblePlayDebug :app:assembleFullSmsDebug
+            ./gradlew :app:assemblePlayDebug :app:assembleFullSmsDebug :app:bundlePlayDebug :app:bundleFullSmsDebug
 
-            cp app/build/outputs/apk/play/debug/app-play-debug.apk build/outputs/artifacts/Rivava-Play.apk
-            cp app/build/outputs/apk/fullSms/debug/app-fullSms-debug.apk build/outputs/artifacts/Rivava-FullSMS.apk
+            cp app/build/outputs/apk/play/debug/app-play-debug.apk build/outputs/artifacts/apk/Rivava-Play.apk
+            cp app/build/outputs/apk/fullSms/debug/app-fullSms-debug.apk build/outputs/artifacts/apk/Rivava-FullSMS.apk
+            cp app/build/outputs/bundle/playDebug/app-play-debug.aab build/outputs/artifacts/aab/Rivava-Play.aab
+            cp app/build/outputs/bundle/fullSmsDebug/app-fullSms-debug.aab build/outputs/artifacts/aab/Rivava-FullSMS.aab
           fi
 
-      - name: Verify APK Artifacts Exist
+      - name: Verify APK and AAB Artifacts Exist
         run: |
-          if [ ! -f "build/outputs/artifacts/Rivava-Play.apk" ] || [ ! -f "build/outputs/artifacts/Rivava-FullSMS.apk" ]; then
+          if [ ! -f "build/outputs/artifacts/apk/Rivava-Play.apk" ] || [ ! -f "build/outputs/artifacts/apk/Rivava-FullSMS.apk" ]; then
             echo "Error: One or both expected APK artifacts are missing from build output!"
             exit 1
           fi
-          echo "Verification successful: Both Rivava-Play.apk and Rivava-FullSMS.apk generated."
+          if [ ! -f "build/outputs/artifacts/aab/Rivava-Play.aab" ] || [ ! -f "build/outputs/artifacts/aab/Rivava-FullSMS.aab" ]; then
+            echo "Error: One or both expected AAB artifacts are missing from build output!"
+            exit 1
+          fi
+          echo "Verification successful: Both APK and AAB artifacts generated successfully."
 
-      - name: Upload Play Flavor APK
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Rivava-Play-APK
-          path: build/outputs/artifacts/Rivava-Play.apk
+          name: Rivava-APK
+          path: build/outputs/artifacts/apk/
           retention-days: 30
 
-      - name: Upload FullSMS Flavor APK
+      - name: Upload AAB Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Rivava-FullSMS-APK
-          path: build/outputs/artifacts/Rivava-FullSMS.apk
+          name: Rivava-AAB
+          path: build/outputs/artifacts/aab/
           retention-days: 30

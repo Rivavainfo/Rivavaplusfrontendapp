@@ -17,3 +17,8 @@
 -keep class * extends androidx.room.RoomDatabase { *; }
 -keep class androidx.room.** { *; }
 -keep interface androidx.room.** { *; }
+
+# Proguard / Razorpay rules
+-dontwarn proguard.annotation.**
+-keep class com.razorpay.** { *; }
+-dontwarn com.razorpay.**
