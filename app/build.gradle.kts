@@ -22,8 +22,12 @@ android {
 
     signingConfigs {
         create("release") {
-            // Path to the keystore file inside the 'app' folder
-            storeFile = file("release-key.jks")
+            // Path to the keystore file inside the 'app' folder (configurable via RELEASE_STORE_FILE)
+            val storeFilePath = System.getenv("RELEASE_STORE_FILE")
+                ?: localProperties.getProperty("RELEASE_STORE_FILE")
+                ?: "release-key.jks"
+            val keystoreFile = file(storeFilePath)
+            storeFile = keystoreFile
 
             // Prioritize Environment Variables (CI), fallback to local.properties (Local)
             val storePwd = System.getenv("RELEASE_STORE_PASSWORD") 
@@ -33,7 +37,7 @@ android {
             val kPwd = System.getenv("RELEASE_KEY_PASSWORD") 
                 ?: localProperties.getProperty("RELEASE_KEY_PASSWORD")
 
-            if (!storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
+            if (keystoreFile.exists() && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
                 storePassword = storePwd
                 keyAlias = kAlias
                 keyPassword = kPwd
@@ -42,7 +46,7 @@ android {
                 enableV3Signing = true
                 enableV4Signing = true
             } else {
-                println("SIGNING CONFIG WARNING: One or more signing variables are missing.")
+                println("SIGNING CONFIG WARNING: Keystore file or signing credentials are missing.")
             }
         }
     }
@@ -93,8 +97,14 @@ android {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
-            if (file("release-key.jks").exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true &&
+                !releaseSigning.storePassword.isNullOrEmpty() &&
+                !releaseSigning.keyAlias.isNullOrEmpty() &&
+                !releaseSigning.keyPassword.isNullOrEmpty()) {
+                signingConfig = releaseSigning
+            } else {
+                println("RELEASE BUILD WARNING: Release build type is unsigned because signing configuration is incomplete.")
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

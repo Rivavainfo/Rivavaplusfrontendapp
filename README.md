@@ -118,3 +118,41 @@ From the `mobile/` directory:
 ./gradlew assembleRelease
 ./gradlew bundleRelease
 ```
+
+---
+
+## 🔑 Release Signing & GitHub Actions Setup
+
+To upload Android App Bundles (AAB) or APKs to Google Play Console, release builds must be digitally signed with a JKS keystore.
+
+### 1. Keystore Generation (if you do not already have one)
+If your app is already published or you have an existing upload key, **use your existing keystore**. Do NOT generate a new one.
+
+If creating a new release keystore for the first time:
+```bash
+keytool -genkeypair -v -keystore release-key.jks -alias your_key_alias -keyalg RSA -keysize 2048 -validity 10000
+```
+
+### 2. Base64 Encode Keystore for GitHub Actions Secrets
+Convert the JKS keystore file to Base64 format:
+
+- **Linux / macOS:**
+  ```bash
+  base64 -w 0 release-key.jks > keystore_base64.txt
+  ```
+- **Windows (PowerShell):**
+  ```powershell
+  [Convert]::ToBase64String([IO.File]::ReadAllBytes("release-key.jks")) | Out-File -Encoding ascii keystore_base64.txt
+  ```
+
+### 3. Add GitHub Repository Secrets
+Navigate to **Settings -> Secrets and variables -> Actions** in your GitHub repository and add the following repository secrets:
+
+| Secret Name | Description |
+| ----------- | ----------- |
+| `RELEASE_KEYSTORE_BASE64` | The complete Base64 encoded string of your `release-key.jks` file. |
+| `RELEASE_STORE_PASSWORD` | Password for your keystore file. |
+| `RELEASE_KEY_ALIAS` | Key alias name inside the keystore. |
+| `RELEASE_KEY_PASSWORD` | Password for the key alias. |
+
+The GitHub Actions workflow (`android-release.yml`) automatically decodes the keystore secret, signs the AABs (`Rivava-Play.aab`, `Rivava-FullSMS.aab`) and APKs (`Rivava-Play.apk`, `Rivava-FullSMS.apk`), and publishes them as downloadable build artifacts compatible with Google Play Console.
