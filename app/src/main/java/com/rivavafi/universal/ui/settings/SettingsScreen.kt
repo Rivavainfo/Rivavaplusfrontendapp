@@ -243,32 +243,6 @@ fun SettingsScreen(
                 }
             }
 
-            // ACCOUNT SECTION
-            SettingsGroupCard(title = "ACCOUNT") {
-                SettingsRowItem(
-                    icon = Icons.Default.Person,
-                    title = "Account Information",
-                    subtitle = "View connected email & authentication type",
-                    onClick = {
-                        Toast.makeText(context, "Logged in as $userEmail", Toast.LENGTH_SHORT).show()
-                    }
-                )
-
-                if (!isGoogleOnly) {
-                    SettingsRowItem(
-                        icon = Icons.Default.Lock,
-                        title = "Password Settings",
-                        subtitle = "Request password reset link",
-                        onClick = {
-                            if (!currentUser?.email.isNullOrBlank()) {
-                                auth.sendPasswordResetEmail(currentUser!!.email!!)
-                                Toast.makeText(context, "Password reset email sent to ${currentUser.email}", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    )
-                }
-            }
-
             // PREFERENCES SECTION
             SettingsGroupCard(title = "PREFERENCES") {
                 Row(
