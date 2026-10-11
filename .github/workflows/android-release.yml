@@ -82,6 +82,10 @@ jobs:
             cp app/build/outputs/bundle/fullSmsDebug/app-fullSms-debug.aab build/outputs/artifacts/aab/Rivava-FullSMS.aab
           fi
 
+      - name: Clean Up Keystore File
+        if: always()
+        run: rm -f app/release-key.jks
+
       - name: Verify APK and AAB Artifacts Exist
         run: |
           if [ ! -f "build/outputs/artifacts/apk/Rivava-Play.apk" ] || [ ! -f "build/outputs/artifacts/apk/Rivava-FullSMS.apk" ]; then
