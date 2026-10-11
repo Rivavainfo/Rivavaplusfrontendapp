@@ -144,17 +144,20 @@ fun HomeScreen(
         ?: viewModelUserName?.takeIf { it.isNotBlank() }
         ?: cachedUser?.name?.takeIf { it.isNotBlank() }
         ?: authUser?.displayName?.takeIf { it.isNotBlank() }
+    val userPhone = userModel?.phone?.takeIf { it.isNotBlank() }
+        ?: userModel?.phoneno?.takeIf { it.isNotBlank() }
+        ?: authUser?.phoneNumber ?: ""
     val profileImageUri = userModel?.profileImage ?: viewModelProfileImageUri ?: cachedUser?.photo ?: authUser?.photoUrl?.toString()
     var showAddSheet by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
-    var showVideoCallDialog by remember { mutableStateOf(false) }
+    var showBookSessionPopup by remember { mutableStateOf(false) }
     var showChatDialog by remember { mutableStateOf(false) }
 
     val haptic = LocalHapticFeedback.current
     val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", android.content.Context.MODE_PRIVATE)
 
-    // Removed showEliteBottomSheet logic as we now navigate directly to EliteLandingActivity
     val isPremiumPref = prefs.getBoolean("isPremium", false)
+    val isPortfolioUnlocked = isPremiumUser || isPremiumPref || prefs.getBoolean("portfolio_unlocked", false)
 
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
@@ -202,14 +205,11 @@ fun HomeScreen(
                         }
                     }
 
-                    // Right: Notification Bell + Profile Avatar
+                    // Right: Profile Avatar with Neon Ring
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-
-
-                        // Profile Avatar with Neon Ring
                         Box(
                             modifier = Modifier
                                 .size(42.dp)
@@ -250,18 +250,8 @@ fun HomeScreen(
                 HomeEliteHeroBanner(
                     seatsRemaining = displaySeats,
                     onJoinClick = {
-                        if (isPremiumUser || eliteSubscription.isElite) {
-                            val userDisplayName = userName ?: "User"
-                            val email = authUser?.email ?: ""
-                            val phone = userModel?.phone ?: ""
-                            com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppForAdvisor(
-                                context = context,
-                                username = userDisplayName,
-                                email = email,
-                                phoneNumber = phone,
-                                preference = "1-on-1 Session Request",
-                                premiumStatus = true
-                            )
+                        if (isPortfolioUnlocked) {
+                            showBookSessionPopup = true
                         } else {
                             Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
                             onNavigateToRivavaPortfolio()
@@ -270,10 +260,17 @@ fun HomeScreen(
                 )
             }
 
-            // 3. 1 in 1 Sessions with Our Advisor Micro Card Matching Reference Image
+            // 3. 1 in 1 Sessions with Our Advisor Micro Card
             item {
                 HomeAdvisorMicroBanner(
-                    onClick = { showVideoCallDialog = true }
+                    onClick = {
+                        if (isPortfolioUnlocked) {
+                            showBookSessionPopup = true
+                        } else {
+                            Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
+                            onNavigateToRivavaPortfolio()
+                        }
+                    }
                 )
             }
 
@@ -306,13 +303,13 @@ fun HomeScreen(
 
             // 7. Specials Section Directly Below Financial Tools & Calculators
             item {
-                val isPortfolioUnlocked = isPremiumUser || isPremiumPref
                 HomeSpecialsSection(
                     isPremium = isPortfolioUnlocked,
                     userName = userName ?: "User",
-                    userPhone = userModel?.phone ?: "",
+                    userPhone = userPhone,
                     onNavigateToPortfolio = { onNavigateToRivavaPortfolio() },
-                    onNavigateToAddTransaction = { showAddSheet = true }
+                    onNavigateToAddTransaction = { showAddSheet = true },
+                    onOpenBookSession = { showBookSessionPopup = true }
                 )
             }
 
@@ -402,67 +399,37 @@ fun HomeScreen(
             }
         }
 
-        if (showVideoCallDialog) {
-            var name by remember { mutableStateOf("") }
-            var preferredTime by remember { mutableStateOf("") }
-            var contactInfo by remember { mutableStateOf("") }
+        // Task 3: Redesigned 1-on-1 Session Booking Popup
+        if (showBookSessionPopup) {
+            BookSessionPopup(
+                initialName = userName ?: "",
+                initialPhone = userPhone,
+                onDismiss = { showBookSessionPopup = false },
+                onRequestSession = { name, phone, dateStr, timeStr, message ->
+                    showBookSessionPopup = false
+                    val whatsappMessage = """
+                        Hello Rivava Team,
 
-            AlertDialog(
-                onDismissRequest = { showVideoCallDialog = false },
-                title = { Text("Schedule a Video Call") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Fill out the details below to book a consultation via WhatsApp.")
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            label = { Text("Name") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-                        )
-                        OutlinedTextField(
-                            value = preferredTime,
-                            onValueChange = { preferredTime = it },
-                            label = { Text("Preferred Time (e.g. 2:00 PM)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-                        )
-                        OutlinedTextField(
-                            value = contactInfo,
-                            onValueChange = { contactInfo = it },
-                            label = { Text("Phone Number") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        if (name.isNotBlank() && preferredTime.isNotBlank() && contactInfo.isNotBlank()) {
-                            showVideoCallDialog = false
-                            val message = "Hi, I want to schedule a video call.\nName: $name\nPreferred Time: $preferredTime\nContact: $contactInfo"
-                            val encodedMessage = java.net.URLEncoder.encode(message, "UTF-8")
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/918881176909?text=$encodedMessage"))
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "WhatsApp not found", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            Toast.makeText(context, "Please fill all fields correctly", Toast.LENGTH_SHORT).show()
-                        }
-                    }) {
-                        Text("Submit")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showVideoCallDialog = false }) {
-                        Text("Cancel")
-                    }
+                        I would like to request a 1-on-1 advisor session.
+
+                        Name: $name
+                        Phone: $phone
+                        Preferred Date: $dateStr
+                        Preferred Time: $timeStr
+                        ${if (message.isNotBlank()) "Additional Details: $message" else ""}
+
+                        Please confirm the session availability.
+
+                        Thank you.
+                    """.trimIndent()
+
+                    com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(
+                        context = context,
+                        customMessage = whatsappMessage
+                    )
                 }
             )
         }
-
 
         if (showChatDialog) {
             var message by remember { mutableStateOf("") }
@@ -846,7 +813,8 @@ fun HomeSpecialsSection(
     userName: String,
     userPhone: String,
     onNavigateToPortfolio: () -> Unit,
-    onNavigateToAddTransaction: () -> Unit
+    onNavigateToAddTransaction: () -> Unit,
+    onOpenBookSession: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -898,17 +866,7 @@ fun HomeSpecialsSection(
                 modifier = Modifier.weight(1f),
                 onClick = {
                     if (isPremium) {
-                        val sessionMsg = """
-                            Hello Rivava Team,
-
-                            I am a Rivava Elite member and would like to request a 1-on-1 session with the advisor.
-
-                            Name: $userName
-
-                            Please let me know the available session timings.
-                        """.trimIndent()
-
-                        com.rivavafi.universal.utils.WhatsAppUtils.openWhatsAppWithMessage(context, sessionMsg)
+                        onOpenBookSession()
                     } else {
                         Toast.makeText(context, "Rivava Elite / Premium access required for 1-on-1 sessions", Toast.LENGTH_LONG).show()
                         onNavigateToPortfolio()
