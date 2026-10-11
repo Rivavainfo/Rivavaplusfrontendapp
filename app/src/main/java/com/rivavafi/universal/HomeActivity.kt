@@ -124,7 +124,7 @@ class HomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-                val isNewUser = intent.getBooleanExtra("isNewUser", false)
+        val isNewUser = intent.getBooleanExtra("isNewUser", false)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -225,7 +225,9 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
 
     val bottomNavigationItems = BaseBottomNavigationItems
 
-    val isBottomBarVisible = currentRoute in bottomNavigationItems.map { it.route }
+    val isBottomBarVisible = currentRoute != null && bottomNavigationItems.any { item ->
+        currentRoute == item.route || currentRoute.startsWith("${item.route}?") || currentRoute.startsWith("${item.route}/")
+    }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", android.content.Context.MODE_PRIVATE)
@@ -289,7 +291,7 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                             ) {
                                 bottomNavigationItems.forEach { screen ->
                                     val isSelected = currentRoute == screen.route ||
-                                            (screen.route == Screen.Calculators.route && currentRoute?.startsWith(Screen.Calculators.route) == true)
+                                            (currentRoute != null && (currentRoute.startsWith("${screen.route}?") || currentRoute.startsWith("${screen.route}/")))
                                     val isLocked = screen.route == Screen.RivavaPortfolio.route && !isPortfolioUnlocked
 
                                     CustomBottomNavItem(
