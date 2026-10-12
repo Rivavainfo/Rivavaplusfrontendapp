@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-release:
-    name: Build & Upload APK & AAB Artifacts
+    name: Build & Upload Signed Release Artifacts
     runs-on: ubuntu-latest
 
     steps:
@@ -30,84 +30,100 @@ jobs:
       - name: Grant Execute Permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build APKs and AABs (Signed Release or Debug Fallback)
+      - name: Decode Keystore & Validate Secrets
         env:
-          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          mkdir -p build/outputs/artifacts/apk
-          mkdir -p build/outputs/artifacts/aab
-
-          if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
-            echo "Release signing secrets detected. Decoding keystore and building signed Release APKs and AABs..."
-            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > app/release-key.jks
-            ./gradlew :app:assemblePlayRelease :app:assembleFullSmsRelease :app:bundlePlayRelease :app:bundleFullSmsRelease
-
-            PLAY_APK=$(find app/build/outputs/apk/play/release -name "*.apk" | head -n 1)
-            FULLSMS_APK=$(find app/build/outputs/apk/fullSms/release -name "*.apk" | head -n 1)
-            PLAY_AAB=$(find app/build/outputs/bundle/playRelease -name "*.aab" | head -n 1)
-            FULLSMS_AAB=$(find app/build/outputs/bundle/fullSmsRelease -name "*.aab" | head -n 1)
-
-            if [ -n "$PLAY_APK" ] && [ -n "$FULLSMS_APK" ] && [ -n "$PLAY_AAB" ] && [ -n "$FULLSMS_AAB" ]; then
-              cp "$PLAY_APK" build/outputs/artifacts/apk/Rivava-Play.apk
-              cp "$FULLSMS_APK" build/outputs/artifacts/apk/Rivava-FullSMS.apk
-              cp "$PLAY_AAB" build/outputs/artifacts/aab/Rivava-Play.aab
-              cp "$FULLSMS_AAB" build/outputs/artifacts/aab/Rivava-FullSMS.aab
-            else
-              echo "Error: Release build files (APK or AAB) were not found after build!"
-              exit 1
-            fi
-          else
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
             echo "=========================================================================================="
-            echo "NOTICE: Release signing secrets are missing or incomplete."
-            echo "Building Debug APKs and Debug AABs instead for initial testing and distribution."
-            echo ""
-            echo "To enable signed release APKs and AABs in GitHub Actions:"
-            echo "  1. Base64-encode your keystore: base64 -w 0 app/release-key.jks"
-            echo "  2. Go to Repository Settings -> Secrets and variables -> Actions"
-            echo "  3. Add the following repository secrets:"
-            echo "     - RELEASE_KEYSTORE_BASE64"
-            echo "     - RELEASE_STORE_PASSWORD"
-            echo "     - RELEASE_KEY_ALIAS"
-            echo "     - RELEASE_KEY_PASSWORD"
+            echo "ERROR: Release signing credentials are missing or incomplete in GitHub Actions Secrets!"
+            echo "Required GitHub Secrets:"
+            echo "  - KEYSTORE_BASE64"
+            echo "  - KEYSTORE_PASSWORD"
+            echo "  - KEY_ALIAS"
+            echo "  - KEY_PASSWORD"
             echo "=========================================================================================="
-
-            ./gradlew :app:assemblePlayDebug :app:assembleFullSmsDebug :app:bundlePlayDebug :app:bundleFullSmsDebug
-
-            cp app/build/outputs/apk/play/debug/app-play-debug.apk build/outputs/artifacts/apk/Rivava-Play.apk
-            cp app/build/outputs/apk/fullSms/debug/app-fullSms-debug.apk build/outputs/artifacts/apk/Rivava-FullSMS.apk
-            cp app/build/outputs/bundle/playDebug/app-play-debug.aab build/outputs/artifacts/aab/Rivava-Play.aab
-            cp app/build/outputs/bundle/fullSmsDebug/app-fullSms-debug.aab build/outputs/artifacts/aab/Rivava-FullSMS.aab
+            exit 1
           fi
+
+          echo "$KEYSTORE_BASE64" | base64 -d > app/release-key.jks
+          if [ ! -s "app/release-key.jks" ]; then
+            echo "Error: Failed to decode KEYSTORE_BASE64 into app/release-key.jks or keystore file is empty!"
+            exit 1
+          fi
+          echo "Release keystore decoded successfully."
+
+      - name: Build Release APK and AAB Artifacts
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:assembleRelease :app:bundleRelease
+
+      - name: Organize and Prepare Release Output Files
+        run: |
+          mkdir -p build/outputs/artifacts
+
+          # Find release APK and AAB outputs
+          PRIMARY_APK=$(find app/build/outputs/apk -name "*release*.apk" | head -n 1)
+          PRIMARY_AAB=$(find app/build/outputs/bundle -name "*release*.aab" | head -n 1)
+
+          if [ -z "$PRIMARY_APK" ] || [ -z "$PRIMARY_AAB" ]; then
+            echo "Error: Could not locate built release APK or AAB files in build outputs!"
+            exit 1
+          fi
+
+          echo "Found primary APK: $PRIMARY_APK"
+          echo "Found primary AAB: $PRIMARY_AAB"
+
+          # Copy primary release artifacts to canonical named outputs
+          cp "$PRIMARY_APK" build/outputs/artifacts/Rivava-release-signed.apk
+          cp "$PRIMARY_AAB" build/outputs/artifacts/aab/Rivava-release-signed.aab 2>/dev/null || cp "$PRIMARY_AAB" build/outputs/artifacts/Rivava-release-signed.aab
+
+          # Also preserve flavor-specific outputs if available
+          PLAY_APK=$(find app/build/outputs/apk/play/release -name "*.apk" 2>/dev/null | head -n 1)
+          FULLSMS_APK=$(find app/build/outputs/apk/fullSms/release -name "*.apk" 2>/dev/null | head -n 1)
+          PLAY_AAB=$(find app/build/outputs/bundle/playRelease -name "*.aab" 2>/dev/null | head -n 1)
+          FULLSMS_AAB=$(find app/build/outputs/bundle/fullSmsRelease -name "*.aab" 2>/dev/null | head -n 1)
+
+          if [ -n "$PLAY_APK" ]; then cp "$PLAY_APK" build/outputs/artifacts/Rivava-Play-release-signed.apk; fi
+          if [ -n "$FULLSMS_APK" ]; then cp "$FULLSMS_APK" build/outputs/artifacts/Rivava-FullSMS-release-signed.apk; fi
+          if [ -n "$PLAY_AAB" ]; then cp "$PLAY_AAB" build/outputs/artifacts/Rivava-Play-release-signed.aab; fi
+          if [ -n "$FULLSMS_AAB" ]; then cp "$FULLSMS_AAB" build/outputs/artifacts/Rivava-FullSMS-release-signed.aab; fi
+
+      - name: Verify Signatures of Release Artifacts
+        run: |
+          echo "Verifying signature of Rivava-release-signed.apk..."
+          APKSIGNER=$(find $ANDROID_SDK_ROOT/build-tools -name "apksigner" | sort -V | tail -n 1)
+          if [ -n "$APKSIGNER" ]; then
+            $APKSIGNER verify --verbose build/outputs/artifacts/Rivava-release-signed.apk
+          else
+            jarsigner -verify -verbose -certs build/outputs/artifacts/Rivava-release-signed.apk
+          fi
+
+          echo "Verifying signature of Rivava-release-signed.aab..."
+          jarsigner -verify build/outputs/artifacts/*Rivava-release-signed.aab || jarsigner -verify build/outputs/artifacts/aab/Rivava-release-signed.aab
+
+          echo "Signature verification completed successfully."
 
       - name: Clean Up Keystore File
         if: always()
-        run: rm -f app/release-key.jks
-
-      - name: Verify APK and AAB Artifacts Exist
         run: |
-          if [ ! -f "build/outputs/artifacts/apk/Rivava-Play.apk" ] || [ ! -f "build/outputs/artifacts/apk/Rivava-FullSMS.apk" ]; then
-            echo "Error: One or both expected APK artifacts are missing from build output!"
-            exit 1
-          fi
-          if [ ! -f "build/outputs/artifacts/aab/Rivava-Play.aab" ] || [ ! -f "build/outputs/artifacts/aab/Rivava-FullSMS.aab" ]; then
-            echo "Error: One or both expected AAB artifacts are missing from build output!"
-            exit 1
-          fi
-          echo "Verification successful: Both APK and AAB artifacts generated successfully."
+          rm -f app/release-key.jks
+          echo "Keystore file cleaned up."
 
-      - name: Upload APK Artifacts
+      - name: Upload Signed Release Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Rivava-APK
-          path: build/outputs/artifacts/apk/
-          retention-days: 30
-
-      - name: Upload AAB Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Rivava-AAB
-          path: build/outputs/artifacts/aab/
+          name: Rivava-Signed-Release-Artifacts
+          path: build/outputs/artifacts/
           retention-days: 30
