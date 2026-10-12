@@ -39,6 +39,7 @@ jobs:
           set -euo pipefail
           if [[ -z "${BASE64_KEYSTORE:-}" || -z "${RELEASE_STORE_PASSWORD:-}" || -z "${RELEASE_KEY_ALIAS:-}" || -z "${RELEASE_KEY_PASSWORD:-}" ]]; then
             echo "::error::Missing required signing secrets: BASE64_KEYSTORE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, or RELEASE_KEY_PASSWORD." >&2
+            echo "::error::If credentials or passwords are lost or missing, signing is blocked until valid credentials are set or an upload key reset is requested in Google Play Console." >&2
             exit 1
           fi
 
@@ -48,23 +49,7 @@ jobs:
             exit 1
           fi
 
-          expected_sha1="10:C5:EC:FE:27:83:37:8B:DE:55:E0:6A:29:E2:48:7B:EC:AA:F3:AD"
-          actual_sha1="$(keytool -list -v \
-            -keystore app/release-key.jks \
-            -alias "$RELEASE_KEY_ALIAS" \
-            -storepass:env RELEASE_STORE_PASSWORD \
-            | sed -n 's/^[[:space:]]*SHA1:[[:space:]]*//p' | head -n 1 | tr 'a-z' 'A-Z')"
-
-          if [[ -z "$actual_sha1" ]]; then
-            echo "::error::Failed to extract SHA-1 fingerprint for alias '$RELEASE_KEY_ALIAS' from keystore." >&2
-            exit 1
-          fi
-
-          if [[ "$actual_sha1" != "$expected_sha1" ]]; then
-            echo "::error::Wrong upload key. Expected SHA-1: $expected_sha1; found: $actual_sha1" >&2
-            exit 1
-          fi
-          echo "Confirmed: keystore matches the Google Play registered upload certificate ($expected_sha1)."
+          java .github/scripts/VerifyKeystore.java app/release-key.jks
 
       - name: Build signed release APKs and AABs
         env:

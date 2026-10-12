@@ -27,7 +27,14 @@ android {
                 ?: System.getenv("RELEASE_STORE_FILE")
                 ?: localProperties.getProperty("RELEASE_STORE_FILE")
                 ?: "release-key.jks"
-            val keystoreFile = file(storeFilePath)
+            val keystoreFile = run {
+                val f = file(storeFilePath)
+                if (f.exists()) f
+                else {
+                    val rootF = rootProject.file(storeFilePath)
+                    if (rootF.exists()) rootF else f
+                }
+            }
             storeFile = keystoreFile
 
             // Prioritize Environment Variables (KEYSTORE_* / KEY_* and RELEASE_*), fallback to local.properties (Local)
