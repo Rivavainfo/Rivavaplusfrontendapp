@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
@@ -48,7 +48,7 @@ jobs:
             } >> "${GITHUB_ENV}"
             echo "Release keystore decoded from BASE64_KEYSTORE."
           else
-            echo "BASE64_KEYSTORE is not set; generating a temporary CI signing key for release artifacts."
+            echo "BASE64_KEYSTORE is not set; generating a temporary CI signing key for CI build validation."
             keytool -genkeypair -v \
               -keystore app/release-key.jks \
               -alias ci-release \
@@ -69,6 +69,7 @@ jobs:
         env:
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
@@ -102,7 +103,7 @@ jobs:
 
       - name: Upload release APKs
         if: ${{ hashFiles('app/build/outputs/apk/**/*release*.apk') != '' }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: rivava-release-apks
           path: app/build/outputs/apk/**/*release*.apk
@@ -110,7 +111,7 @@ jobs:
 
       - name: Upload release AABs
         if: ${{ hashFiles('app/build/outputs/bundle/**/*.aab') != '' }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: rivava-release-aabs
           path: app/build/outputs/bundle/**/*.aab
