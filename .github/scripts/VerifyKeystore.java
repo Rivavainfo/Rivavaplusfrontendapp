@@ -6,7 +6,7 @@ import java.security.MessageDigest;
 import java.security.cert.Certificate;
 
 public class VerifyKeystore {
-    private static final String EXPECTED_SHA1 = "10:C5:EC:FE:27:83:37:8B:DE:55:E0:6A:29:E2:48:7B:EC:AA:F3:AD";
+    private static final String EXPECTED_SHA1 = "B2:A7:7A:4B:B3:5F:93:7A:00:11:24:ED:3B:03:76:2F:17:F5:30:95";
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -26,7 +26,7 @@ public class VerifyKeystore {
 
         String alias = System.getenv("RELEASE_KEY_ALIAS");
         if (alias == null) alias = System.getenv("KEY_ALIAS");
-        if (alias == null || alias.trim().isEmpty()) alias = "rivava";
+        if (alias == null || alias.trim().isEmpty()) alias = "rivava-upload";
 
         String keyPass = System.getenv("RELEASE_KEY_PASSWORD");
         if (keyPass == null) keyPass = System.getenv("KEY_PASSWORD");
@@ -38,13 +38,13 @@ public class VerifyKeystore {
 
         KeyStore ks = null;
         try {
-            ks = KeyStore.getInstance("JKS");
+            ks = KeyStore.getInstance("PKCS12");
             try (FileInputStream fis = new FileInputStream(ksFile)) {
                 ks.load(fis, storePass.toCharArray());
             }
         } catch (Exception e1) {
             try {
-                ks = KeyStore.getInstance("PKCS12");
+                ks = KeyStore.getInstance("JKS");
                 try (FileInputStream fis = new FileInputStream(ksFile)) {
                     ks.load(fis, storePass.toCharArray());
                 }
