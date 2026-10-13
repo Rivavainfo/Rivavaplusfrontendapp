@@ -51,6 +51,14 @@ jobs:
 
           java .github/scripts/VerifyKeystore.java app/release-key.jks
 
+      - name: Verify decoded keystore hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s app/release-key.jks
+          echo "Decoded keystore SHA-256:"
+          sha256sum app/release-key.jks
+
       - name: Build signed release APKs and AABs
         env:
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
