@@ -75,7 +75,7 @@ jobs:
             exit 1
           fi
 
-          expected_sha1="10:C5:EC:FE:27:83:37:8B:DE:55:E0:6A:29:E2:48:7B:EC:AA:F3:AD"
+          expected_sha1="B2:A7:7A:4B:B3:5F:93:7A:00:11:24:ED:3B:03:76:2F:17:F5:30:95"
 
           for artifact in "${aabs[@]}" "${apks[@]}"; do
             actual_sha1="$(keytool -printcert -jarfile "$artifact" \

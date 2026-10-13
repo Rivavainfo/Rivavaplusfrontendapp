@@ -22,7 +22,6 @@ android {
 
     signingConfigs {
         create("release") {
-            // Path to the keystore file inside the 'app' folder (configurable via KEYSTORE_FILE or RELEASE_STORE_FILE)
             val storeFilePath = System.getenv("KEYSTORE_FILE")
                 ?: System.getenv("RELEASE_STORE_FILE")
                 ?: localProperties.getProperty("RELEASE_STORE_FILE")
@@ -37,31 +36,29 @@ android {
             }
             storeFile = keystoreFile
 
-            // Prioritize Environment Variables (KEYSTORE_* / KEY_* and RELEASE_*), fallback to local.properties (Local)
             val storePwd = System.getenv("KEYSTORE_PASSWORD")
                 ?: System.getenv("RELEASE_STORE_PASSWORD")
                 ?: localProperties.getProperty("KEYSTORE_PASSWORD")
                 ?: localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                ?: ""
             val kAlias = System.getenv("KEY_ALIAS")
                 ?: System.getenv("RELEASE_KEY_ALIAS")
                 ?: localProperties.getProperty("KEY_ALIAS")
                 ?: localProperties.getProperty("RELEASE_KEY_ALIAS")
+                ?: ""
             val kPwd = System.getenv("KEY_PASSWORD")
                 ?: System.getenv("RELEASE_KEY_PASSWORD")
                 ?: localProperties.getProperty("KEY_PASSWORD")
                 ?: localProperties.getProperty("RELEASE_KEY_PASSWORD")
+                ?: ""
 
-            if (keystoreFile.exists() && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
-                storePassword = storePwd
-                keyAlias = kAlias
-                keyPassword = kPwd
-                enableV1Signing = true
-                enableV2Signing = true
-                enableV3Signing = true
-                enableV4Signing = true
-            } else {
-                println("SIGNING CONFIG WARNING: Keystore file or signing credentials are missing.")
-            }
+            storePassword = storePwd
+            keyAlias = kAlias
+            keyPassword = kPwd
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = true
         }
     }
 
@@ -111,15 +108,7 @@ android {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
-            val releaseSigning = signingConfigs.getByName("release")
-            if (releaseSigning.storeFile?.exists() == true &&
-                !releaseSigning.storePassword.isNullOrEmpty() &&
-                !releaseSigning.keyAlias.isNullOrEmpty() &&
-                !releaseSigning.keyPassword.isNullOrEmpty()) {
-                signingConfig = releaseSigning
-            } else {
-                println("RELEASE BUILD WARNING: Release build type is unsigned because signing configuration is incomplete.")
-            }
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
