@@ -44,10 +44,9 @@ jobs:
           fi
 
           printf '%s' "$BASE64_KEYSTORE" | base64 --decode > app/release-key.jks
-          if [[ ! -s app/release-key.jks ]]; then
-            echo "::error::Decoded release keystore app/release-key.jks is empty." >&2
-            exit 1
-          fi
+          echo "Checking decoded keystore..."
+          test -s app/release-key.jks || exit 1
+          sha256sum app/release-key.jks
 
           ACTUAL_SHA256="$(sha256sum app/release-key.jks | awk '{print $1}' | tr 'a-z' 'A-Z')"
           EXPECTED_SHA256="51E7512241263F1D5AF6E85641B5508FEBFE4C93306A7BA9D5D5F9701FA3EC00"
