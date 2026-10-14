@@ -96,30 +96,42 @@ class AuthViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val user = repository.auth.currentUser
-            if (user != null) {
-                // APP START LOGIC: If logged in, update cache and sync
-                val appUser = User(
-                    uid = user.uid,
-                    name = user.displayName,
-                    email = user.email,
-                    photo = user.photoUrl?.toString(),
-                    phone = user.phoneNumber
-                )
-                userRepository.cacheUserLocally(context, appUser)
-                userRepository.saveUserToFirestore(appUser)
+            try {
+                val user = repository.auth.currentUser
+                if (user != null) {
+                    // APP START LOGIC: If logged in, update cache and sync
+                    val appUser = User(
+                        uid = user.uid,
+                        name = user.displayName,
+                        email = user.email,
+                        photo = user.photoUrl?.toString(),
+                        phone = user.phoneNumber
+                    )
+                    userRepository.cacheUserLocally(context, appUser)
+                    try {
+                        userRepository.saveUserToFirestore(appUser)
+                    } catch (e: Exception) {
+                        Log.e("AuthViewModel", "Failed to save user to firestore during init", e)
+                    }
 
-                try {
-                    val docSnap = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("therivdata").document(user.uid).get().await()
-                    _isNewUser.value = !docSnap.exists()
-                } catch (e: Exception) {
-                    Log.e("AuthViewModel", "Failed to check existing user data", e)
-                    _isNewUser.value = false // Default to false if network fails to avoid blocking login flow
+                    try {
+                        val docSnap = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("therivdata").document(user.uid).get().await()
+                        _isNewUser.value = !docSnap.exists()
+                    } catch (e: Exception) {
+                        Log.e("AuthViewModel", "Failed to check existing user data", e)
+                        _isNewUser.value = false // Default to false if network fails to avoid blocking login flow
+                    }
+
+                    try {
+                        userEntitlementRepository.syncEntitlement()
+                    } catch (e: Exception) {
+                        Log.e("AuthViewModel", "Failed to sync entitlement during init", e)
+                    }
+                    _authState.value = AuthState.SUCCESS
                 }
-
-                val providerId = user.providerData.firstOrNull()?.providerId
-                userEntitlementRepository.syncEntitlement()
-                _authState.value = AuthState.SUCCESS
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error restoring user session during init", e)
+                _authState.value = AuthState.IDLE
             }
         }
     }

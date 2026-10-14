@@ -65,16 +65,20 @@ fun HomeCardCarouselSection(
 
     // Fixed 6-second auto-rotation timer with smooth slide transition
     LaunchedEffect(pagerState.currentPage, isScrollInProgress, isLifecycleActive) {
-        if (!isScrollInProgress && isLifecycleActive) {
-            delay(6000)
-            if (!pagerState.isScrollInProgress && isLifecycleActive) {
-                val nextPage = (pagerState.currentPage + 1) % totalPageCount
-                runCatching {
-                    pagerState.animateScrollToPage(
-                        page = nextPage,
-                        animationSpec = tween(durationMillis = 450)
-                    )
+        if (!isScrollInProgress && isLifecycleActive && totalPageCount > 0) {
+            try {
+                delay(6000)
+                if (!pagerState.isScrollInProgress && isLifecycleActive && totalPageCount > 0) {
+                    val nextPage = (pagerState.currentPage + 1) % totalPageCount
+                    runCatching {
+                        pagerState.animateScrollToPage(
+                            page = nextPage,
+                            animationSpec = tween(durationMillis = 450)
+                        )
+                    }
                 }
+            } catch (e: Exception) {
+                // Ignore coroutine cancellation or auto-scroll error
             }
         }
     }
