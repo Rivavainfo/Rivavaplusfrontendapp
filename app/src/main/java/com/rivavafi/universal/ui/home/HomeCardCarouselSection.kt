@@ -5,7 +5,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -23,7 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,7 +46,6 @@ fun HomeCardCarouselSection(
     val totalPageCount = 4
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { totalPageCount })
     val coroutineScope = rememberCoroutineScope()
-    var isUserInteracting by remember { mutableStateOf(false) }
     var isLifecycleActive by remember { mutableStateOf(true) }
 
     // Lifecycle observer to pause timer when app is in background
@@ -63,30 +60,23 @@ fun HomeCardCarouselSection(
         }
     }
 
-    // Fixed 6-second auto-rotation timer with smooth slide transition
-    LaunchedEffect(pagerState.currentPage, isUserInteracting, isLifecycleActive) {
-        if (!isUserInteracting && isLifecycleActive) {
+    // Fixed 6-second auto-rotation timer using native pagerState.isScrollInProgress
+    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress, isLifecycleActive) {
+        if (!pagerState.isScrollInProgress && isLifecycleActive) {
             delay(6000)
-            val nextPage = (pagerState.currentPage + 1) % totalPageCount
-            pagerState.animateScrollToPage(
-                page = nextPage,
-                animationSpec = tween(durationMillis = 450)
-            )
+            if (!pagerState.isScrollInProgress && isLifecycleActive) {
+                val nextPage = (pagerState.currentPage + 1) % totalPageCount
+                runCatching {
+                    pagerState.animateScrollToPage(
+                        page = nextPage,
+                        animationSpec = tween(durationMillis = 450)
+                    )
+                }
+            }
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { isUserInteracting = true },
-                    onDragEnd = { isUserInteracting = false },
-                    onDragCancel = { isUserInteracting = false },
-                    onDrag = { _, _ -> }
-                )
-            }
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -202,7 +192,9 @@ fun HomeCardCarouselSection(
                         )
                         .clickable {
                             coroutineScope.launch {
-                                pagerState.animateScrollToPage(index, animationSpec = tween(350))
+                                runCatching {
+                                    pagerState.animateScrollToPage(index, animationSpec = tween(350))
+                                }
                             }
                         }
                 )
