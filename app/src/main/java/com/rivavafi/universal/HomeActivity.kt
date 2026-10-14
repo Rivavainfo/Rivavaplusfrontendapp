@@ -479,12 +479,17 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                 )
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(onRestartApp = {
-                    val intent = android.content.Intent(context, com.rivavafi.universal.ui.auth.AuthActivity::class.java)
-                    intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    context.startActivity(intent)
-                    (context as? android.app.Activity)?.finish()
-                })
+                SettingsScreen(
+                    onRestartApp = {
+                        val intent = android.content.Intent(context, com.rivavafi.universal.ui.auth.AuthActivity::class.java)
+                        intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        context.startActivity(intent)
+                        (context as? android.app.Activity)?.finish()
+                    },
+                    onNavigateToPrivacyPolicy = {
+                        navController.navigate(Screen.Profile.route)
+                    }
+                )
             }
             composable(Screen.RivavaPortfolio.route) {
                 RivavaPortfolioScreen(

@@ -28,8 +28,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import android.widget.Toast
 
-
-
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.os.Build
 import android.content.Intent
@@ -55,13 +53,15 @@ import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Shield
+import com.rivavafi.universal.sms.SmsTrackingMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     profileViewModel: com.rivavafi.universal.ui.profile.ProfileViewModel = hiltViewModel(),
-    onRestartApp: () -> Unit
+    onRestartApp: () -> Unit,
+    onNavigateToPrivacyPolicy: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val activity = context as? android.app.Activity
@@ -69,6 +69,7 @@ fun SettingsScreen(
     val banksDetected by viewModel.banksDetected.collectAsState()
     val showSmsDetails by viewModel.showSmsDetails.collectAsState()
     val terminologyMode by viewModel.terminologyMode.collectAsState()
+    val smsTrackingMode by viewModel.smsTrackingMode.collectAsState()
     val profileState by profileViewModel.profileState.collectAsState()
 
     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
@@ -90,12 +91,18 @@ fun SettingsScreen(
     var deleteConfirmationText by remember { mutableStateOf("") }
     var isDeleting by remember { mutableStateOf(false) }
 
+    val isSmsScanEnabled = smsTrackingMode != SmsTrackingMode.OFF.name
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions[Manifest.permission.READ_SMS] == true && permissions[Manifest.permission.RECEIVE_SMS] == true
-        if (!granted) {
-            viewModel.setSmsTrackingMode("OFF")
+        if (granted) {
+            viewModel.setSmsTrackingMode(SmsTrackingMode.BOTH.name)
+            viewModel.rescanSms(context)
+            Toast.makeText(context, "SMS transaction scanning enabled", Toast.LENGTH_SHORT).show()
+        } else {
+            viewModel.setSmsTrackingMode(SmsTrackingMode.OFF.name)
             showSmsSettingsDialog = true
         }
     }
@@ -243,6 +250,63 @@ fun SettingsScreen(
                 }
             }
 
+            // FINANCIAL TRACKING SECTION
+            SettingsGroupCard(title = "FINANCIAL TRACKING") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Scan Messages",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Automatically detect transactions from SMS",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFF869AB8),
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                    Switch(
+                        checked = isSmsScanEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                val hasReadSms = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+                                val hasReceiveSms = ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
+                                if (hasReadSms && hasReceiveSms) {
+                                    viewModel.setSmsTrackingMode(SmsTrackingMode.BOTH.name)
+                                    viewModel.rescanSms(context)
+                                    Toast.makeText(context, "SMS transaction scanning enabled", Toast.LENGTH_SHORT).show()
+                                } else if (ActivityCompat.shouldShowRequestPermissionRationale(activity ?: return@Switch, Manifest.permission.READ_SMS)) {
+                                    showSmsRationaleDialog = true
+                                } else {
+                                    permissionLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS))
+                                }
+                            } else {
+                                viewModel.setSmsTrackingMode(SmsTrackingMode.OFF.name)
+                                Toast.makeText(context, "SMS transaction scanning disabled", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF00A3FF),
+                            uncheckedThumbColor = Color(0xFF869AB8),
+                            uncheckedTrackColor = Color(0xFF1B2338)
+                        )
+                    )
+                }
+            }
+
             // PREFERENCES SECTION
             SettingsGroupCard(title = "PREFERENCES") {
                 Row(
@@ -330,8 +394,12 @@ fun SettingsScreen(
                     title = "Privacy Policy",
                     subtitle = "Read about data protection & encryption",
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://therivava.com/privacy"))
-                        try { context.startActivity(intent) } catch (_: Exception) {}
+                        if (onNavigateToPrivacyPolicy != null) {
+                            onNavigateToPrivacyPolicy()
+                        } else {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://therivava.com/privacy"))
+                            try { context.startActivity(intent) } catch (_: Exception) {}
+                        }
                     }
                 )
 
