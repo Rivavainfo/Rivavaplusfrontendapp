@@ -5,7 +5,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -23,7 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -69,11 +67,15 @@ fun HomeCardCarouselSection(
     LaunchedEffect(pagerState.currentPage, isScrollInProgress, isLifecycleActive) {
         if (!isScrollInProgress && isLifecycleActive) {
             delay(6000)
-            val nextPage = (pagerState.currentPage + 1) % totalPageCount
-            pagerState.animateScrollToPage(
-                page = nextPage,
-                animationSpec = tween(durationMillis = 450)
-            )
+            if (!pagerState.isScrollInProgress && isLifecycleActive) {
+                val nextPage = (pagerState.currentPage + 1) % totalPageCount
+                runCatching {
+                    pagerState.animateScrollToPage(
+                        page = nextPage,
+                        animationSpec = tween(durationMillis = 450)
+                    )
+                }
+            }
         }
     }
 
@@ -195,7 +197,9 @@ fun HomeCardCarouselSection(
                         )
                         .clickable {
                             coroutineScope.launch {
-                                pagerState.animateScrollToPage(index, animationSpec = tween(350))
+                                runCatching {
+                                    pagerState.animateScrollToPage(index, animationSpec = tween(350))
+                                }
                             }
                         }
                 )
