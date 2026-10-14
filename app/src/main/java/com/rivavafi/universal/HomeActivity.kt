@@ -125,14 +125,17 @@ class HomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val isNewUser = intent.getBooleanExtra("isNewUser", false)
+        val isNewUser = try { intent?.getBooleanExtra("isNewUser", false) ?: false } catch (e: Exception) { false }
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+        } catch (e: Exception) {
+            android.util.Log.e("HomeActivity", "Error setting window decor fit", e)
+        }
 
         setContent {
             val isPremiumUser = preferencesRepository.isPremiumUserFlow.collectAsState(initial = false).value
-            val hasCompletedOnboardingState = preferencesRepository.hasCompletedOnboardingFlow.collectAsState(initial = true)
-            val hasCompletedOnboarding = hasCompletedOnboardingState.value
+            val hasCompletedOnboarding = preferencesRepository.hasCompletedOnboardingFlow.collectAsState(initial = true).value
 
             RivavaTheme(isPremium = isPremiumUser) {
                 Surface(
