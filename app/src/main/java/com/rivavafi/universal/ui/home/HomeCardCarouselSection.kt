@@ -60,9 +60,12 @@ fun HomeCardCarouselSection(
         }
     }
 
-    // Fixed 6-second auto-rotation timer using native pagerState.isScrollInProgress
-    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress, isLifecycleActive) {
-        if (!pagerState.isScrollInProgress && isLifecycleActive) {
+    // Pause auto-scroll while pager is being scrolled by user
+    val isScrollInProgress = pagerState.isScrollInProgress
+
+    // Fixed 6-second auto-rotation timer with smooth slide transition
+    LaunchedEffect(pagerState.currentPage, isScrollInProgress, isLifecycleActive) {
+        if (!isScrollInProgress && isLifecycleActive) {
             delay(6000)
             if (!pagerState.isScrollInProgress && isLifecycleActive) {
                 val nextPage = (pagerState.currentPage + 1) % totalPageCount
@@ -76,7 +79,9 @@ fun HomeCardCarouselSection(
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
