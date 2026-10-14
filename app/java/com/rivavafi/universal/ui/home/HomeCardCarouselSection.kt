@@ -48,7 +48,6 @@ fun HomeCardCarouselSection(
     val totalPageCount = 4
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { totalPageCount })
     val coroutineScope = rememberCoroutineScope()
-    var isUserInteracting by remember { mutableStateOf(false) }
     var isLifecycleActive by remember { mutableStateOf(true) }
 
     // Lifecycle observer to pause timer when app is in background
@@ -63,9 +62,12 @@ fun HomeCardCarouselSection(
         }
     }
 
+    // Pause auto-scroll while pager is being scrolled by user
+    val isScrollInProgress = pagerState.isScrollInProgress
+
     // Fixed 6-second auto-rotation timer with smooth slide transition
-    LaunchedEffect(pagerState.currentPage, isUserInteracting, isLifecycleActive) {
-        if (!isUserInteracting && isLifecycleActive) {
+    LaunchedEffect(pagerState.currentPage, isScrollInProgress, isLifecycleActive) {
+        if (!isScrollInProgress && isLifecycleActive) {
             delay(6000)
             val nextPage = (pagerState.currentPage + 1) % totalPageCount
             pagerState.animateScrollToPage(
@@ -76,16 +78,7 @@ fun HomeCardCarouselSection(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { isUserInteracting = true },
-                    onDragEnd = { isUserInteracting = false },
-                    onDragCancel = { isUserInteracting = false },
-                    onDrag = { _, _ -> }
-                )
-            }
+        modifier = modifier.fillMaxWidth()
     ) {
         HorizontalPager(
             state = pagerState,
