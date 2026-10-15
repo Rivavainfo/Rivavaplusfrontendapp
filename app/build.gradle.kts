@@ -46,7 +46,7 @@ android {
                 enableV3Signing = true
                 enableV4Signing = true
             } else {
-                println("SIGNING CONFIG WARNING: Keystore file or signing credentials are missing.")
+                println("SIGNING CONFIG WARNING: Keystore file ($storeFilePath) or signing credentials are missing.")
             }
         }
     }
@@ -98,11 +98,16 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             val releaseSigning = signingConfigs.getByName("release")
-            if (releaseSigning.storeFile?.exists() == true &&
-                !releaseSigning.storePassword.isNullOrEmpty() &&
+            val isCi = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
+            val hasKeystore = releaseSigning.storeFile?.exists() == true
+            val hasCredentials = !releaseSigning.storePassword.isNullOrEmpty() &&
                 !releaseSigning.keyAlias.isNullOrEmpty() &&
-                !releaseSigning.keyPassword.isNullOrEmpty()) {
+                !releaseSigning.keyPassword.isNullOrEmpty()
+
+            if (hasKeystore && hasCredentials) {
                 signingConfig = releaseSigning
+            } else if (isCi && System.getenv("REQUIRE_RELEASE_SIGNING") == "true") {
+                error("RELEASE BUILD ERROR: Missing release signing configuration in CI environment! Keystore exists: $hasKeystore, credentials present: $hasCredentials")
             } else {
                 println("RELEASE BUILD WARNING: Release build type is unsigned because signing configuration is incomplete.")
             }
