@@ -112,18 +112,20 @@ jobs:
         run: |
           echo "Verifying AAB digital signatures with jarsigner..."
 
-          jarsigner -verify -strict -verbose -certs build/outputs/artifacts/aab/Rivava-Play.aab > play_aab_verify.txt 2>&1
-          if ! grep -q "jar verified" play_aab_verify.txt; then
-            echo "ERROR: Rivava-Play.aab digital signature verification failed!"
+          jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-Play.aab > play_aab_verify.txt 2>&1
+          PLAY_AAB_STATUS=$?
+          if [ $PLAY_AAB_STATUS -ne 0 ] || ! grep -q "jar verified" play_aab_verify.txt; then
+            echo "ERROR: Rivava-Play.aab digital signature verification failed (exit code $PLAY_AAB_STATUS)!"
             cat play_aab_verify.txt
             exit 1
           fi
           echo " Rivava-Play.aab digital signature verified."
           rm -f play_aab_verify.txt
 
-          jarsigner -verify -strict -verbose -certs build/outputs/artifacts/aab/Rivava-FullSMS.aab > fullsms_aab_verify.txt 2>&1
-          if ! grep -q "jar verified" fullsms_aab_verify.txt; then
-            echo "ERROR: Rivava-FullSMS.aab digital signature verification failed!"
+          jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-FullSMS.aab > fullsms_aab_verify.txt 2>&1
+          FULLSMS_AAB_STATUS=$?
+          if [ $FULLSMS_AAB_STATUS -ne 0 ] || ! grep -q "jar verified" fullsms_aab_verify.txt; then
+            echo "ERROR: Rivava-FullSMS.aab digital signature verification failed (exit code $FULLSMS_AAB_STATUS)!"
             cat fullsms_aab_verify.txt
             exit 1
           fi
