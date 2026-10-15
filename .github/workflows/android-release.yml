@@ -78,6 +78,7 @@ jobs:
 
       - name: Build Signed Release APKs and AABs
         env:
+          REQUIRE_RELEASE_SIGNING: "true"
           RELEASE_STORE_FILE: "release-key.jks"
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
@@ -111,7 +112,7 @@ jobs:
         run: |
           echo "Verifying AAB digital signatures with jarsigner..."
 
-          jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-Play.aab > play_aab_verify.txt 2>&1
+          jarsigner -verify -strict -verbose -certs build/outputs/artifacts/aab/Rivava-Play.aab > play_aab_verify.txt 2>&1
           if ! grep -q "jar verified" play_aab_verify.txt; then
             echo "ERROR: Rivava-Play.aab digital signature verification failed!"
             cat play_aab_verify.txt
@@ -120,7 +121,7 @@ jobs:
           echo " Rivava-Play.aab digital signature verified."
           rm -f play_aab_verify.txt
 
-          jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-FullSMS.aab > fullsms_aab_verify.txt 2>&1
+          jarsigner -verify -strict -verbose -certs build/outputs/artifacts/aab/Rivava-FullSMS.aab > fullsms_aab_verify.txt 2>&1
           if ! grep -q "jar verified" fullsms_aab_verify.txt; then
             echo "ERROR: Rivava-FullSMS.aab digital signature verification failed!"
             cat fullsms_aab_verify.txt
@@ -130,12 +131,13 @@ jobs:
           rm -f fullsms_aab_verify.txt
 
           echo "Verifying APK signatures with apksigner..."
-          if command -v apksigner > /dev/null; then
-            apksigner verify --verbose build/outputs/artifacts/apk/Rivava-Play.apk
-            apksigner verify --verbose build/outputs/artifacts/apk/Rivava-FullSMS.apk
+          APKSIGNER_BIN=$(find $ANDROID_HOME/build-tools -name "apksigner" | tail -n 1)
+          if [ -n "$APKSIGNER_BIN" ]; then
+            "$APKSIGNER_BIN" verify --verbose --print-certs build/outputs/artifacts/apk/Rivava-Play.apk
+            "$APKSIGNER_BIN" verify --verbose --print-certs build/outputs/artifacts/apk/Rivava-FullSMS.apk
           else
-            jarsigner -verify build/outputs/artifacts/apk/Rivava-Play.apk
-            jarsigner -verify build/outputs/artifacts/apk/Rivava-FullSMS.apk
+            jarsigner -verify -verbose -certs build/outputs/artifacts/apk/Rivava-Play.apk
+            jarsigner -verify -verbose -certs build/outputs/artifacts/apk/Rivava-FullSMS.apk
           fi
           echo " APK digital signatures verified."
 
