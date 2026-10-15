@@ -43,6 +43,7 @@
     </queries>
 
     <application
+        xmlns:tools="http://schemas.android.com/tools"
         android:name=".RivavaApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -52,6 +53,17 @@
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="false">
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <meta-data
             android:name="com.razorpay.ApiKey"
