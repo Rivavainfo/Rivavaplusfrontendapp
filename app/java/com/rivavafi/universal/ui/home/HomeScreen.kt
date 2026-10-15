@@ -243,25 +243,20 @@ fun HomeScreen(
                 }
             }
 
-            // 2. Task 4: Rotating 4-Card Set Carousel
+            // 2. Rivava Elite Hero Banner
             item {
                 val seatsRemaining = (eliteConfig.totalSeats - eliteConfig.occupiedSeats).coerceAtLeast(0)
                 val displaySeats = if (eliteConfig.occupiedSeats > 0 && seatsRemaining > 0) seatsRemaining else 93
-                HomeCardCarouselSection(
+                HomeEliteHeroBanner(
                     seatsRemaining = displaySeats,
-                    isPortfolioUnlocked = isPortfolioUnlocked,
-                    onNavigateToPortfolio = { onNavigateToRivavaPortfolio() },
-                    onBookSessionClick = {
+                    onJoinClick = {
                         if (isPortfolioUnlocked) {
                             showBookSessionPopup = true
                         } else {
                             Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
                             onNavigateToRivavaPortfolio()
                         }
-                    },
-                    onNavigateToAnalytics = { onNavigateToAnalytics() },
-                    onNavigateToTransactions = { onNavigateToTransactions() },
-                    onNavigateToTools = { onNavigateToCalculators(null) }
+                    }
                 )
             }
 

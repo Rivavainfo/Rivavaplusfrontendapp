@@ -125,17 +125,14 @@ class HomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val isNewUser = try { intent?.getBooleanExtra("isNewUser", false) ?: false } catch (e: Exception) { false }
+        val isNewUser = intent.getBooleanExtra("isNewUser", false)
 
-        try {
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-        } catch (e: Exception) {
-            android.util.Log.e("HomeActivity", "Error setting window decor fit", e)
-        }
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             val isPremiumUser = preferencesRepository.isPremiumUserFlow.collectAsState(initial = false).value
-            val hasCompletedOnboarding = preferencesRepository.hasCompletedOnboardingFlow.collectAsState(initial = true).value
+            val hasCompletedOnboardingState = preferencesRepository.hasCompletedOnboardingFlow.collectAsState(initial = true)
+            val hasCompletedOnboarding = hasCompletedOnboardingState.value
 
             RivavaTheme(isPremium = isPremiumUser) {
                 Surface(
@@ -482,17 +479,12 @@ fun RivavaAppContent(hasCompletedOnboarding: Boolean, preferencesRepository: Use
                 )
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(
-                    onRestartApp = {
-                        val intent = android.content.Intent(context, com.rivavafi.universal.ui.auth.AuthActivity::class.java)
-                        intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        context.startActivity(intent)
-                        (context as? android.app.Activity)?.finish()
-                    },
-                    onNavigateToPrivacyPolicy = {
-                        navController.navigate(Screen.Profile.route)
-                    }
-                )
+                SettingsScreen(onRestartApp = {
+                    val intent = android.content.Intent(context, com.rivavafi.universal.ui.auth.AuthActivity::class.java)
+                    intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    context.startActivity(intent)
+                    (context as? android.app.Activity)?.finish()
+                })
             }
             composable(Screen.RivavaPortfolio.route) {
                 RivavaPortfolioScreen(

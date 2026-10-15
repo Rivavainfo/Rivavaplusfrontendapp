@@ -22,43 +22,32 @@ android {
 
     signingConfigs {
         create("release") {
-            val storeFilePath = System.getenv("KEYSTORE_FILE")
-                ?: System.getenv("RELEASE_STORE_FILE")
+            // Path to the keystore file inside the 'app' folder (configurable via RELEASE_STORE_FILE)
+            val storeFilePath = System.getenv("RELEASE_STORE_FILE")
                 ?: localProperties.getProperty("RELEASE_STORE_FILE")
                 ?: "release-key.jks"
-            val keystoreFile = run {
-                val f = file(storeFilePath)
-                if (f.exists()) f
-                else {
-                    val rootF = rootProject.file(storeFilePath)
-                    if (rootF.exists()) rootF else f
-                }
-            }
+            val keystoreFile = file(storeFilePath)
             storeFile = keystoreFile
 
-            val storePwd = System.getenv("KEYSTORE_PASSWORD")
-                ?: System.getenv("RELEASE_STORE_PASSWORD")
-                ?: localProperties.getProperty("KEYSTORE_PASSWORD")
+            // Prioritize Environment Variables (CI), fallback to local.properties (Local)
+            val storePwd = System.getenv("RELEASE_STORE_PASSWORD")
                 ?: localProperties.getProperty("RELEASE_STORE_PASSWORD")
-                ?: ""
-            val kAlias = System.getenv("KEY_ALIAS")
-                ?: System.getenv("RELEASE_KEY_ALIAS")
-                ?: localProperties.getProperty("KEY_ALIAS")
+            val kAlias = System.getenv("RELEASE_KEY_ALIAS")
                 ?: localProperties.getProperty("RELEASE_KEY_ALIAS")
-                ?: ""
-            val kPwd = System.getenv("KEY_PASSWORD")
-                ?: System.getenv("RELEASE_KEY_PASSWORD")
-                ?: localProperties.getProperty("KEY_PASSWORD")
+            val kPwd = System.getenv("RELEASE_KEY_PASSWORD")
                 ?: localProperties.getProperty("RELEASE_KEY_PASSWORD")
-                ?: ""
 
-            storePassword = storePwd
-            keyAlias = kAlias
-            keyPassword = kPwd
-            enableV1Signing = true
-            enableV2Signing = true
-            enableV3Signing = true
-            enableV4Signing = true
+            if (keystoreFile.exists() && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
+                storePassword = storePwd
+                keyAlias = kAlias
+                keyPassword = kPwd
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            } else {
+                println("SIGNING CONFIG WARNING: Keystore file or signing credentials are missing.")
+            }
         }
     }
 
@@ -66,8 +55,8 @@ android {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
         targetSdk = 35
-        versionCode = 34
-        versionName = "34"
+        versionCode = 33
+        versionName = "33"
 
         // API Key injection with safe fallbacks
         buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${System.getenv("ALPHA_VANTAGE_API_KEY") ?: localProperties.getProperty("alphavantage.apikey") ?: ""}\"")
@@ -108,7 +97,15 @@ android {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true &&
+                !releaseSigning.storePassword.isNullOrEmpty() &&
+                !releaseSigning.keyAlias.isNullOrEmpty() &&
+                !releaseSigning.keyPassword.isNullOrEmpty()) {
+                signingConfig = releaseSigning
+            } else {
+                println("RELEASE BUILD WARNING: Release build type is unsigned because signing configuration is incomplete.")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

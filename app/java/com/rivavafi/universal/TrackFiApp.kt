@@ -21,9 +21,8 @@ class RivavaApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        if (FirebaseApp.getApps(this).isEmpty()) {
-            FirebaseApp.initializeApp(this)
-        }
+        FirebaseApp.initializeApp(this)
+
         validateFinnhubApiKey()
     }
 
