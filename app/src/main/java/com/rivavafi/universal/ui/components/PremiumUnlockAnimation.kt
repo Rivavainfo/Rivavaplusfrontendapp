@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.Icon
@@ -38,143 +39,125 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 @Composable
 fun PremiumUnlockAnimation(
-    onAnimationComplete: () -> Unit,
-    modifier: Modifier = Modifier
+    onAnimationComplete: () -> Unit
 ) {
-    var animationStep by remember { mutableStateOf(0) }
-    var isFadingOut by remember { mutableStateOf(false) }
+    var step by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        // Step 1: Display centered lock icon on slightly dimmed background (0 - 250ms)
-        animationStep = 0
-        delay(250)
-
-        // Step 2: Animate lock opening with subtle scale and glow (250ms - 600ms)
-        animationStep = 1
-        delay(350)
-
-        // Step 3: Animate text "Portfolio Unlocked" & "Welcome to Rivava Elite" (600ms - 1000ms)
-        animationStep = 2
-        delay(400)
-
-        // Step 4: Smooth fade out and reveal unlocked UI (1000ms - 1150ms)
-        isFadingOut = true
-        delay(150)
+        delay(300)
+        step = 1 // Lock turns to unlocked
+        delay(600)
+        step = 2 // Checkmark appears
+        delay(800)
         onAnimationComplete()
     }
 
-    val overlayAlpha by animateFloatAsState(
-        targetValue = if (isFadingOut) 0f else 1f,
-        animationSpec = tween(150, easing = FastOutSlowInEasing),
-        label = "overlayAlpha"
-    )
-
     val iconScale by animateFloatAsState(
-        targetValue = if (animationStep >= 1) 1.15f else 1.0f,
-        animationSpec = tween(350, easing = FastOutSlowInEasing),
+        targetValue = if (step >= 1) 1.2f else 1f,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
         label = "iconScale"
     )
 
-    val textAlpha by animateFloatAsState(
-        targetValue = if (animationStep >= 2) 1f else 0f,
-        animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "textAlpha"
+    val checkAlpha by animateFloatAsState(
+        targetValue = if (step >= 2) 1f else 0f,
+        animationSpec = tween(400),
+        label = "checkAlpha"
     )
 
-    val infiniteTransition = rememberInfiniteTransition(label = "unlockGlow")
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
     val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
+        initialValue = 0.4f,
+        targetValue = 0.8f,
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "glowAlpha"
     )
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .alpha(overlayAlpha)
-            .background(Color(0xFF06070B).copy(alpha = 0.92f)),
+            .background(Color(0xFF111111).copy(alpha = 0.95f)),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.scale(iconScale)
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
-                modifier = Modifier.size(110.dp),
+                modifier = Modifier
+                    .size(120.dp)
+                    .scale(iconScale),
                 contentAlignment = Alignment.Center
             ) {
-                // Subtle ambient radial glow
+                // Glow effect
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            Color(0xFF00E471).copy(alpha = if (animationStep >= 1) glowAlpha * 0.35f else 0.1f),
-                            CircleShape
-                        )
+                        .background(Color(0xFF00E471).copy(alpha = glowAlpha * 0.3f), CircleShape)
                 )
 
-                // Step 1: Centered closed lock
-                if (animationStep == 0) {
+                // Icons
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = step == 0,
+                    enter = fadeIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = "Locked",
-                        tint = Color.White.copy(alpha = 0.85f),
+                        tint = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.size(48.dp)
                     )
                 }
 
-                // Step 2: Open lock with glow
-                if (animationStep >= 1) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = step == 1,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
                     Icon(
                         imageVector = Icons.Default.LockOpen,
                         contentDescription = "Unlocked",
                         tint = Color(0xFF00E471),
-                        modifier = Modifier.size(54.dp)
+                        modifier = Modifier.size(56.dp)
+                    )
+                }
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = step == 2,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Success",
+                        tint = Color(0xFF00E471),
+                        modifier = Modifier.size(64.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Step 3: Subtle fade in for text
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.alpha(textAlpha)
-            ) {
-                Text(
-                    text = "Portfolio Unlocked",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.5).sp,
-                        fontSize = 24.sp
-                    ),
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
+            Text(
+                text = "Premium Unlocked!",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+                modifier = Modifier.alpha(checkAlpha)
+            )
 
-                Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "Welcome to Rivava Elite",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
-                    ),
-                    color = Color(0xFF00E471),
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = "Preparing your insights...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.alpha(checkAlpha)
+            )
         }
     }
 }

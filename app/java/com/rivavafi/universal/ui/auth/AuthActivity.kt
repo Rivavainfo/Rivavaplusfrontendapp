@@ -94,45 +94,41 @@ class AuthActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
-        try {
-            val action = intent.action
-            val data = intent.data
+        val action = intent.action
+        val data = intent.data
 
-            if (Intent.ACTION_VIEW == action && data != null) {
-                var mode = data.getQueryParameter("mode")
-                var oobCode = data.getQueryParameter("oobCode")
-                var token = data.getQueryParameter("token")
-                var email = data.getQueryParameter("email")
+        if (Intent.ACTION_VIEW == action && data != null) {
+            var mode = data.getQueryParameter("mode")
+            var oobCode = data.getQueryParameter("oobCode")
+            var token = data.getQueryParameter("token")
+            var email = data.getQueryParameter("email")
 
-                // Check if wrapped in dynamic link query parameter (e.g. link=...)
-                val deepLink = data.getQueryParameter("link")
-                if (!deepLink.isNullOrBlank()) {
-                    val parsedNested = android.net.Uri.parse(deepLink)
-                    if (mode.isNullOrBlank()) mode = parsedNested.getQueryParameter("mode")
-                    if (oobCode.isNullOrBlank()) oobCode = parsedNested.getQueryParameter("oobCode")
-                    if (token.isNullOrBlank()) token = parsedNested.getQueryParameter("token")
-                    if (email.isNullOrBlank()) email = parsedNested.getQueryParameter("email")
-                }
+            // Check if wrapped in dynamic link query parameter (e.g. link=...)
+            val deepLink = data.getQueryParameter("link")
+            if (!deepLink.isNullOrBlank()) {
+                val parsedNested = android.net.Uri.parse(deepLink)
+                if (mode.isNullOrBlank()) mode = parsedNested.getQueryParameter("mode")
+                if (oobCode.isNullOrBlank()) oobCode = parsedNested.getQueryParameter("oobCode")
+                if (token.isNullOrBlank()) token = parsedNested.getQueryParameter("token")
+                if (email.isNullOrBlank()) email = parsedNested.getQueryParameter("email")
+            }
 
-                if (!token.isNullOrBlank() || !oobCode.isNullOrBlank()) {
-                    if (!token.isNullOrBlank() || mode == "resetPassword" || data.path?.contains("/reset") == true || data.toString().contains("resetPassword")) {
-                        val resetIntent = Intent(this, SetNewPasswordActivity::class.java).apply {
-                            putExtra("token", token)
-                            putExtra("email", email)
-                            putExtra("oobCode", oobCode)
-                        }
-                        startActivity(resetIntent)
-                    } else if (mode == "verifyEmail" || data.path?.contains("/verify") == true || data.toString().contains("verifyEmail")) {
-                        if (!oobCode.isNullOrBlank()) {
-                            viewModel.verifyEmailActionCode(oobCode) {
-                                Toast.makeText(this, "Email verified successfully!", Toast.LENGTH_SHORT).show()
-                            }
+            if (!token.isNullOrBlank() || !oobCode.isNullOrBlank()) {
+                if (!token.isNullOrBlank() || mode == "resetPassword" || data.path?.contains("/reset") == true || data.toString().contains("resetPassword")) {
+                    val resetIntent = Intent(this, SetNewPasswordActivity::class.java).apply {
+                        putExtra("token", token)
+                        putExtra("email", email)
+                        putExtra("oobCode", oobCode)
+                    }
+                    startActivity(resetIntent)
+                } else if (mode == "verifyEmail" || data.path?.contains("/verify") == true || data.toString().contains("verifyEmail")) {
+                    if (!oobCode.isNullOrBlank()) {
+                        viewModel.verifyEmailActionCode(oobCode) {
+                            Toast.makeText(this, "Email verified successfully!", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             }
-        } catch (e: Exception) {
-            android.util.Log.e("AuthActivity", "Error processing intent deep links", e)
         }
     }
 
@@ -266,12 +262,9 @@ fun AuthScreenContent(
 
 
     LaunchedEffect(authState) {
-        try {
-            if (authState == AuthState.SUCCESS) {
-                onLoginSuccess(isNewUser == true)
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("AuthActivity", "Error during navigation on auth success", e)
+
+        if (authState == AuthState.SUCCESS) {
+            onLoginSuccess(isNewUser == true)
         }
     }
 
