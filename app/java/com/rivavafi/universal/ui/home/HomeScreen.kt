@@ -19,6 +19,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -108,6 +110,8 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.ChevronRight
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -243,34 +247,26 @@ fun HomeScreen(
                 }
             }
 
-            // 2. Rivava Elite Hero Banner
+            // 2 & 3. Task 4: Rotating 4-Set Homepage Carousel (6s Interval)
             item {
                 val seatsRemaining = (eliteConfig.totalSeats - eliteConfig.occupiedSeats).coerceAtLeast(0)
                 val displaySeats = if (eliteConfig.occupiedSeats > 0 && seatsRemaining > 0) seatsRemaining else 93
-                HomeEliteHeroBanner(
-                    seatsRemaining = displaySeats,
-                    onJoinClick = {
-                        if (isPortfolioUnlocked) {
-                            showBookSessionPopup = true
-                        } else {
-                            Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
-                            onNavigateToRivavaPortfolio()
-                        }
-                    }
-                )
-            }
 
-            // 3. 1 in 1 Sessions with Our Advisor Micro Card
-            item {
-                HomeAdvisorMicroBanner(
-                    onClick = {
+                RotatingHomepageCarousel(
+                    displaySeats = displaySeats,
+                    isPortfolioUnlocked = isPortfolioUnlocked,
+                    onOpenBookSession = {
                         if (isPortfolioUnlocked) {
                             showBookSessionPopup = true
                         } else {
                             Toast.makeText(context, "Premium account required for Rivava Elite 1-on-1 sessions", Toast.LENGTH_LONG).show()
                             onNavigateToRivavaPortfolio()
                         }
-                    }
+                    },
+                    onNavigateToPortfolio = { onNavigateToRivavaPortfolio() },
+                    onNavigateToAnalytics = { onNavigateToAnalytics() },
+                    onNavigateToTransactions = { onNavigateToTransactions() },
+                    onNavigateToTools = { onNavigateToCalculators(null) }
                 )
             }
 
@@ -284,7 +280,7 @@ fun HomeScreen(
                 )
             }
 
-            // 5. Track Your Money Donut Chart and Category Breakdown Matching Reference Image
+            // 5. Track Your Money Donut Chart and Category Breakdown
             item {
                 HomeTrackMoneySection(
                     transactions = transactions,
@@ -293,7 +289,7 @@ fun HomeScreen(
                 )
             }
 
-            // 6. Financial Tools & Calculators 8-Grid Section Matching Reference Image
+            // 6. Financial Tools & Calculators 8-Grid Section
             item {
                 HomeFinancialToolsSection(
                     onSeeAllClick = { onNavigateToCalculators(null) },
@@ -301,7 +297,7 @@ fun HomeScreen(
                 )
             }
 
-            // 7. Specials Section Directly Below Financial Tools & Calculators
+            // 7. Specials Section
             item {
                 HomeSpecialsSection(
                     isPremium = isPortfolioUnlocked,
@@ -399,7 +395,6 @@ fun HomeScreen(
             }
         }
 
-        // Task 3: Redesigned 1-on-1 Session Booking Popup
         if (showBookSessionPopup) {
             BookSessionPopup(
                 initialName = userName ?: "",
@@ -493,6 +488,293 @@ fun HomeScreen(
                     }
                 }
             )
+        }
+    }
+}
+
+/**
+ * Task 4: Rotating Homepage Carousel supporting 4 Card Sets with 6s Auto-Rotation
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun RotatingHomepageCarousel(
+    displaySeats: Int,
+    isPortfolioUnlocked: Boolean,
+    onOpenBookSession: () -> Unit,
+    onNavigateToPortfolio: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
+    onNavigateToTransactions: () -> Unit,
+    onNavigateToTools: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val pageCount = 4
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { pageCount })
+
+    // Automatic 6-second rotation interval
+    LaunchedEffect(pagerState) {
+        while (true) {
+            delay(6000)
+            if (!pagerState.isScrollInProgress) {
+                val nextPage = (pagerState.currentPage + 1) % pageCount
+                pagerState.animateScrollToPage(nextPage, animationSpec = tween(450))
+            }
+        }
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp), // Fixed height to prevent vertical layout jumping
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                when (page) {
+                    0 -> {
+                        // CARD SET 1: EXISTING CARDS
+                        HomeEliteHeroBanner(
+                            seatsRemaining = displaySeats,
+                            onJoinClick = onOpenBookSession
+                        )
+                        HomeAdvisorMicroBanner(
+                            onClick = onOpenBookSession
+                        )
+                    }
+                    1 -> {
+                        // CARD SET 2: RIVAVA ELITE & SPECIAL OFFER
+                        CarouselBannerCard(
+                            badgeText = "RIVAVA ELITE",
+                            badgeColor = Color(0xFFFFD700),
+                            title = "Explore Premium Research",
+                            subtitle = "Access institutional stock analysis & market intelligence.",
+                            buttonText = "Open Portfolio →",
+                            buttonBgColor = Color(0xFFFFD700),
+                            buttonTextColor = Color(0xFF0F0B00),
+                            onClick = onNavigateToPortfolio
+                        )
+                        CarouselBannerCard(
+                            badgeText = "SPECIAL LIMITED TIME OFFER",
+                            badgeColor = Color(0xFFFF3366),
+                            title = "1-on-1 Advisor Sessions",
+                            subtitle = "Connect With Your Advisor at special limited price of ₹96 only (original price ₹399)",
+                            buttonText = "Book Session @ ₹96 →",
+                            buttonBgColor = Color(0xFF00E471),
+                            buttonTextColor = Color(0xFF080C16),
+                            onClick = onOpenBookSession,
+                            strikeThroughPrice = "₹399",
+                            specialPrice = "₹96"
+                        )
+                    }
+                    2 -> {
+                        // CARD SET 3: FINANCIAL INSIGHTS
+                        CarouselBannerCard(
+                            badgeText = "SPENDING ANALYTICS",
+                            badgeColor = Color(0xFF00A3FF),
+                            title = "Track Your Spending",
+                            subtitle = "Understand where your money goes with visual category charts.",
+                            buttonText = "Open Analytics →",
+                            buttonBgColor = Color(0xFF00A3FF),
+                            buttonTextColor = Color.White,
+                            onClick = onNavigateToAnalytics
+                        )
+                        CarouselBannerCard(
+                            badgeText = "TRANSACTION LOG",
+                            badgeColor = Color(0xFFA855F7),
+                            title = "Transaction History",
+                            subtitle = "Explore your daily money activity and search all past debits.",
+                            buttonText = "Open Transactions →",
+                            buttonBgColor = Color(0xFFA855F7),
+                            buttonTextColor = Color.White,
+                            onClick = onNavigateToTransactions
+                        )
+                    }
+                    3 -> {
+                        // CARD SET 4: FINANCIAL TOOLS & RESEARCH
+                        CarouselBannerCard(
+                            badgeText = "SMART CALCULATORS",
+                            badgeColor = Color(0xFF00E471),
+                            title = "Financial Calculators",
+                            subtitle = "Plan loans, SIP, profit & loss, and interest smarter.",
+                            buttonText = "Open Tools →",
+                            buttonBgColor = Color(0xFF00E471),
+                            buttonTextColor = Color(0xFF080C16),
+                            onClick = onNavigateToTools
+                        )
+                        CarouselBannerCard(
+                            badgeText = "RESEARCH & REPORTS",
+                            badgeColor = Color(0xFFFFB800),
+                            title = "Research Reports",
+                            subtitle = "Explore Rivava institutional research and market sector reports.",
+                            buttonText = "View Reports →",
+                            buttonBgColor = Color(0xFFFFB800),
+                            buttonTextColor = Color(0xFF090D17),
+                            onClick = onNavigateToPortfolio
+                        )
+                    }
+                }
+            }
+        }
+
+        // Page Indicator Dots
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(pageCount) { index ->
+                val isSelected = pagerState.currentPage == index
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .height(6.dp)
+                        .width(if (isSelected) 18.dp else 6.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) Color(0xFF00A3FF) else Color(0xFF26334D))
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Generic Carousel Card for Sets 2, 3, and 4
+ */
+@Composable
+fun CarouselBannerCard(
+    badgeText: String,
+    badgeColor: Color,
+    title: String,
+    subtitle: String,
+    buttonText: String,
+    buttonBgColor: Color,
+    buttonTextColor: Color,
+    onClick: () -> Unit,
+    strikeThroughPrice: String? = null,
+    specialPrice: String? = null,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(130.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, Color(0xFF1E253A), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF101524))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF131828), Color(0xFF0A0E18))
+                    )
+                )
+                .padding(14.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top Row: Badge & Offer Tag
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(badgeColor.copy(alpha = 0.15f))
+                            .border(1.dp, badgeColor.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = badgeColor
+                            )
+                        )
+                    }
+
+                    if (strikeThroughPrice != null && specialPrice != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = strikeThroughPrice,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF94A3B8),
+                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                )
+                            )
+                            Text(
+                                text = specialPrice,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF00E471)
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Middle Title & Subtitle
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 15.sp,
+                            color = Color.White
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color(0xFF94A3B8),
+                            fontSize = 11.sp,
+                            lineHeight = 14.sp
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Bottom Action Button
+                Surface(
+                    onClick = onClick,
+                    shape = RoundedCornerShape(10.dp),
+                    color = buttonBgColor,
+                    modifier = Modifier.height(28.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = buttonText,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = buttonTextColor,
+                                fontSize = 10.5.sp
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 }
