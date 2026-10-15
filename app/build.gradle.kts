@@ -11,7 +11,7 @@ import java.io.FileInputStream
 
 android {
     namespace = "com.rivavafi.universal"
-    compileSdk = 35
+    compileSdk = 36
 
     // Load local.properties for local builds
     val localProperties = Properties()
@@ -62,9 +62,9 @@ android {
     defaultConfig {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 34
-        versionName = "34"
+        targetSdk = 36
+        versionCode = 35
+        versionName = "35"
 
         // API Key injection with safe fallbacks
         buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${System.getenv("ALPHA_VANTAGE_API_KEY") ?: localProperties.getProperty("alphavantage.apikey") ?: ""}\"")
