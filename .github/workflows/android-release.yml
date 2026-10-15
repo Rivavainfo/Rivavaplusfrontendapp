@@ -30,9 +30,55 @@ jobs:
       - name: Grant Execute Permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build APKs and AABs (Signed Release or Debug Fallback)
+      - name: Restore Keystore and Verify Credentials
         env:
-          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.BASE64_KEYSTORE || secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ERROR: Neither BASE64_KEYSTORE nor RELEASE_KEYSTORE_BASE64 secret is configured!"
+            exit 1
+          fi
+          if [ -z "$RELEASE_STORE_PASSWORD" ]; then
+            echo "ERROR: RELEASE_STORE_PASSWORD secret is missing!"
+            exit 1
+          fi
+          if [ -z "$RELEASE_KEY_ALIAS" ]; then
+            echo "ERROR: RELEASE_KEY_ALIAS secret is missing!"
+            exit 1
+          fi
+          if [ -z "$RELEASE_KEY_PASSWORD" ]; then
+            echo "ERROR: RELEASE_KEY_PASSWORD secret is missing!"
+            exit 1
+          fi
+
+          echo "Decoding keystore to app/release-key.jks..."
+          echo "$KEYSTORE_BASE64" | base64 -d > app/release-key.jks
+
+          if [ ! -s app/release-key.jks ]; then
+            echo "ERROR: Decoded keystore file app/release-key.jks is missing or empty!"
+            exit 1
+          fi
+
+          echo "Verifying keystore and key alias with keytool..."
+          keytool -list -v -keystore app/release-key.jks -storepass "$RELEASE_STORE_PASSWORD" -alias "$RELEASE_KEY_ALIAS" > keystore_info.txt
+
+          if ! grep -q "Entry type: PrivateKeyEntry" keystore_info.txt && ! grep -q "Entry type: keyEntry" keystore_info.txt; then
+            echo "ERROR: Alias '$RELEASE_KEY_ALIAS' in keystore is not a valid PrivateKeyEntry!"
+            rm -f keystore_info.txt
+            exit 1
+          fi
+
+          echo " Keystore verification successful."
+          echo "Release Key Certificate Fingerprint (SHA-256):"
+          grep "SHA256:" keystore_info.txt || grep "SHA-256:" keystore_info.txt || true
+          rm -f keystore_info.txt
+
+      - name: Build Signed Release APKs and AABs
+        env:
+          RELEASE_STORE_FILE: "release-key.jks"
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
@@ -40,63 +86,58 @@ jobs:
           mkdir -p build/outputs/artifacts/apk
           mkdir -p build/outputs/artifacts/aab
 
-          if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
-            echo "Release signing secrets detected. Decoding keystore and building signed Release APKs and AABs..."
-            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > app/release-key.jks
-            ./gradlew :app:assemblePlayRelease :app:assembleFullSmsRelease :app:bundlePlayRelease :app:bundleFullSmsRelease
+          ./gradlew :app:assemblePlayRelease :app:assembleFullSmsRelease :app:bundlePlayRelease :app:bundleFullSmsRelease
 
-            PLAY_APK=$(find app/build/outputs/apk/play/release -name "*.apk" | head -n 1)
-            FULLSMS_APK=$(find app/build/outputs/apk/fullSms/release -name "*.apk" | head -n 1)
-            PLAY_AAB=$(find app/build/outputs/bundle/playRelease -name "*.aab" | head -n 1)
-            FULLSMS_AAB=$(find app/build/outputs/bundle/fullSmsRelease -name "*.aab" | head -n 1)
+          PLAY_APK=$(find app/build/outputs/apk/play/release -name "*.apk" | head -n 1)
+          FULLSMS_APK=$(find app/build/outputs/apk/fullSms/release -name "*.apk" | head -n 1)
+          PLAY_AAB=$(find app/build/outputs/bundle/playRelease -name "*.aab" | head -n 1)
+          FULLSMS_AAB=$(find app/build/outputs/bundle/fullSmsRelease -name "*.aab" | head -n 1)
 
-            if [ -n "$PLAY_APK" ] && [ -n "$FULLSMS_APK" ] && [ -n "$PLAY_AAB" ] && [ -n "$FULLSMS_AAB" ]; then
-              cp "$PLAY_APK" build/outputs/artifacts/apk/Rivava-Play.apk
-              cp "$FULLSMS_APK" build/outputs/artifacts/apk/Rivava-FullSMS.apk
-              cp "$PLAY_AAB" build/outputs/artifacts/aab/Rivava-Play.aab
-              cp "$FULLSMS_AAB" build/outputs/artifacts/aab/Rivava-FullSMS.aab
-            else
-              echo "Error: Release build files (APK or AAB) were not found after build!"
-              exit 1
-            fi
+          if [ -n "$PLAY_APK" ] && [ -n "$FULLSMS_APK" ] && [ -n "$PLAY_AAB" ] && [ -n "$FULLSMS_AAB" ]; then
+            cp "$PLAY_APK" build/outputs/artifacts/apk/Rivava-Play.apk
+            cp "$FULLSMS_APK" build/outputs/artifacts/apk/Rivava-FullSMS.apk
+            cp "$PLAY_AAB" build/outputs/artifacts/aab/Rivava-Play.aab
+            cp "$FULLSMS_AAB" build/outputs/artifacts/aab/Rivava-FullSMS.aab
           else
-            echo "=========================================================================================="
-            echo "NOTICE: Release signing secrets are missing or incomplete."
-            echo "Building Debug APKs and Debug AABs instead for initial testing and distribution."
-            echo ""
-            echo "To enable signed release APKs and AABs in GitHub Actions:"
-            echo "  1. Base64-encode your keystore: base64 -w 0 app/release-key.jks"
-            echo "  2. Go to Repository Settings -> Secrets and variables -> Actions"
-            echo "  3. Add the following repository secrets:"
-            echo "     - RELEASE_KEYSTORE_BASE64"
-            echo "     - RELEASE_STORE_PASSWORD"
-            echo "     - RELEASE_KEY_ALIAS"
-            echo "     - RELEASE_KEY_PASSWORD"
-            echo "=========================================================================================="
-
-            ./gradlew :app:assemblePlayDebug :app:assembleFullSmsDebug :app:bundlePlayDebug :app:bundleFullSmsDebug
-
-            cp app/build/outputs/apk/play/debug/app-play-debug.apk build/outputs/artifacts/apk/Rivava-Play.apk
-            cp app/build/outputs/apk/fullSms/debug/app-fullSms-debug.apk build/outputs/artifacts/apk/Rivava-FullSMS.apk
-            cp app/build/outputs/bundle/playDebug/app-play-debug.aab build/outputs/artifacts/aab/Rivava-Play.aab
-            cp app/build/outputs/bundle/fullSmsDebug/app-fullSms-debug.aab build/outputs/artifacts/aab/Rivava-FullSMS.aab
+            echo "ERROR: Required Release build files (APK or AAB) were not found after Gradle build!"
+            exit 1
           fi
 
       - name: Clean Up Keystore File
         if: always()
         run: rm -f app/release-key.jks
 
-      - name: Verify APK and AAB Artifacts Exist
+      - name: Verify Digital Signatures on Release AABs and APKs
         run: |
-          if [ ! -f "build/outputs/artifacts/apk/Rivava-Play.apk" ] || [ ! -f "build/outputs/artifacts/apk/Rivava-FullSMS.apk" ]; then
-            echo "Error: One or both expected APK artifacts are missing from build output!"
+          echo "Verifying AAB digital signatures with jarsigner..."
+
+          jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-Play.aab > play_aab_verify.txt 2>&1
+          if ! grep -q "jar verified" play_aab_verify.txt; then
+            echo "ERROR: Rivava-Play.aab digital signature verification failed!"
+            cat play_aab_verify.txt
             exit 1
           fi
-          if [ ! -f "build/outputs/artifacts/aab/Rivava-Play.aab" ] || [ ! -f "build/outputs/artifacts/aab/Rivava-FullSMS.aab" ]; then
-            echo "Error: One or both expected AAB artifacts are missing from build output!"
+          echo " Rivava-Play.aab digital signature verified."
+          rm -f play_aab_verify.txt
+
+          jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-FullSMS.aab > fullsms_aab_verify.txt 2>&1
+          if ! grep -q "jar verified" fullsms_aab_verify.txt; then
+            echo "ERROR: Rivava-FullSMS.aab digital signature verification failed!"
+            cat fullsms_aab_verify.txt
             exit 1
           fi
-          echo "Verification successful: Both APK and AAB artifacts generated successfully."
+          echo " Rivava-FullSMS.aab digital signature verified."
+          rm -f fullsms_aab_verify.txt
+
+          echo "Verifying APK signatures with apksigner..."
+          if command -v apksigner > /dev/null; then
+            apksigner verify --verbose build/outputs/artifacts/apk/Rivava-Play.apk
+            apksigner verify --verbose build/outputs/artifacts/apk/Rivava-FullSMS.apk
+          else
+            jarsigner -verify build/outputs/artifacts/apk/Rivava-Play.apk
+            jarsigner -verify build/outputs/artifacts/apk/Rivava-FullSMS.apk
+          fi
+          echo " APK digital signatures verified."
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
@@ -105,7 +146,14 @@ jobs:
           path: build/outputs/artifacts/apk/
           retention-days: 30
 
-      - name: Upload AAB Artifacts
+      - name: Upload Play Release AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rivava-Play-AAB
+          path: build/outputs/artifacts/aab/Rivava-Play.aab
+          retention-days: 30
+
+      - name: Upload All AAB Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Rivava-AAB
