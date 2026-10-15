@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.Icon
@@ -38,9 +39,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 @Composable
@@ -50,41 +49,32 @@ fun PremiumUnlockAnimation(
     var step by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        // Total duration ~1000ms (800-1200ms range)
-        delay(250)
-        step = 1 // Lock opens with scale and glow
-        delay(350)
-        step = 2 // Text "Portfolio Unlocked" & "Welcome to Rivava Elite" fades in
-        delay(400)
-        step = 3 // Fade out overlay
-        delay(100)
+        delay(300)
+        step = 1 // Lock turns to unlocked
+        delay(600)
+        step = 2 // Checkmark appears
+        delay(800)
         onAnimationComplete()
     }
 
     val iconScale by animateFloatAsState(
-        targetValue = if (step >= 1) 1.15f else 0.9f,
-        animationSpec = tween(350, easing = FastOutSlowInEasing),
+        targetValue = if (step >= 1) 1.2f else 1f,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
         label = "iconScale"
     )
 
-    val textAlpha by animateFloatAsState(
+    val checkAlpha by animateFloatAsState(
         targetValue = if (step >= 2) 1f else 0f,
-        animationSpec = tween(300),
-        label = "textAlpha"
-    )
-
-    val overlayAlpha by animateFloatAsState(
-        targetValue = if (step >= 3) 0f else 1f,
-        animationSpec = tween(200),
-        label = "overlayAlpha"
+        animationSpec = tween(400),
+        label = "checkAlpha"
     )
 
     val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
     val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
+        initialValue = 0.4f,
+        targetValue = 0.8f,
         animationSpec = infiniteRepeatable(
-            animation = tween(600, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "glowAlpha"
@@ -93,24 +83,24 @@ fun PremiumUnlockAnimation(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .alpha(overlayAlpha)
-            .background(Color(0xFF060913).copy(alpha = 0.92f)),
+            .background(Color(0xFF111111).copy(alpha = 0.95f)),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
-                    .size(110.dp)
+                    .size(120.dp)
                     .scale(iconScale),
                 contentAlignment = Alignment.Center
             ) {
-                // Subtle glow effect
+                // Glow effect
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0xFF00E471).copy(alpha = glowAlpha * 0.25f), CircleShape)
+                        .background(Color(0xFF00E471).copy(alpha = glowAlpha * 0.3f), CircleShape)
                 )
 
+                // Icons
                 androidx.compose.animation.AnimatedVisibility(
                     visible = step == 0,
                     enter = fadeIn(),
@@ -119,49 +109,54 @@ fun PremiumUnlockAnimation(
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = "Locked",
-                        tint = Color.White.copy(alpha = 0.85f),
+                        tint = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.size(48.dp)
                     )
                 }
 
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = step >= 1,
+                    visible = step == 1,
                     enter = fadeIn() + scaleIn(),
-                    exit = fadeOut()
+                    exit = fadeOut() + scaleOut()
                 ) {
                     Icon(
                         imageVector = Icons.Default.LockOpen,
                         contentDescription = "Unlocked",
                         tint = Color(0xFF00E471),
-                        modifier = Modifier.size(54.dp)
+                        modifier = Modifier.size(56.dp)
+                    )
+                }
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = step == 2,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Success",
+                        tint = Color(0xFF00E471),
+                        modifier = Modifier.size(64.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Portfolio Unlocked",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 24.sp
-                ),
+                text = "Premium Unlocked!",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
-                modifier = Modifier.alpha(textAlpha),
-                textAlign = TextAlign.Center
+                modifier = Modifier.alpha(checkAlpha)
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Welcome to Rivava Elite",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                ),
-                color = Color(0xFF00C6FF),
-                modifier = Modifier.alpha(textAlpha),
-                textAlign = TextAlign.Center
+                text = "Preparing your insights...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.alpha(checkAlpha)
             )
         }
     }

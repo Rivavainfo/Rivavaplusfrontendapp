@@ -55,7 +55,6 @@ import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Sms
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +69,6 @@ fun SettingsScreen(
     val banksDetected by viewModel.banksDetected.collectAsState()
     val showSmsDetails by viewModel.showSmsDetails.collectAsState()
     val terminologyMode by viewModel.terminologyMode.collectAsState()
-    val smsTrackingMode by viewModel.smsTrackingMode.collectAsState()
     val profileState by profileViewModel.profileState.collectAsState()
 
     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
@@ -92,16 +90,11 @@ fun SettingsScreen(
     var deleteConfirmationText by remember { mutableStateOf("") }
     var isDeleting by remember { mutableStateOf(false) }
 
-    val isSmsScanEnabled = smsTrackingMode != "OFF"
-
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions[Manifest.permission.READ_SMS] == true && permissions[Manifest.permission.RECEIVE_SMS] == true
-        if (granted) {
-            viewModel.setSmsTrackingMode("ALL")
-            viewModel.rescanSms(context)
-        } else {
+        if (!granted) {
             viewModel.setSmsTrackingMode("OFF")
             showSmsSettingsDialog = true
         }
@@ -250,80 +243,6 @@ fun SettingsScreen(
                 }
             }
 
-            // FINANCIAL TRACKING SECTION
-            SettingsGroupCard(title = "FINANCIAL TRACKING") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(11.dp))
-                                .background(Color(0xFF1B2338)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Sms,
-                                contentDescription = null,
-                                tint = Color(0xFF00A3FF),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                "Scan Messages",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = 14.sp
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                "Automatically detect transactions from SMS",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFF869AB8),
-                                    fontSize = 11.sp
-                                )
-                            )
-                        }
-                    }
-
-                    Switch(
-                        checked = isSmsScanEnabled,
-                        onCheckedChange = { enabled ->
-                            if (enabled) {
-                                val hasReadSms = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-                                val hasReceiveSms = ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-
-                                if (hasReadSms && hasReceiveSms) {
-                                    viewModel.setSmsTrackingMode("ALL")
-                                    viewModel.rescanSms(context)
-                                } else {
-                                    showSmsRationaleDialog = true
-                                }
-                            } else {
-                                viewModel.setSmsTrackingMode("OFF")
-                            }
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFF00A3FF)
-                        )
-                    )
-                }
-            }
-
             // PREFERENCES SECTION
             SettingsGroupCard(title = "PREFERENCES") {
                 Row(
@@ -411,7 +330,7 @@ fun SettingsScreen(
                     title = "Privacy Policy",
                     subtitle = "Read about data protection & encryption",
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.rivava.in/privacy-policy.html"))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://therivava.com/privacy"))
                         try { context.startActivity(intent) } catch (_: Exception) {}
                     }
                 )
