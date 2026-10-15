@@ -22,12 +22,20 @@ android {
 
     signingConfigs {
         create("release") {
-            // Path to the keystore file inside the 'app' folder (configurable via RELEASE_STORE_FILE)
+            // Path to the keystore file (configurable via RELEASE_STORE_FILE, defaulting to release-key.jks)
             val storeFilePath = System.getenv("RELEASE_STORE_FILE")
                 ?: localProperties.getProperty("RELEASE_STORE_FILE")
                 ?: "release-key.jks"
-            val keystoreFile = file(storeFilePath)
-            storeFile = keystoreFile
+            val keystoreFile = sequenceOf(
+                file(storeFilePath),
+                rootProject.file(storeFilePath),
+                file("release-key.jks"),
+                rootProject.file("app/release-key.jks")
+            ).firstOrNull { it.exists() && it.isFile }
+
+            if (keystoreFile != null) {
+                storeFile = keystoreFile
+            }
 
             // Prioritize Environment Variables (CI), fallback to local.properties (Local)
             val storePwd = System.getenv("RELEASE_STORE_PASSWORD")
@@ -37,7 +45,7 @@ android {
             val kPwd = System.getenv("RELEASE_KEY_PASSWORD")
                 ?: localProperties.getProperty("RELEASE_KEY_PASSWORD")
 
-            if (keystoreFile.exists() && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
+            if (keystoreFile != null && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
                 storePassword = storePwd
                 keyAlias = kAlias
                 keyPassword = kPwd
