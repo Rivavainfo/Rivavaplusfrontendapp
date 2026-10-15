@@ -22,20 +22,12 @@ android {
 
     signingConfigs {
         create("release") {
-            // Path to the keystore file (configurable via RELEASE_STORE_FILE, defaulting to release-key.jks)
+            // Path to the keystore file inside the 'app' folder (configurable via RELEASE_STORE_FILE)
             val storeFilePath = System.getenv("RELEASE_STORE_FILE")
                 ?: localProperties.getProperty("RELEASE_STORE_FILE")
                 ?: "release-key.jks"
-            val keystoreFile = sequenceOf(
-                file(storeFilePath),
-                rootProject.file(storeFilePath),
-                file("release-key.jks"),
-                rootProject.file("app/release-key.jks")
-            ).firstOrNull { it.exists() && it.isFile }
-
-            if (keystoreFile != null) {
-                storeFile = keystoreFile
-            }
+            val keystoreFile = file(storeFilePath)
+            storeFile = keystoreFile
 
             // Prioritize Environment Variables (CI), fallback to local.properties (Local)
             val storePwd = System.getenv("RELEASE_STORE_PASSWORD")
@@ -45,7 +37,7 @@ android {
             val kPwd = System.getenv("RELEASE_KEY_PASSWORD")
                 ?: localProperties.getProperty("RELEASE_KEY_PASSWORD")
 
-            if (keystoreFile != null && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
+            if (keystoreFile.exists() && !storePwd.isNullOrEmpty() && !kAlias.isNullOrEmpty() && !kPwd.isNullOrEmpty()) {
                 storePassword = storePwd
                 keyAlias = kAlias
                 keyPassword = kPwd
@@ -63,8 +55,8 @@ android {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
         targetSdk = 36
-        versionCode = 35
-        versionName = "35"
+        versionCode = 33
+        versionName = "33"
 
         // API Key injection with safe fallbacks
         buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${System.getenv("ALPHA_VANTAGE_API_KEY") ?: localProperties.getProperty("alphavantage.apikey") ?: ""}\"")
