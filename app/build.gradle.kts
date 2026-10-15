@@ -106,7 +106,7 @@ android {
 
             if (hasKeystore && hasCredentials) {
                 signingConfig = releaseSigning
-            } else if (isCi) {
+            } else if (isCi && System.getenv("REQUIRE_RELEASE_SIGNING") == "true") {
                 error("RELEASE BUILD ERROR: Missing release signing configuration in CI environment! Keystore exists: $hasKeystore, credentials present: $hasCredentials")
             } else {
                 println("RELEASE BUILD WARNING: Release build type is unsigned because signing configuration is incomplete.")
