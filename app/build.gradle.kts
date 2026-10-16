@@ -12,7 +12,7 @@ plugins {
 
 android {
     namespace = "com.rivavafi.universal"
-    compileSdk = 35
+    compileSdk = 36
 
     // Load local.properties for local development
     val localProperties = Properties()
@@ -100,9 +100,9 @@ android {
     defaultConfig {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 35
-        versionName = "35"
+        targetSdk = 36
+        versionCode = 39
+        versionName = "39"
 
         // API key injection
         buildConfigField(
