@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 || secrets.BASE64_KEYSTORE }}
       RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
       RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
@@ -42,17 +42,37 @@ jobs:
         run: |
           set -euo pipefail
 
-          for secret in \
-            RELEASE_KEYSTORE_BASE64 \
-            RELEASE_STORE_PASSWORD \
-            RELEASE_KEY_ALIAS \
-            RELEASE_KEY_PASSWORD
-          do
-            if [ -z "${!secret:-}" ]; then
-              echo "::error::Missing signing secret: $secret"
-              exit 1
-            fi
-          done
+          MISSING=0
+
+          if [ -z "${RELEASE_KEYSTORE_BASE64:-}" ]; then
+            echo "::error::Missing signing keystore secret: Neither RELEASE_KEYSTORE_BASE64 nor BASE64_KEYSTORE is set in GitHub Repository Secrets."
+            echo "Please set RELEASE_KEYSTORE_BASE64 (or BASE64_KEYSTORE) in GitHub Settings -> Secrets and variables -> Actions."
+            echo "To generate the Base64 string from your release-key.jks on Windows PowerShell, run:"
+            echo '  [Convert]::ToBase64String([System.IO.File]::ReadAllBytes("path\to\release-key.jks")) | Set-Clipboard'
+            MISSING=1
+          fi
+
+          if [ -z "${RELEASE_STORE_PASSWORD:-}" ]; then
+            echo "::error::Missing signing secret: RELEASE_STORE_PASSWORD"
+            echo "Please set RELEASE_STORE_PASSWORD in GitHub Settings -> Secrets and variables -> Actions."
+            MISSING=1
+          fi
+
+          if [ -z "${RELEASE_KEY_ALIAS:-}" ]; then
+            echo "::error::Missing signing secret: RELEASE_KEY_ALIAS"
+            echo "Please set RELEASE_KEY_ALIAS in GitHub Settings -> Secrets and variables -> Actions."
+            MISSING=1
+          fi
+
+          if [ -z "${RELEASE_KEY_PASSWORD:-}" ]; then
+            echo "::error::Missing signing secret: RELEASE_KEY_PASSWORD"
+            echo "Please set RELEASE_KEY_PASSWORD in GitHub Settings -> Secrets and variables -> Actions."
+            MISSING=1
+          fi
+
+          if [ "$MISSING" -eq 1 ]; then
+            exit 1
+          fi
 
           echo "All release signing secrets are present."
 
@@ -62,16 +82,28 @@ jobs:
           set -euo pipefail
 
           printf '%s' "$RELEASE_KEYSTORE_BASE64" \
+            | tr -d '\r\n ' \
             | base64 --decode > app/release-key.jks
 
           chmod 600 app/release-key.jks
-          test -s app/release-key.jks
 
-          keytool -list \
+          if [ ! -s app/release-key.jks ]; then
+            echo "::error::Decoded keystore file app/release-key.jks is empty or missing. Check Base64 secret format."
+            exit 1
+          fi
+
+          KEYTOOL_OUT=$(keytool -list -v \
             -keystore app/release-key.jks \
             -storepass:env RELEASE_STORE_PASSWORD \
-            -alias "$RELEASE_KEY_ALIAS" \
-            > /dev/null
+            -alias "$RELEASE_KEY_ALIAS" 2>&1) || {
+              echo "::error::Failed to open keystore or locate alias '$RELEASE_KEY_ALIAS' with supplied store password."
+              exit 1
+            }
+
+          if ! grep -qi "PrivateKeyEntry" <<< "$KEYTOOL_OUT"; then
+            echo "::error::Key alias '$RELEASE_KEY_ALIAS' is not a PrivateKeyEntry in app/release-key.jks."
+            exit 1
+          fi
 
           echo "Release signing keystore validated."
 
