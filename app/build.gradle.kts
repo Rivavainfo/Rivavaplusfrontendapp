@@ -61,7 +61,7 @@ android {
             "RIVAVA RELEASE SIGNING FAILED: " +
             "A valid keystore file and all four signing " +
             "configuration values are required. " +
-            "Check RELEASE_KEYSTORE_BASE64, " +
+            "Check RELEASE_KEYSTORE_BASE64 (or BASE64_KEYSTORE), " +
             "RELEASE_STORE_PASSWORD, " +
             "RELEASE_KEY_ALIAS and " +
             "RELEASE_KEY_PASSWORD in GitHub Actions. " +
