@@ -124,49 +124,41 @@ jobs:
         run: |
           set -euo pipefail
 
+          rm -rf build/outputs/artifacts
           mkdir -p build/outputs/artifacts/apk
           mkdir -p build/outputs/artifacts/aab
 
-          copy_artifact() {
-            local source_dir="$1"
-            local extension="$2"
-            local destination="$3"
-            local source_file
+          copy_explicit_artifact() {
+            local source_file="$1"
+            local destination="$2"
 
-            source_file=$(find "$source_dir" \
-              -type f -name "*.$extension" \
-              -print -quit)
-
-            if [ -z "$source_file" ]; then
-              echo "::error::Artifact missing in $source_dir"
+            if [ ! -f "$source_file" ] || [ ! -s "$source_file" ]; then
+              echo "::error::Expected release artifact missing or empty at $source_file"
               exit 1
             fi
 
             cp "$source_file" "$destination"
             test -s "$destination"
+            echo "Collected: $(basename "$destination") from $source_file"
           }
 
-          copy_artifact \
-            app/build/outputs/apk/play/release \
-            apk \
+          copy_explicit_artifact \
+            app/build/outputs/apk/play/release/app-play-release.apk \
             build/outputs/artifacts/apk/Rivava-Play.apk
 
-          copy_artifact \
-            app/build/outputs/apk/fullSms/release \
-            apk \
+          copy_explicit_artifact \
+            app/build/outputs/apk/fullSms/release/app-fullSms-release.apk \
             build/outputs/artifacts/apk/Rivava-FullSMS.apk
 
-          copy_artifact \
-            app/build/outputs/bundle/playRelease \
-            aab \
+          copy_explicit_artifact \
+            app/build/outputs/bundle/playRelease/app-play-release.aab \
             build/outputs/artifacts/aab/Rivava-Play.aab
 
-          copy_artifact \
-            app/build/outputs/bundle/fullSmsRelease \
-            aab \
+          copy_explicit_artifact \
+            app/build/outputs/bundle/fullSmsRelease/app-fullSms-release.aab \
             build/outputs/artifacts/aab/Rivava-FullSMS.aab
 
-          echo "All four release artifacts collected."
+          echo "All four release artifacts successfully collected."
 
       - name: Verify APK and AAB Signatures
         shell: bash
@@ -188,22 +180,26 @@ jobs:
           )
 
           if [[ ! "$EXPECTED" =~ ^[0-9A-F]{64}$ ]]; then
-            echo "::error::Cannot read keystore fingerprint."
+            echo "::error::Cannot read keystore fingerprint. Parsed output: '$EXPECTED'"
             exit 1
           fi
 
-          echo "Expected signing SHA-256: $EXPECTED"
+          echo "Expected signing SHA-256 fingerprint: $EXPECTED"
 
+          # Verify AAB artifacts
           for aab in build/outputs/artifacts/aab/*.aab; do
-            echo "Verifying $aab"
+            filename=$(basename "$aab")
+            echo "Verifying AAB: $filename"
 
-            RESULT=$(jarsigner -verify -verbose "$aab" 2>&1) || {
-              echo "$RESULT"
+            JARSIGNER_OUT=$(jarsigner -verify -verbose "$aab" 2>&1) || {
+              echo "::error::jarsigner failed for $filename"
+              echo "$JARSIGNER_OUT"
               exit 1
             }
 
-            if ! grep -q 'jar verified.' <<< "$RESULT"; then
-              echo "::error::AAB is not signed: $aab"
+            if ! grep -q 'jar verified.' <<< "$JARSIGNER_OUT"; then
+              echo "::error::AAB jar verification failed for $filename. jarsigner output:"
+              echo "$JARSIGNER_OUT"
               exit 1
             fi
 
@@ -214,14 +210,25 @@ jobs:
                 | normalize_fingerprint
             )
 
-            if [ "$ACTUAL" != "$EXPECTED" ]; then
-              echo "::error::AAB signing certificate mismatch."
+            PARSE_SUCCESS=0
+            if [[ "$ACTUAL" =~ ^[0-9A-F]{64}$ ]]; then
+              PARSE_SUCCESS=1
+            fi
+
+            if [ "$PARSE_SUCCESS" -ne 1 ] || [ "$ACTUAL" != "$EXPECTED" ]; then
+              echo "::error::AAB signing certificate mismatch for $filename"
+              echo "Artifact Filename: $filename"
+              echo "Expected SHA-256: $EXPECTED"
+              echo "Actual SHA-256: $ACTUAL"
+              echo "AAB Signature Valid: YES"
+              echo "Fingerprint Parsing Succeeded: $( [ "$PARSE_SUCCESS" -eq 1 ] && echo "YES" || echo "NO" )"
               exit 1
             fi
 
-            echo "AAB signature verified."
+            echo "AAB $filename verified successfully. SHA-256: $ACTUAL"
           done
 
+          # Locate apksigner tool
           APKSIGNER=$(
             find "$ANDROID_HOME/build-tools" \
               -type f -name apksigner \
@@ -229,33 +236,62 @@ jobs:
           )
 
           if [ -z "$APKSIGNER" ]; then
-            echo "::error::Android apksigner not found."
+            echo "::error::Android apksigner tool not found in $ANDROID_HOME/build-tools."
             exit 1
           fi
 
+          # Verify APK artifacts
           for apk in build/outputs/artifacts/apk/*.apk; do
-            echo "Verifying $apk"
+            filename=$(basename "$apk")
+            echo "Verifying APK: $filename"
 
-            DETAILS=$("$APKSIGNER" verify \
-              --verbose --print-certs "$apk")
+            APKSIGNER_OUT=$("$APKSIGNER" verify --verbose --print-certs "$apk" 2>&1)
+            VERIFY_STATUS=$?
+
+            APK_VALID="NO"
+            if [ $VERIFY_STATUS -eq 0 ] && grep -q "Verifies" <<< "$APKSIGNER_OUT"; then
+              APK_VALID="YES"
+            fi
 
             ACTUAL=$(
-              printf '%s\n' "$DETAILS" \
-                | sed -n \
-                  's/^Signer #1 certificate SHA-256 digest:[[:space:]]*//p' \
+              printf '%s\n' "$APKSIGNER_OUT" \
+                | sed -n 's/^[[:space:]]*Signer #1 certificate SHA-256 digest:[[:space:]]*//p' \
                 | head -n 1 \
                 | normalize_fingerprint
             )
 
-            if [ "$ACTUAL" != "$EXPECTED" ]; then
-              echo "::error::APK signing certificate mismatch."
+            if [ -z "$ACTUAL" ]; then
+              ACTUAL=$(
+                printf '%s\n' "$APKSIGNER_OUT" \
+                  | sed -n 's/.*SHA-256 digest:[[:space:]]*//p' \
+                  | head -n 1 \
+                  | normalize_fingerprint
+              )
+            fi
+
+            PARSE_SUCCESS=0
+            if [[ "$ACTUAL" =~ ^[0-9A-F]{64}$ ]]; then
+              PARSE_SUCCESS=1
+            fi
+
+            if [ "$APK_VALID" != "YES" ] || [ "$PARSE_SUCCESS" -ne 1 ] || [ "$ACTUAL" != "$EXPECTED" ]; then
+              echo "::error::APK signing certificate mismatch for $filename"
+              echo "Artifact Filename: $filename"
+              echo "Expected SHA-256: $EXPECTED"
+              echo "Actual SHA-256: $ACTUAL"
+              echo "APK Signature Valid: $APK_VALID"
+              echo "Fingerprint Parsing Succeeded: $( [ "$PARSE_SUCCESS" -eq 1 ] && echo "YES" || echo "NO" )"
+              if [ "$APK_VALID" != "YES" ]; then
+                echo "apksigner output:"
+                echo "$APKSIGNER_OUT"
+              fi
               exit 1
             fi
 
-            echo "APK signature verified."
+            echo "APK $filename verified successfully. SHA-256: $ACTUAL"
           done
 
-          echo "All release artifacts are correctly signed."
+          echo "All release artifacts are correctly signed and verified."
 
       - name: Clean Up Keystore
         if: always()
