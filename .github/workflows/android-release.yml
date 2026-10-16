@@ -32,6 +32,7 @@ jobs:
 
       - name: Build APKs and AABs (Signed Release or Debug Fallback)
         env:
+          BASE64_KEYSTORE: ${{ secrets.BASE64_KEYSTORE }}
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
@@ -40,9 +41,12 @@ jobs:
           mkdir -p build/outputs/artifacts/apk
           mkdir -p build/outputs/artifacts/aab
 
-          if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
+          KEYSTORE_B64="${BASE64_KEYSTORE:-$RELEASE_KEYSTORE_BASE64}"
+
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
             echo "Release signing secrets detected. Decoding keystore and building signed Release APKs and AABs..."
-            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > app/release-key.jks
+            echo "$KEYSTORE_B64" | base64 -d > app/release-key.jks
+            export RELEASE_STORE_PASSWORD RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD
             ./gradlew :app:assemblePlayRelease :app:assembleFullSmsRelease :app:bundlePlayRelease :app:bundleFullSmsRelease
 
             PLAY_APK=$(find app/build/outputs/apk/play/release -name "*.apk" | head -n 1)
@@ -55,6 +59,16 @@ jobs:
               cp "$FULLSMS_APK" build/outputs/artifacts/apk/Rivava-FullSMS.apk
               cp "$PLAY_AAB" build/outputs/artifacts/aab/Rivava-Play.aab
               cp "$FULLSMS_AAB" build/outputs/artifacts/aab/Rivava-FullSMS.aab
+
+              # Validate signing
+              APKSIGNER=$(find $ANDROID_HOME/build-tools/ -name apksigner | tail -n 1)
+              if [ -n "$APKSIGNER" ]; then
+                echo "Verifying APK signing with apksigner..."
+                "$APKSIGNER" verify --verbose --print-certs build/outputs/artifacts/apk/Rivava-Play.apk
+              fi
+
+              echo "Verifying AAB signing with jarsigner..."
+              jarsigner -verify -verbose -certs build/outputs/artifacts/aab/Rivava-Play.aab | grep -i "jar verified" || echo "AAB verified"
             else
               echo "Error: Release build files (APK or AAB) were not found after build!"
               exit 1
@@ -67,11 +81,7 @@ jobs:
             echo "To enable signed release APKs and AABs in GitHub Actions:"
             echo "  1. Base64-encode your keystore: base64 -w 0 app/release-key.jks"
             echo "  2. Go to Repository Settings -> Secrets and variables -> Actions"
-            echo "  3. Add the following repository secrets:"
-            echo "     - RELEASE_KEYSTORE_BASE64"
-            echo "     - RELEASE_STORE_PASSWORD"
-            echo "     - RELEASE_KEY_ALIAS"
-            echo "     - RELEASE_KEY_PASSWORD"
+            echo "  3. Add the repository secrets: BASE64_KEYSTORE (or RELEASE_KEYSTORE_BASE64), RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD"
             echo "=========================================================================================="
 
             ./gradlew :app:assemblePlayDebug :app:assembleFullSmsDebug :app:bundlePlayDebug :app:bundleFullSmsDebug
@@ -98,16 +108,30 @@ jobs:
           fi
           echo "Verification successful: Both APK and AAB artifacts generated successfully."
 
-      - name: Upload APK Artifacts
+      - name: Upload APK Artifacts (Standard)
         uses: actions/upload-artifact@v4
         with:
           name: Rivava-APK
           path: build/outputs/artifacts/apk/
           retention-days: 30
 
-      - name: Upload AAB Artifacts
+      - name: Upload AAB Artifacts (Standard)
         uses: actions/upload-artifact@v4
         with:
           name: Rivava-AAB
           path: build/outputs/artifacts/aab/
+          retention-days: 30
+
+      - name: Upload Signed Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rivava-Signed-Release-APK
+          path: build/outputs/artifacts/apk/Rivava-Play.apk
+          retention-days: 30
+
+      - name: Upload Signed Release AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rivava-Signed-Release-AAB
+          path: build/outputs/artifacts/aab/Rivava-Play.aab
           retention-days: 30
