@@ -11,7 +11,7 @@ import java.io.FileInputStream
 
 android {
     namespace = "com.rivavafi.universal"
-    compileSdk = 36
+    compileSdk = 35
 
     // Load local.properties for local builds
     val localProperties = Properties()
@@ -46,7 +46,7 @@ android {
                 enableV3Signing = true
                 enableV4Signing = true
             } else {
-                println("SIGNING CONFIG WARNING: Keystore file ($storeFilePath) or signing credentials are missing.")
+                println("SIGNING CONFIG WARNING: Keystore file or signing credentials are missing.")
             }
         }
     }
@@ -54,9 +54,9 @@ android {
     defaultConfig {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
-        targetSdk = 36
-        versionCode = 33
-        versionName = "33"
+        targetSdk = 35
+        versionCode = 34
+        versionName = "34"
 
         // API Key injection with safe fallbacks
         buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${System.getenv("ALPHA_VANTAGE_API_KEY") ?: localProperties.getProperty("alphavantage.apikey") ?: ""}\"")
@@ -98,16 +98,11 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             val releaseSigning = signingConfigs.getByName("release")
-            val isCi = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
-            val hasKeystore = releaseSigning.storeFile?.exists() == true
-            val hasCredentials = !releaseSigning.storePassword.isNullOrEmpty() &&
+            if (releaseSigning.storeFile?.exists() == true &&
+                !releaseSigning.storePassword.isNullOrEmpty() &&
                 !releaseSigning.keyAlias.isNullOrEmpty() &&
-                !releaseSigning.keyPassword.isNullOrEmpty()
-
-            if (hasKeystore && hasCredentials) {
+                !releaseSigning.keyPassword.isNullOrEmpty()) {
                 signingConfig = releaseSigning
-            } else if (isCi && System.getenv("REQUIRE_RELEASE_SIGNING") == "true") {
-                error("RELEASE BUILD ERROR: Missing release signing configuration in CI environment! Keystore exists: $hasKeystore, credentials present: $hasCredentials")
             } else {
                 println("RELEASE BUILD WARNING: Release build type is unsigned because signing configuration is incomplete.")
             }

@@ -132,7 +132,7 @@ fun RivavaPortfolioScreen(
     }
 
     if (premiumState.status != EntitlementStatus.UNLOCKED) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AmoledBlack)
@@ -140,6 +140,8 @@ fun RivavaPortfolioScreen(
                 .padding(20.dp),
             contentAlignment = Alignment.Center
         ) {
+            val maxCardWidth = if (maxWidth > 600.dp) 560.dp else maxWidth
+
             IconButton(
                 onClick = onBack,
                 modifier = Modifier
@@ -156,6 +158,7 @@ fun RivavaPortfolioScreen(
 
             Card(
                 modifier = Modifier
+                    .widthIn(max = maxCardWidth)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(28.dp))
                     .border(
@@ -479,13 +482,21 @@ fun RivavaPortfolioScreen(
         containerColor = Color(0xFF060913),
         modifier = Modifier.systemBarsPadding()
     ) { paddingValues ->
-        LazyColumn(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 140.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp)
+            contentAlignment = Alignment.TopCenter
         ) {
+            val contentMaxWidth = if (maxWidth > 800.dp) 760.dp else maxWidth
+
+            LazyColumn(
+                modifier = Modifier
+                    .widthIn(max = contentMaxWidth)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 140.dp),
+                verticalArrangement = Arrangement.spacedBy(22.dp)
+            ) {
             // 1. Top Brand Header Bar
             item {
                 Row(
@@ -1016,6 +1027,7 @@ fun RivavaPortfolioScreen(
             }
         }
     }
+}
 }
 
 /**
