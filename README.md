@@ -26,7 +26,7 @@ Native, modern Android financial intelligence and expense management application
 - **Network / API:** Retrofit 2 + OkHttp + Moshi / Gson
 - **Async & Reactive:** Kotlin Coroutines + StateFlow / SharedFlow
 - **Firebase Services:** Firebase Auth, Cloud Firestore, Cloud Messaging (FCM)
-- **Target SDK:** 35 (Android 15) | **Min SDK:** 24 (Android 7.0)
+- **Target SDK:** 36 (Android 16) | **Min SDK:** 24 (Android 7.0)
 
 ---
 
@@ -71,7 +71,7 @@ mobile/
 ### 1. Prerequisites
 - **Android Studio:** Hedgehog | Iguana | Jellyfish | Koala or newer
 - **JDK:** Java 17 or Java 21 (configured in Android Studio Gradle settings)
-- **Android SDK:** API 35 installed
+- **Android SDK:** API 36 installed
 
 ### 2. Configure `local.properties`
 Create or edit `local.properties` inside the `mobile/` directory:
