@@ -93,14 +93,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun rescanSms(context: Context) {
+    fun rescanSms(context: Context, modeOverride: String? = null) {
         viewModelScope.launch {
-            val modeStr = smsTrackingMode.value
+            val modeStr = modeOverride ?: smsTrackingMode.value
             val mode = runCatching { SmsTrackingMode.valueOf(modeStr) }.getOrDefault(SmsTrackingMode.OFF)
             if (mode != SmsTrackingMode.OFF) {
                 try {
                     val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                     _isLoading.value = true
+                    preferencesRepository.setLastSmsScanDate(0L)
                     smsInboxScanner.scanInbox(context, mode, userId)
                 } finally {
                     _isLoading.value = false
