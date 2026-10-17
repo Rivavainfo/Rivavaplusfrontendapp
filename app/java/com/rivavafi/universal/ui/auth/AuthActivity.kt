@@ -49,6 +49,10 @@ import com.rivavafi.universal.ui.components.RivavaBrandDisplay
 import com.rivavafi.universal.ui.components.RivavaGlowingLogo
 import com.rivavafi.universal.ui.components.RivavaLoadingOverlay
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import dagger.hilt.android.AndroidEntryPoint
 import android.util.Patterns
 import androidx.compose.foundation.shape.CircleShape
@@ -124,7 +128,7 @@ class AuthActivity : ComponentActivity() {
                 } else if (mode == "verifyEmail" || data.path?.contains("/verify") == true || data.toString().contains("verifyEmail")) {
                     if (!oobCode.isNullOrBlank()) {
                         viewModel.verifyEmailActionCode(oobCode) {
-                            Toast.makeText(this, "Email verified successfully!", Toast.LENGTH_SHORT).show()
+                            // Link verified successfully, state will automatically switch to EmailApprovedScreen
                         }
                     }
                 }
@@ -268,6 +272,10 @@ fun AuthScreenContent(
         }
     }
 
+    val pendingVerificationEmail by viewModel.pendingVerificationEmail.collectAsState()
+    val isEmailApproved by viewModel.isEmailApproved.collectAsState()
+    val resendCooldown by viewModel.resendCooldown.collectAsState()
+
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             if (it.isNotEmpty()) {
@@ -277,6 +285,24 @@ fun AuthScreenContent(
         }
     }
 
+    if (isEmailApproved) {
+        EmailApprovedScreen(
+            onAnimationComplete = {
+                viewModel.completeApprovalAndNavigateToHome(onLoginSuccess)
+            }
+        )
+        return
+    }
+
+    if (!pendingVerificationEmail.isNullOrBlank()) {
+        EmailVerificationScreen(
+            email = pendingVerificationEmail!!,
+            cooldownSeconds = resendCooldown,
+            onResend = { viewModel.resendVerificationEmail() },
+            onCancel = { viewModel.resetState() }
+        )
+        return
+    }
 
     Box(
         modifier = Modifier
@@ -727,5 +753,210 @@ fun AuthScreenContent(
         }
 
         RivavaLoadingOverlay(isLoading = authState == AuthState.LOADING)
+    }
+}
+
+@Composable
+fun EmailVerificationScreen(
+    email: String,
+    cooldownSeconds: Int,
+    onResend: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0A0A0A))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(26.dp))
+                .border(
+                    width = 1.2.dp,
+                    brush = Brush.linearGradient(
+                        listOf(
+                            RivavaCyan.copy(alpha = 0.7f),
+                            RivavaPink.copy(alpha = 0.45f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(26.dp)
+                ),
+            shape = RoundedCornerShape(26.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF121420)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                RivavaGlowingLogo(size = 56.dp)
+
+                Text(
+                    text = "Verify Your Email",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                )
+
+                Text(
+                    text = "We've sent a verification link to your email address ($email). Please check your inbox and verify your email to continue.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    ),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Button(
+                    onClick = onResend,
+                    enabled = cooldownSeconds == 0,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RivavaCyan,
+                        disabledContainerColor = Color.White.copy(alpha = 0.12f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = if (cooldownSeconds > 0) "Resend Email (${cooldownSeconds}s)" else "Resend Verification Email",
+                        fontWeight = FontWeight.Bold,
+                        color = if (cooldownSeconds > 0) Color.White.copy(alpha = 0.5f) else Color.White,
+                        fontSize = 15.sp
+                    )
+                }
+
+                TextButton(onClick = onCancel) {
+                    Text(
+                        text = "Back to Sign In",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmailApprovedScreen(
+    onAnimationComplete: () -> Unit
+) {
+    var checkmarkVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        checkmarkVisible = true
+        kotlinx.coroutines.delay(2000)
+        onAnimationComplete()
+    }
+
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (checkmarkVisible) 1.1f else 0.2f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "checkmarkScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0A0A0A))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(26.dp))
+                .border(
+                    width = 1.5.dp,
+                    brush = Brush.linearGradient(
+                        listOf(
+                            Color(0xFF00E5FF),
+                            Color(0xFF00FF87)
+                        )
+                    ),
+                    shape = RoundedCornerShape(26.dp)
+                ),
+            shape = RoundedCornerShape(26.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1624)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .scale(scale)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(Color(0xFF00E5FF).copy(alpha = 0.25f), Color.Transparent)
+                            ),
+                            CircleShape
+                        )
+                        .border(2.dp, Color(0xFF00E5FF), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "✅",
+                        fontSize = 38.sp
+                    )
+                }
+
+                Text(
+                    text = "Email Approved!",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
+                    )
+                )
+
+                Text(
+                    text = "Your email address has been successfully verified. Welcome to Rivava!",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 15.sp
+                    ),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = Color(0xFF00E5FF),
+                        strokeWidth = 2.dp
+                    )
+                    Text(
+                        text = "Setting up your account…",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            color = Color(0xFF00E5FF),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
+            }
+        }
     }
 }

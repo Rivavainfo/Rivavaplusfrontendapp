@@ -1,6 +1,7 @@
 package com.rivavafi.universal.data.repository
 
 import android.util.Log
+import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -224,25 +225,44 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun sendVerificationEmail(email: String, uid: String): Boolean {
+    suspend fun sendVerificationEmailWithActionCode(user: FirebaseUser): Boolean {
         return try {
-            val response = authApiService.sendVerificationEmail(SendVerificationRequest(email, uid))
-            if (response.isSuccessful) {
-                true
-            } else {
-                Log.w("AuthRepository", "API verification failed with ${response.code()}. Falling back to Firebase Auth.")
-                auth.currentUser?.sendEmailVerification()?.await()
-                true
-            }
+            val actionCodeSettings = ActionCodeSettings.newBuilder()
+                .setUrl("https://rivava.in/verify")
+                .setHandleCodeInApp(true)
+                .setAndroidPackageName("com.rivavafi.universal", true, "40")
+                .build()
+            user.sendEmailVerification(actionCodeSettings).await()
+            Log.d("AuthRepository", "Sent verification email with ActionCodeSettings to ${user.email}")
+            true
         } catch (e: Exception) {
-            Log.e("AuthRepository", "Failed to send verification email via API. Falling back to Firebase Auth.", e)
+            Log.e("AuthRepository", "Failed to send verification email with ActionCodeSettings, attempting standard fallback", e)
             try {
-                auth.currentUser?.sendEmailVerification()?.await()
+                user.sendEmailVerification().await()
                 true
             } catch (fallbackEx: Exception) {
                 Log.e("AuthRepository", "Firebase Auth fallback failed", fallbackEx)
                 false
             }
+        }
+    }
+
+    suspend fun sendVerificationEmail(email: String, uid: String): Boolean {
+        val currentUser = auth.currentUser
+        if (currentUser != null && currentUser.email.equals(email, ignoreCase = true)) {
+            return sendVerificationEmailWithActionCode(currentUser)
+        }
+        return try {
+            val response = authApiService.sendVerificationEmail(SendVerificationRequest(email, uid))
+            if (response.isSuccessful) {
+                true
+            } else {
+                Log.w("AuthRepository", "API verification failed with ${response.code()}.")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Failed to send verification email via API.", e)
+            false
         }
     }
 
