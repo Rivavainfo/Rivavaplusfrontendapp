@@ -61,6 +61,7 @@ fun PremiumUnlockDialog(
     val keyState by viewModel.keyVerificationState.collectAsState()
     val authUser = FirebaseAuth.getInstance().currentUser
     val userEmail = authUser?.email ?: ""
+    val userPhone = authUser?.phoneNumber ?: ""
     val displayName = userName.ifBlank { authUser?.displayName ?: "User" }
 
     LaunchedEffect(keyState) {
@@ -256,8 +257,9 @@ fun PremiumUnlockDialog(
 
                                             I would like to speak with an advisor regarding Rivava Premium Portfolio access.
 
-                                            Name: $displayName
-                                            Account Email: $userEmail
+                                            Username: $displayName
+                                            Email: $userEmail
+                                            Phone: $userPhone
 
                                             Please guide me through the activation process.
                                         """.trimIndent()
@@ -280,8 +282,9 @@ fun PremiumUnlockDialog(
 
                                             I would like to request my Rivava Premium Portfolio activation key.
 
-                                            Name: $displayName
-                                            Account Email: $userEmail
+                                            Username: $displayName
+                                            Email: $userEmail
+                                            Phone: $userPhone
 
                                             Please guide me through key activation.
                                         """.trimIndent()

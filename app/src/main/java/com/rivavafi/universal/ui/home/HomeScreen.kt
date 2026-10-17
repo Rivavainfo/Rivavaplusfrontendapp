@@ -165,7 +165,8 @@ fun HomeScreen(
 
                 I would like to request a 1-on-1 advisor session.
 
-                Name: ${userName ?: "User"}
+                Username: ${userName ?: "User"}
+                Email: ${authUser?.email ?: userModel?.email ?: "Not provided"}
                 Phone: $userPhone
 
                 Please confirm session availability.
@@ -239,13 +240,34 @@ fun HomeScreen(
                                 .clickable { onNavigateToProfile() },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (profileImageUri != null) {
-                                coil.compose.AsyncImage(
-                                    model = profileImageUri,
-                                    contentDescription = "Profile Avatar",
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
+                            if (!profileImageUri.isNullOrBlank()) {
+                                val decodedBitmap = remember(profileImageUri) {
+                                    if (profileImageUri.startsWith("data:image")) {
+                                        try {
+                                            val base64String = profileImageUri.substringAfter("base64,")
+                                            val imageBytes = android.util.Base64.decode(base64String, android.util.Base64.DEFAULT)
+                                            android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                        } catch (e: Exception) {
+                                            null
+                                        }
+                                    } else null
+                                }
+
+                                if (decodedBitmap != null) {
+                                    Image(
+                                        bitmap = decodedBitmap.asImageBitmap(),
+                                        contentDescription = "Profile Avatar",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    coil.compose.AsyncImage(
+                                        model = profileImageUri,
+                                        contentDescription = "Profile Avatar",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             } else {
                                 val initial = if (!userName.isNullOrEmpty()) userName.first().toString().uppercase() else "A"
                                 Text(

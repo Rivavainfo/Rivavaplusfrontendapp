@@ -290,7 +290,14 @@ class AuthViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Email login failed", e)
-                _errorMessage.value = e.message ?: "Login failed"
+                val msg = when {
+                    e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ||
+                    e is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
+                    e.message?.contains("password", ignoreCase = true) == true ||
+                    e.message?.contains("credential", ignoreCase = true) == true -> "Incorrect Password"
+                    else -> e.message ?: "Login failed. Incorrect Password"
+                }
+                _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
             }
         }
@@ -406,7 +413,12 @@ class AuthViewModel @Inject constructor(
                 onVerificationSent()
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Email registration failed", e)
-                _errorMessage.value = e.message ?: "Registration failed"
+                val msg = when {
+                    e.message?.contains("password", ignoreCase = true) == true -> "Incorrect Password"
+                    e is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Incorrect Password: Weak password (min 6 characters required)"
+                    else -> e.message ?: "Registration failed"
+                }
+                _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
             }
         }
