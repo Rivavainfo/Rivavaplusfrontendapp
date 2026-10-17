@@ -291,11 +291,12 @@ class AuthViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Email login failed", e)
                 val msg = when {
+                    e is com.google.firebase.FirebaseNetworkException -> "Network connection error. Please check your network and try again."
                     e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ||
                     e is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
                     e.message?.contains("password", ignoreCase = true) == true ||
-                    e.message?.contains("credential", ignoreCase = true) == true -> "Incorrect Password"
-                    else -> e.message ?: "Login failed. Incorrect Password"
+                    e.message?.contains("credential", ignoreCase = true) == true -> "Incorrect password. Please try again."
+                    else -> "Incorrect password. Please try again."
                 }
                 _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
@@ -414,9 +415,10 @@ class AuthViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Email registration failed", e)
                 val msg = when {
-                    e.message?.contains("password", ignoreCase = true) == true -> "Incorrect Password"
-                    e is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Incorrect Password: Weak password (min 6 characters required)"
-                    else -> e.message ?: "Registration failed"
+                    e is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "Email is already registered. Please sign in."
+                    e is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Weak password. Minimum 6 characters required."
+                    e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Invalid email format."
+                    else -> e.message ?: "Registration failed. Please try again."
                 }
                 _errorMessage.value = msg
                 _authState.value = AuthState.IDLE

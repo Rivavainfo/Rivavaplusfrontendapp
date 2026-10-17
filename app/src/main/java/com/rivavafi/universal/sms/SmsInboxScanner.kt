@@ -10,29 +10,43 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+data class SmsScanResult(
+    val messagesExamined: Int = 0,
+    val transactionsDetected: Int = 0,
+    val newTransactionsAdded: Int = 0,
+    val duplicatesSkipped: Int = 0
+)
+
 class SmsInboxScanner @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val preferencesRepository: UserPreferencesRepository
 ) {
-    suspend fun scanInbox(context: Context, mode: SmsTrackingMode, userId: String) {
-        if (mode == SmsTrackingMode.OFF) return
+    suspend fun scanInbox(context: Context, mode: SmsTrackingMode, userId: String): SmsScanResult {
+        if (mode == SmsTrackingMode.OFF) return SmsScanResult()
 
-        withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
             val lastScanDate = preferencesRepository.lastSmsScanDateFlow.first()
             var latestScanDate = lastScanDate
 
-            val cursor = context.contentResolver.query(
-                Telephony.Sms.Inbox.CONTENT_URI,
-                arrayOf(
-                    Telephony.Sms._ID,
-                    Telephony.Sms.ADDRESS,
-                    Telephony.Sms.BODY,
-                    Telephony.Sms.DATE
-                ),
-                "${Telephony.Sms.DATE} > ?",
-                arrayOf(lastScanDate.toString()),
-                "${Telephony.Sms.DATE} DESC LIMIT 500" // Sort DESC to get recent messages, limit to 500 to avoid long scans blocking UI
-            )
+            var examined = 0
+            var detected = 0
+            var added = 0
+            var duplicates = 0
+
+            val cursor = runCatching {
+                context.contentResolver.query(
+                    Telephony.Sms.Inbox.CONTENT_URI,
+                    arrayOf(
+                        Telephony.Sms._ID,
+                        Telephony.Sms.ADDRESS,
+                        Telephony.Sms.BODY,
+                        Telephony.Sms.DATE
+                    ),
+                    "${Telephony.Sms.DATE} > ?",
+                    arrayOf(lastScanDate.toString()),
+                    "${Telephony.Sms.DATE} DESC LIMIT 500"
+                )
+            }.getOrNull()
 
             cursor?.use {
                 val idIndex = it.getColumnIndexOrThrow(Telephony.Sms._ID)
@@ -41,6 +55,7 @@ class SmsInboxScanner @Inject constructor(
                 val dateIndex = it.getColumnIndexOrThrow(Telephony.Sms.DATE)
 
                 while (it.moveToNext()) {
+                    examined++
                     val smsId = it.getString(idIndex)
                     val sender = it.getString(addressIndex) ?: ""
                     val body = it.getString(bodyIndex) ?: ""
@@ -52,8 +67,11 @@ class SmsInboxScanner @Inject constructor(
 
                     val parsed = SmsTransactionParser.parseMessage(sender, body, timestamp, smsId, mode)
                     if (parsed != null) {
+                        detected++
                         val isProcessed = transactionRepository.isSmsIdProcessed(smsId, userId)
-                        if (!isProcessed) {
+                        if (isProcessed) {
+                            duplicates++
+                        } else {
                             val duplicate = transactionRepository.findDuplicate(
                                 userId = userId,
                                 transactionId = parsed.transactionId,
@@ -65,7 +83,9 @@ class SmsInboxScanner @Inject constructor(
                                 smsSender = parsed.smsSender
                             )
 
-                            if (duplicate == null) {
+                            if (duplicate != null) {
+                                duplicates++
+                            } else {
                                 val entity = TransactionEntity(
                                     userId = userId,
                                     bankName = parsed.bankName,
@@ -86,6 +106,7 @@ class SmsInboxScanner @Inject constructor(
                                     source = parsed.source
                                 )
                                 transactionRepository.addTransaction(entity)
+                                added++
                             }
                         }
                     }
@@ -95,6 +116,13 @@ class SmsInboxScanner @Inject constructor(
             if (latestScanDate > lastScanDate) {
                 preferencesRepository.setLastSmsScanDate(latestScanDate)
             }
+
+            SmsScanResult(
+                messagesExamined = examined,
+                transactionsDetected = detected,
+                newTransactionsAdded = added,
+                duplicatesSkipped = duplicates
+            )
         }
     }
 }

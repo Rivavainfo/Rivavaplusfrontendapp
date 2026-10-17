@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 import com.rivavafi.universal.sms.SmsInboxScanner
+import com.rivavafi.universal.sms.SmsScanResult
 import com.rivavafi.universal.sms.SmsTrackingMode
 import javax.inject.Inject
 
@@ -32,16 +33,23 @@ class SettingsViewModel @Inject constructor(
     private val preferencesRepository: UserPreferencesRepository,
     private val transactionRepository: TransactionRepository,
     private val exportCsvUseCase: ExportCsvUseCase,
-
     private val importCsvUseCase: ImportCsvUseCase,
     private val smsInboxScanner: SmsInboxScanner,
     private val userCorrectionDao: com.rivavafi.universal.data.local.UserCorrectionDao,
-
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _isLoading = kotlinx.coroutines.flow.MutableStateFlow(false)
-    val isLoading: kotlinx.coroutines.flow.StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _lastScanResult = MutableStateFlow<SmsScanResult?>(null)
+    val lastScanResult: StateFlow<SmsScanResult?> = _lastScanResult.asStateFlow()
+
+    val lastSmsScanDate = preferencesRepository.lastSmsScanDateFlow.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        0L
+    )
 
     val homeLayoutPreset = preferencesRepository.homeLayoutPresetFlow.stateIn(
         viewModelScope,
@@ -80,7 +88,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-
     val smsTrackingMode = preferencesRepository.smsTrackingModeFlow.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -93,7 +100,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun rescanSms(context: Context, modeOverride: String? = null) {
+    fun clearLastScanResult() {
+        _lastScanResult.value = null
+    }
+
+    fun rescanSms(context: Context, modeOverride: String? = null, onComplete: ((SmsScanResult) -> Unit)? = null) {
         viewModelScope.launch {
             val modeStr = modeOverride ?: smsTrackingMode.value
             val mode = runCatching { SmsTrackingMode.valueOf(modeStr) }.getOrDefault(SmsTrackingMode.OFF)
@@ -102,7 +113,9 @@ class SettingsViewModel @Inject constructor(
                     val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                     _isLoading.value = true
                     preferencesRepository.setLastSmsScanDate(0L)
-                    smsInboxScanner.scanInbox(context, mode, userId)
+                    val result = smsInboxScanner.scanInbox(context, mode, userId)
+                    _lastScanResult.value = result
+                    onComplete?.invoke(result)
                 } finally {
                     _isLoading.value = false
                 }
