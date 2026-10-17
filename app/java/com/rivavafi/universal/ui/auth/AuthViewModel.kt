@@ -11,6 +11,7 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthActionCodeException
 import com.rivavafi.universal.data.preferences.UserPreferencesRepository
 import com.rivavafi.universal.data.repository.AuthRepository
 import com.rivavafi.universal.data.repository.UserEntitlementRepository
@@ -69,8 +70,17 @@ class AuthViewModel @Inject constructor(
     private val _phoneAuthState = MutableStateFlow(PhoneAuthState.IDLE)
     val phoneAuthState: StateFlow<PhoneAuthState> = _phoneAuthState.asStateFlow()
 
+    private val _pendingVerificationEmail = MutableStateFlow<String?>(null)
+    val pendingVerificationEmail: StateFlow<String?> = _pendingVerificationEmail.asStateFlow()
 
+    private val _isEmailApproved = MutableStateFlow(false)
+    val isEmailApproved: StateFlow<Boolean> = _isEmailApproved.asStateFlow()
 
+    private val _resendCooldown = MutableStateFlow(0)
+    val resendCooldown: StateFlow<Int> = _resendCooldown.asStateFlow()
+
+    private var verificationPollingJob: kotlinx.coroutines.Job? = null
+    private var cooldownJob: kotlinx.coroutines.Job? = null
 
     private val _isNewUser = MutableStateFlow<Boolean?>(null)
     val isNewUser: StateFlow<Boolean?> = _isNewUser.asStateFlow()
@@ -127,7 +137,10 @@ class AuthViewModel @Inject constructor(
     fun resetState() {
         _authState.value = AuthState.IDLE
         _phoneAuthState.value = PhoneAuthState.IDLE
+        _pendingVerificationEmail.value = null
+        _isEmailApproved.value = false
         _errorMessage.value = null
+        verificationPollingJob?.cancel()
     }
 
     fun setErrorMessage(message: String) {
@@ -230,7 +243,23 @@ class AuthViewModel @Inject constructor(
                 val authRes = repository.auth.signInWithEmailAndPassword(email, pass).await()
                 Log.d("AuthViewModel", "Email login successful")
 
-                val uid = authRes.user?.uid ?: repository.auth.currentUser?.uid ?: throw Exception("Failed to retrieve UID")
+                val user = authRes.user ?: repository.auth.currentUser
+                val uid = user?.uid ?: throw Exception("Failed to retrieve UID")
+
+                user.reload().await()
+
+                // Use Firebase Auth creation timestamp metadata to distinguish existing accounts
+                val creationTime = user.metadata?.creationTimestamp ?: 0L
+                val isAccountRecentlyCreated = (System.currentTimeMillis() - creationTime) < (10 * 60 * 1000L) // Account created in last 10 minutes
+
+                // Only require email verification if account was recently created and not yet verified
+                if (!user.isEmailVerified && isAccountRecentlyCreated && _pendingVerificationEmail.value == email) {
+                    Log.w("AuthViewModel", "Unverified newly created user logging in. Redirecting to verification screen.")
+                    _pendingVerificationEmail.value = email
+                    _authState.value = AuthState.IDLE
+                    startEmailVerificationPolling(name = user.displayName ?: "", email = email)
+                    return@launch
+                }
 
                 // SAVE TO THEDATA (handles both create if not exists and update lastLoginAt if exists)
                 val theDataUser = UserModel(
@@ -243,7 +272,7 @@ class AuthViewModel @Inject constructor(
 
                 val sessionState = repository.saveUserToFirestore(
                     uid = uid,
-                    name = authRes.user?.displayName,
+                    name = user.displayName,
                     email = email,
                     phoneNumber = null,
                     authProvider = "email",
@@ -267,7 +296,7 @@ class AuthViewModel @Inject constructor(
 
                 val appUser = User(
                     uid = uid,
-                    name = sessionState.existingName ?: authRes.user?.displayName,
+                    name = sessionState.existingName ?: user.displayName,
                     email = email,
                     photo = sessionState.photoUrl,
                     phone = null
@@ -290,7 +319,15 @@ class AuthViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Email login failed", e)
-                _errorMessage.value = e.message ?: "Login failed"
+                val msg = when {
+                    e is com.google.firebase.FirebaseNetworkException -> "Network connection error. Please check your network and try again."
+                    e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ||
+                    e is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
+                    e.message?.contains("password", ignoreCase = true) == true ||
+                    e.message?.contains("credential", ignoreCase = true) == true -> "Incorrect password. Please try again."
+                    else -> e.message ?: "Incorrect password. Please try again."
+                }
+                _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
             }
         }
@@ -351,11 +388,79 @@ class AuthViewModel @Inject constructor(
             try {
                 Log.d("AuthViewModel", "Attempting email registration for: $email")
                 val result = repository.auth.createUserWithEmailAndPassword(email, pass).await()
-                val uid = result.user?.uid ?: throw Exception("Failed to retrieve UID")
+                val user = result.user ?: throw Exception("Failed to retrieve user")
 
-                Log.d("AuthViewModel", "Registration successful. Saving to Firestore and syncing session...")
+                // Update display name
+                if (name.isNotBlank()) {
+                    val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                        .setDisplayName(name)
+                        .build()
+                    user.updateProfile(profileUpdates).await()
+                }
 
-                // SAVE TO THEDATA
+                _pendingVerificationEmail.value = email
+                _isNewUser.value = true
+
+                // Send verification email with App Link ActionCodeSettings
+                repository.sendVerificationEmailWithActionCode(user)
+
+                startCooldownTimer(30)
+                _authState.value = AuthState.IDLE
+                onVerificationSent()
+
+                startEmailVerificationPolling(name, email)
+
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Email registration failed", e)
+                val msg = when {
+                    e is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "Email is already registered. Please sign in."
+                    e is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Weak password. Minimum 6 characters required."
+                    e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Invalid email format."
+                    else -> e.message ?: "Registration failed. Please try again."
+                }
+                _errorMessage.value = msg
+                _authState.value = AuthState.IDLE
+            }
+        }
+    }
+
+    private fun startEmailVerificationPolling(name: String, email: String) {
+        verificationPollingJob?.cancel()
+        verificationPollingJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(3000)
+                val currentUser = repository.auth.currentUser
+                if (currentUser != null) {
+                    try {
+                        currentUser.reload().await()
+                        if (currentUser.isEmailVerified) {
+                            Log.d("AuthViewModel", "Polling confirmed email is verified!")
+                            completeNewUserVerification(currentUser, name, email)
+                            break
+                        }
+                    } catch (e: Exception) {
+                        Log.w("AuthViewModel", "Error reloading user during polling: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startCooldownTimer(seconds: Int = 30) {
+        cooldownJob?.cancel()
+        _resendCooldown.value = seconds
+        cooldownJob = viewModelScope.launch {
+            while (_resendCooldown.value > 0) {
+                kotlinx.coroutines.delay(1000)
+                _resendCooldown.value -= 1
+            }
+        }
+    }
+
+    private fun completeNewUserVerification(user: com.google.firebase.auth.FirebaseUser, name: String, email: String) {
+        viewModelScope.launch {
+            try {
+                val uid = user.uid
                 val theDataUser = UserModel(
                     uid = uid,
                     name = name.ifBlank { null },
@@ -391,25 +496,27 @@ class AuthViewModel @Inject constructor(
                 } catch (e: Exception) {
                     Log.w("AuthViewModel", "Automatic key request creation failed: ${e.message}")
                 }
-                userEntitlementRepository.syncEntitlement()
-                _authState.value = AuthState.SUCCESS
 
                 try {
                     emailService.sendWelcomeEmail(email, name)
                 } catch (emailErr: Exception) {
                     Log.w("AuthViewModel", "Welcome email failed: ${emailErr.message}")
                 }
-                try {
-                    repository.sendVerificationEmail(email, uid)
-                } catch (e: Exception) {}
 
-                onVerificationSent()
+                userEntitlementRepository.syncEntitlement()
+                _isEmailApproved.value = true
             } catch (e: Exception) {
-                Log.e("AuthViewModel", "Email registration failed", e)
-                _errorMessage.value = e.message ?: "Registration failed"
-                _authState.value = AuthState.IDLE
+                Log.e("AuthViewModel", "Failed to complete new user verification: ${e.message}", e)
+                _errorMessage.value = "Failed to complete account setup: ${e.message}"
             }
         }
+    }
+
+    fun completeApprovalAndNavigateToHome(onSuccess: (Boolean) -> Unit) {
+        _pendingVerificationEmail.value = null
+        _isEmailApproved.value = false
+        _authState.value = AuthState.SUCCESS
+        onSuccess(true)
     }
 
     fun verifyEmailActionCode(oobCode: String, onSuccess: () -> Unit) {
@@ -417,11 +524,27 @@ class AuthViewModel @Inject constructor(
             _authState.value = AuthState.LOADING
             try {
                 repository.auth.applyActionCode(oobCode).await()
+                val currentUser = repository.auth.currentUser
+                if (currentUser != null) {
+                    currentUser.reload().await()
+                    completeNewUserVerification(
+                        user = currentUser,
+                        name = currentUser.displayName ?: "",
+                        email = currentUser.email ?: ""
+                    )
+                } else {
+                    _isEmailApproved.value = true
+                }
                 _authState.value = AuthState.IDLE
                 onSuccess()
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Failed to verify email with oobCode", e)
-                _errorMessage.value = "Failed to verify email: ${e.message}"
+                val msg = when {
+                    e is com.google.firebase.auth.FirebaseAuthActionCodeException ->
+                        "This verification link is invalid or has expired. Please request a new verification email."
+                    else -> "Failed to verify email: ${e.localizedMessage ?: "Unknown error"}"
+                }
+                _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
             }
         }
@@ -841,19 +964,28 @@ class AuthViewModel @Inject constructor(
     }
 
     fun resendVerificationEmail() {
+        if (_resendCooldown.value > 0) {
+            _errorMessage.value = "Please wait ${_resendCooldown.value} seconds before requesting another email."
+            return
+        }
         viewModelScope.launch {
             _authState.value = AuthState.LOADING
             try {
                 val user = repository.auth.currentUser
-                if (user != null && user.email != null) {
-                    repository.sendVerificationEmail(user.email!!, user.uid)
-                    _errorMessage.value = "Verification email resent successfully."
+                if (user != null) {
+                    val sent = repository.sendVerificationEmailWithActionCode(user)
+                    if (sent) {
+                        _errorMessage.value = "Verification email sent! Please check your inbox."
+                        startCooldownTimer(30)
+                    } else {
+                        _errorMessage.value = "Failed to resend verification email. Please try again."
+                    }
                 } else {
-                    _errorMessage.value = "User not found. Please log in again."
+                    _errorMessage.value = "Session expired. Please sign up or log in again."
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Failed to resend verification email", e)
-                _errorMessage.value = "Failed to resend verification email."
+                _errorMessage.value = "Failed to resend verification email: ${e.message}"
             } finally {
                 _authState.value = AuthState.IDLE
             }
