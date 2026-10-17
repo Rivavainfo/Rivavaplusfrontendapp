@@ -230,7 +230,19 @@ class AuthViewModel @Inject constructor(
                 val authRes = repository.auth.signInWithEmailAndPassword(email, pass).await()
                 Log.d("AuthViewModel", "Email login successful")
 
-                val uid = authRes.user?.uid ?: repository.auth.currentUser?.uid ?: throw Exception("Failed to retrieve UID")
+                val user = authRes.user ?: repository.auth.currentUser
+                val uid = user?.uid ?: throw Exception("Failed to retrieve UID")
+
+                // Ensure email is verified before granting access
+                user.reload().await()
+                val isVerified = user.isEmailVerified || repository.checkVerificationStatus(uid)
+                if (!isVerified) {
+                    Log.w("AuthViewModel", "Email sign-in rejected: Email $email is not verified")
+                    repository.auth.signOut()
+                    _errorMessage.value = "Email not verified yet. Please click the approval link sent to your email before signing in."
+                    _authState.value = AuthState.IDLE
+                    return@launch
+                }
 
                 // SAVE TO THEDATA (handles both create if not exists and update lastLoginAt if exists)
                 val theDataUser = UserModel(
@@ -243,7 +255,7 @@ class AuthViewModel @Inject constructor(
 
                 val sessionState = repository.saveUserToFirestore(
                     uid = uid,
-                    name = authRes.user?.displayName,
+                    name = user.displayName,
                     email = email,
                     phoneNumber = null,
                     authProvider = "email",
@@ -267,7 +279,7 @@ class AuthViewModel @Inject constructor(
 
                 val appUser = User(
                     uid = uid,
-                    name = sessionState.existingName ?: authRes.user?.displayName,
+                    name = sessionState.existingName ?: user.displayName,
                     email = email,
                     photo = sessionState.photoUrl,
                     phone = null
@@ -296,7 +308,7 @@ class AuthViewModel @Inject constructor(
                     e is com.google.firebase.auth.FirebaseAuthInvalidUserException ||
                     e.message?.contains("password", ignoreCase = true) == true ||
                     e.message?.contains("credential", ignoreCase = true) == true -> "Incorrect password. Please try again."
-                    else -> "Incorrect password. Please try again."
+                    else -> e.message ?: "Incorrect password. Please try again."
                 }
                 _errorMessage.value = msg
                 _authState.value = AuthState.IDLE
@@ -399,8 +411,6 @@ class AuthViewModel @Inject constructor(
                 } catch (e: Exception) {
                     Log.w("AuthViewModel", "Automatic key request creation failed: ${e.message}")
                 }
-                userEntitlementRepository.syncEntitlement()
-                _authState.value = AuthState.SUCCESS
 
                 try {
                     emailService.sendWelcomeEmail(email, name)
@@ -410,6 +420,11 @@ class AuthViewModel @Inject constructor(
                 try {
                     repository.sendVerificationEmail(email, uid)
                 } catch (e: Exception) {}
+
+                // Sign out so user must verify email link and sign in manually
+                repository.auth.signOut()
+                _authState.value = AuthState.IDLE
+                _errorMessage.value = "Account created! Please check your inbox and click the verification link before signing in."
 
                 onVerificationSent()
             } catch (e: Exception) {
@@ -431,6 +446,7 @@ class AuthViewModel @Inject constructor(
             _authState.value = AuthState.LOADING
             try {
                 repository.auth.applyActionCode(oobCode).await()
+                repository.auth.signOut()
                 _authState.value = AuthState.IDLE
                 onSuccess()
             } catch (e: Exception) {

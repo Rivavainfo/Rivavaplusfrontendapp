@@ -150,6 +150,43 @@ fun HomeScreen(
     val profileImageUri = userModel?.profileImage ?: viewModelProfileImageUri ?: cachedUser?.photo ?: authUser?.photoUrl?.toString()
     var showAddSheet by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
+    var showScanSmsDialog by remember { mutableStateOf(false) }
+
+    val hasSmsPermission = remember {
+        androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_SMS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.setSmsTrackingEnabled(true)
+            onNavigateToAnalytics()
+        } else {
+            Toast.makeText(context, "SMS permission is required to auto-track transactions.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val handleScanSmsAction = {
+        if (hasSmsPermission) {
+            viewModel.setSmsTrackingEnabled(true)
+            onNavigateToAnalytics()
+        } else {
+            smsPermissionLauncher.launch(Manifest.permission.READ_SMS)
+        }
+    }
+
+    // Automatically check on Home screen load if SMS is untracked/unpermissioned and pop up prompt
+    LaunchedEffect(Unit) {
+        val trackingEnabledPref = context.getSharedPreferences("user_preferences", android.content.Context.MODE_PRIVATE)
+            .getBoolean("sms_tracking_enabled", true)
+        if (!hasSmsPermission || !trackingEnabledPref) {
+            showScanSmsDialog = true
+        }
+    }
 
     val haptic = LocalHapticFeedback.current
     val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", android.content.Context.MODE_PRIVATE)
@@ -312,7 +349,9 @@ fun HomeScreen(
                 HomeTrackMoneySection(
                     transactions = transactions,
                     onClick = { onNavigateToAnalytics() },
-                    onAddTransactionClick = { showAddSheet = true }
+                    onAddTransactionClick = { showAddSheet = true },
+                    onScanSmsClick = { handleScanSmsAction() },
+                    isSmsTracked = hasSmsPermission
                 )
             }
 
@@ -449,6 +488,68 @@ fun HomeScreen(
                         Toast.makeText(context, "Incorrect password", Toast.LENGTH_SHORT).show()
                     }
                 }
+            )
+        }
+
+        if (showScanSmsDialog) {
+            AlertDialog(
+                onDismissRequest = { showScanSmsDialog = false },
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF00A3FF).copy(alpha = 0.2f))
+                            .border(1.dp, Color(0xFF00A3FF).copy(alpha = 0.4f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            tint = Color(0xFF00A3FF),
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = "Scan Your SMS & Auto-Track",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 18.sp
+                        )
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Automate your daily expense tracking and cash flow analytics by enabling SMS inbox scanning. Bank messages are processed locally on device.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.White.copy(alpha = 0.75f),
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showScanSmsDialog = false
+                            handleScanSmsAction()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A3FF)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Scan SMS Now", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showScanSmsDialog = false }) {
+                        Text("Later", color = Color.White.copy(alpha = 0.6f))
+                    }
+                },
+                containerColor = Color(0xFF101524),
+                shape = RoundedCornerShape(22.dp)
             )
         }
     }

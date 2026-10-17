@@ -2,6 +2,7 @@ package com.rivavafi.universal.ui.home
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1294,6 +1295,8 @@ fun HomeTrackMoneySection(
     transactions: List<TransactionEntity> = emptyList(),
     onClick: () -> Unit = {},
     onAddTransactionClick: () -> Unit = {},
+    onScanSmsClick: () -> Unit = {},
+    isSmsTracked: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var selectedPeriod by remember { mutableStateOf(TrackPeriod.LAST_7_DAYS) }
@@ -1736,6 +1739,73 @@ fun HomeTrackMoneySection(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            if (!isSmsTracked) {
+                // Warning / Callout Banner when SMS tracking is off or SMS permission is not granted
+                Surface(
+                    onClick = onScanSmsClick,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFF9800).copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color(0xFFFF9800).copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = null,
+                                tint = Color(0xFFFFB74D),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "SMS Tracking Disabled",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFFB74D),
+                                        fontSize = 11.5.sp
+                                    )
+                                )
+                                Text(
+                                    text = "Money is not being auto-tracked from bank SMS.",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 9.5.sp
+                                    )
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFFF9800))
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                text = "Scan SMS",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.Black,
+                                    fontSize = 10.5.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
 
             if (periodTransactions.isEmpty()) {
                 // EMPTY STATE

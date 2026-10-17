@@ -124,7 +124,7 @@ class AuthActivity : ComponentActivity() {
                 } else if (mode == "verifyEmail" || data.path?.contains("/verify") == true || data.toString().contains("verifyEmail")) {
                     if (!oobCode.isNullOrBlank()) {
                         viewModel.verifyEmailActionCode(oobCode) {
-                            Toast.makeText(this, "Email verified successfully!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Email verified successfully! Please sign in with your credentials.", Toast.LENGTH_LONG).show()
                         }
                     }
                 }
