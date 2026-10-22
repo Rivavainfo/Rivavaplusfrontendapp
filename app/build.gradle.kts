@@ -101,8 +101,8 @@ android {
         applicationId = "com.rivavafi.universal"
         minSdk = 24
         targetSdk = 36
-        versionCode = 40
-        versionName = "40"
+        versionCode = 41
+        versionName = "41"
 
         // API key injection
         buildConfigField(
