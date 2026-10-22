@@ -294,6 +294,8 @@ fun AuthScreenContent(
         return
     }
 
+    /*
+     * TASK 3: Email verification screen overlay commented out as verification is no longer mandatory for new users.
     if (!pendingVerificationEmail.isNullOrBlank()) {
         EmailVerificationScreen(
             email = pendingVerificationEmail!!,
@@ -303,6 +305,7 @@ fun AuthScreenContent(
         )
         return
     }
+    */
 
     Box(
         modifier = Modifier
@@ -710,7 +713,7 @@ fun AuthScreenContent(
                                         onClick = {
                                             if (isEmailSignUp) {
                                                 viewModel.onEmailRegister(emailInput.trim(), passwordInput, nameInput.trim()) {
-                                                    Toast.makeText(context, "Verification email sent to $emailInput", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(context, "Account created successfully!", Toast.LENGTH_SHORT).show()
                                                 }
                                             } else {
                                                 viewModel.onEmailLogin(emailInput.trim(), passwordInput)
@@ -725,7 +728,7 @@ fun AuthScreenContent(
                                         enabled = authState != AuthState.LOADING && emailInput.isNotBlank() && passwordInput.isNotBlank()
                                     ) {
                                         Text(
-                                            text = if (isEmailSignUp) "Create Account & Send Email" else "Sign In",
+                                            text = if (isEmailSignUp) "Create Account" else "Sign In",
                                             color = Color.White,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 15.sp

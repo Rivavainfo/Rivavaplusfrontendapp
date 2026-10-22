@@ -248,18 +248,8 @@ class AuthViewModel @Inject constructor(
 
                 user.reload().await()
 
-                // Use Firebase Auth creation timestamp metadata to distinguish existing accounts
-                val creationTime = user.metadata?.creationTimestamp ?: 0L
-                val isAccountRecentlyCreated = (System.currentTimeMillis() - creationTime) < (10 * 60 * 1000L) // Account created in last 10 minutes
-
-                // Only require email verification if account was recently created and not yet verified
-                if (!user.isEmailVerified && isAccountRecentlyCreated && _pendingVerificationEmail.value == email) {
-                    Log.w("AuthViewModel", "Unverified newly created user logging in. Redirecting to verification screen.")
-                    _pendingVerificationEmail.value = email
-                    _authState.value = AuthState.IDLE
-                    startEmailVerificationPolling(name = user.displayName ?: "", email = email)
-                    return@launch
-                }
+                // TASK 3: Email verification requirement removed for new sign-ups.
+                // All newly created or existing accounts proceed directly without verification gates.
 
                 // SAVE TO THEDATA (handles both create if not exists and update lastLoginAt if exists)
                 val theDataUser = UserModel(
@@ -398,17 +388,10 @@ class AuthViewModel @Inject constructor(
                     user.updateProfile(profileUpdates).await()
                 }
 
-                _pendingVerificationEmail.value = email
-                _isNewUser.value = true
-
-                // Send verification email with App Link ActionCodeSettings
-                repository.sendVerificationEmailWithActionCode(user)
-
-                startCooldownTimer(30)
-                _authState.value = AuthState.IDLE
+                // TASK 3: Directly complete account setup and enter app without email verification
+                completeNewUserSetup(user, name, email)
+                _authState.value = AuthState.SUCCESS
                 onVerificationSent()
-
-                startEmailVerificationPolling(name, email)
 
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Email registration failed", e)
@@ -422,6 +405,58 @@ class AuthViewModel @Inject constructor(
                 _authState.value = AuthState.IDLE
             }
         }
+    }
+
+    private suspend fun completeNewUserSetup(user: com.google.firebase.auth.FirebaseUser, name: String, email: String) {
+        val uid = user.uid
+        val theDataUser = UserModel(
+            uid = uid,
+            name = name.ifBlank { null },
+            email = email,
+            loginProvider = "email",
+            isPhoneVerified = false
+        )
+        firebaseUserManager.saveUserToFirestore(theDataUser)
+
+        val sessionState = repository.saveUserToFirestore(
+            uid = uid,
+            name = name.ifBlank { null },
+            email = email,
+            phoneNumber = null,
+            authProvider = "email",
+            isVerified = true
+        )
+        userPreferencesRepository.saveUserName(name)
+
+        val appUser = User(
+            uid = uid,
+            name = name.ifBlank { null },
+            email = email,
+            photo = null,
+            phone = null
+        )
+        userRepository.saveUserToFirestore(appUser)
+        userRepository.cacheUserLocally(context, appUser)
+
+        val isNew = !sessionState.onboardingCompleted
+        _isNewUser.value = isNew
+        if (isNew) {
+            repository.auth.currentUser?.let { repository.sendUserToSheet(it, "Email") }
+        }
+
+        try {
+            userEntitlementRepository.requestNewKey()
+        } catch (e: Exception) {
+            Log.w("AuthViewModel", "Automatic key request creation failed: ${e.message}")
+        }
+
+        try {
+            emailService.sendWelcomeEmail(email, name)
+        } catch (emailErr: Exception) {
+            Log.w("AuthViewModel", "Welcome email failed: ${emailErr.message}")
+        }
+
+        userEntitlementRepository.syncEntitlement()
     }
 
     private fun startEmailVerificationPolling(name: String, email: String) {

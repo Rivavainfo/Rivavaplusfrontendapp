@@ -120,17 +120,11 @@ fun RivavaPortfolioScreen(
         }
     }
 
-    if (premiumState.status == EntitlementStatus.LOADING) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(color = EmeraldGreen)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading portfolio intelligence...", color = Color.White)
-            }
-        }
-        return
-    }
-
+    /*
+     * TASK 1: Permanent Portfolio Access.
+     * The lock overlay screen and gating conditions are commented out below so that the entire
+     * Portfolio section, market quotes, crypto tracking, and research reports remain permanently open.
+     *
     if (premiumState.status != EntitlementStatus.UNLOCKED) {
         BoxWithConstraints(
             modifier = Modifier
@@ -453,6 +447,7 @@ fun RivavaPortfolioScreen(
         }
         return
     }
+    */
 
     // Unlocked / Development Mode: Render Full Portfolio Section
     val stockStates by viewModel.stockStates.collectAsState()

@@ -111,6 +111,7 @@ import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -432,6 +433,9 @@ fun HomeScreen(
     }
 }
 
+// Task 2 Constant: 4-second automatic carousel rotation interval
+private const val CAROUSEL_AUTO_SCROLL_INTERVAL_MS = 4000L
+
 /**
  * Task 4: Rotating Homepage Carousel supporting 4 Card Sets with 6s Auto-Rotation.
  * Cards are visually consistent in size and styling with Set 1.
@@ -452,12 +456,28 @@ fun RotatingHomepageCarousel(
     val pageCount = 4
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { pageCount })
 
-    // Automatic 6-second rotation interval
-    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
-        if (!pagerState.isScrollInProgress) {
-            delay(6000)
-            val nextPage = (pagerState.currentPage + 1) % pageCount
-            pagerState.animateScrollToPage(nextPage, animationSpec = tween(450))
+    // Lifecycle-aware observer to pause auto-scroll when app is backgrounded or screen inactive
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isResumed by remember { mutableStateOf(true) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            isResumed = event.targetState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Task 2: Automatic 4-second rotation interval with loop and pause/resume support
+    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress, isResumed) {
+        if (pageCount > 1 && isResumed && !pagerState.isScrollInProgress) {
+            delay(CAROUSEL_AUTO_SCROLL_INTERVAL_MS)
+            if (isResumed && !pagerState.isScrollInProgress) {
+                val nextPage = (pagerState.currentPage + 1) % pageCount
+                pagerState.animateScrollToPage(nextPage, animationSpec = tween(450))
+            }
         }
     }
 
