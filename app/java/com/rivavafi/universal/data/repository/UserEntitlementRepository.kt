@@ -42,110 +42,24 @@ class UserEntitlementRepository @Inject constructor(
     private val functions = FirebaseFunctions.getInstance("asia-south1")
     private val auth = FirebaseAuth.getInstance()
 
-    private val _premiumState = MutableStateFlow(PremiumState())
+    // TASK 1: Initialize entitlement state to permanently UNLOCKED so Portfolio is always accessible.
+    private val _premiumState = MutableStateFlow(PremiumState(EntitlementStatus.UNLOCKED, true, "permanent_unlocked"))
     val premiumState: StateFlow<PremiumState> = _premiumState.asStateFlow()
     private var snapshotListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     suspend fun syncEntitlement() {
         val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
-        val localPremium = prefs.getBoolean("isPremium", false)
-        val localPremiumSource = prefs.getString("premium_source", null)
-        val hasLocalKeyUnlock = localPremium && (localPremiumSource == "access_key" || localPremiumSource == "secret_key" || localPremiumSource == "local_account_key")
+        prefs.edit()
+            .putBoolean("isPremium", true)
+            .putBoolean("portfolio_unlocked", true)
+            .putString("premium_source", "permanent_unlocked")
+            .apply()
 
-        if (localPremium) {
-            _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, localPremiumSource ?: "cache")
-        } else {
-            _premiumState.value = PremiumState(EntitlementStatus.LOADING, false, null)
-        }
+        userPreferencesRepository.setPremiumUserForCurrent(true)
+        _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "permanent_unlocked")
 
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
-            if (hasLocalKeyUnlock) {
-                _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, localPremiumSource ?: "local_account_key")
-                userPreferencesRepository.setPremiumUserForCurrent(true)
-            } else {
-                _premiumState.value = PremiumState(EntitlementStatus.LOCKED, false, null)
-                prefs.edit().putBoolean("isPremium", false).putBoolean("portfolio_unlocked", false).remove("premium_source").apply()
-                userPreferencesRepository.setPremiumUserForCurrent(false)
-            }
-            snapshotListener?.remove()
-            return
-        }
-
-        try {
-            snapshotListener?.remove()
-            snapshotListener = firestore.collection("therivdata").document(uid)
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.e("UserEntitlement", "Listen failed.", e)
-                        return@addSnapshotListener
-                    }
-
-                    if (snapshot != null && snapshot.exists()) {
-                        val isPremium = snapshot.getBoolean("premiumStatus") ?: false
-                        val expiresAtDate = snapshot.getDate("premiumExpiresAt") ?: snapshot.getDate("premium_expires_at")
-                        val isExpired = expiresAtDate != null && java.util.Date().after(expiresAtDate)
-
-                        val validPremium = isPremium && !isExpired
-                        val effectivePremium = validPremium || hasLocalKeyUnlock
-                        val effectiveSource = if (hasLocalKeyUnlock) (localPremiumSource ?: "local_account_key") else if (validPremium) "therivdata" else null
-
-                        _premiumState.value = if (effectivePremium) {
-                            PremiumState(EntitlementStatus.UNLOCKED, true, effectiveSource)
-                        } else {
-                            PremiumState(EntitlementStatus.LOCKED, false, null)
-                        }
-
-                        val edit = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE).edit()
-                        edit.putBoolean("isPremium", effectivePremium)
-                            .putBoolean("portfolio_unlocked", effectivePremium)
-                        if (effectivePremium) {
-                            edit.putString("premium_source", effectiveSource)
-                        } else {
-                            edit.remove("premium_source")
-                        }
-                        edit.apply()
-
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                            userPreferencesRepository.setPremiumUserForCurrent(effectivePremium)
-                        }
-                    }
-                }
-
-            val docSnap = firestore.collection("therivdata").document(uid).get().await()
-            val isPremium = docSnap.getBoolean("premiumStatus") ?: false
-            val expiresAtDate = docSnap.getDate("premiumExpiresAt") ?: docSnap.getDate("premium_expires_at")
-            val isExpired = expiresAtDate != null && java.util.Date().after(expiresAtDate)
-
-            val validPremium = isPremium && !isExpired
-            val effectivePremium = validPremium || hasLocalKeyUnlock
-            val effectiveSource = if (hasLocalKeyUnlock) (localPremiumSource ?: "local_account_key") else if (validPremium) "therivdata" else null
-
-            _premiumState.value = if (effectivePremium) {
-                PremiumState(EntitlementStatus.UNLOCKED, true, effectiveSource)
-            } else {
-                PremiumState(EntitlementStatus.LOCKED, false, null)
-            }
-
-            val edit = prefs.edit()
-                .putBoolean("isPremium", effectivePremium)
-                .putBoolean("portfolio_unlocked", effectivePremium)
-            if (effectivePremium) {
-                edit.putString("premium_source", effectiveSource)
-            } else {
-                edit.remove("premium_source")
-            }
-            edit.apply()
-            userPreferencesRepository.setPremiumUserForCurrent(effectivePremium)
-
-        } catch (e: Exception) {
-            Log.e("UserEntitlement", "Error syncing entitlement", e)
-            _premiumState.value = PremiumState(
-                if (hasLocalKeyUnlock) EntitlementStatus.UNLOCKED else EntitlementStatus.ERROR,
-                hasLocalKeyUnlock || localPremium,
-                localPremiumSource ?: "cache"
-            )
-        }
+        // TASK 1: Background snapshot listeners and 30-day relocking/expiration checks are disabled
+        // to ensure Portfolio access is permanently maintained across app restarts, syncs, and account updates.
     }
 
     suspend fun createPaymentOrder(amountPaise: Int = 1100, plan: String = "portfolio_premium"): OrderResult {
@@ -228,14 +142,15 @@ class UserEntitlementRepository @Inject constructor(
     }
 
     suspend fun clearEntitlement() {
+        // TASK 1: Maintain permanent Portfolio unlock state even if entitlement clear is invoked.
         val prefs = context.getSharedPreferences("RivavaPortfolioPrefs", Context.MODE_PRIVATE)
         prefs.edit()
-            .putBoolean("isPremium", false)
-            .putBoolean("portfolio_unlocked", false)
-            .remove("premium_source")
+            .putBoolean("isPremium", true)
+            .putBoolean("portfolio_unlocked", true)
+            .putString("premium_source", "permanent_unlocked")
             .apply()
-        userPreferencesRepository.setPremiumUserForCurrent(false)
-        _premiumState.value = PremiumState(EntitlementStatus.LOCKED, false, null)
+        userPreferencesRepository.setPremiumUserForCurrent(true)
+        _premiumState.value = PremiumState(EntitlementStatus.UNLOCKED, true, "permanent_unlocked")
     }
 
     suspend fun requestNewKey(): Result<String> {
